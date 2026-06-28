@@ -8,20 +8,20 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { parseSupabaseError } from '@/lib/utils';
 import { Trash2, CheckCircle } from 'lucide-react';
 
-interface Ingredient {
-  ingredient_id: number;
-  ingredient_name: string;
+interface RmItem {
+  rm_item_id: number;
+  name: string;
   unit: string;
 }
 
-interface Supplier {
-  supplier_id: number;
-  supplier_name: string;
+interface Vendor {
+  id: number;
+  name: string;
 }
 
 interface ReceiptLine {
-  ingredient_id: number;
-  ingredient_name: string;
+  rm_item_id: number;
+  name: string;
   unit: string;
   qty_received: string;
   cost_per_unit: string;
@@ -31,47 +31,55 @@ export default function ReceivePage() {
   const supabase = createClient();
   const { user } = useUser();
 
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [items, setItems] = useState<RmItem[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const [supplierId, setSupplierId] = useState('');
-  const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
-  const [invoiceRef, setInvoiceRef] = useState('');
+  const [vendorId, setVendorId] = useState('');
+  const [note, setNote] = useState('');
 
   const [lines, setLines] = useState<ReceiptLine[]>([]);
   const [search, setSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const filtered = ingredients.filter(i =>
-    i.ingredient_name.toLowerCase().includes(search.toLowerCase())
+  const filtered = items.filter(i =>
+    i.name.toLowerCase().includes(search.toLowerCase())
   ).slice(0, 8);
 
   useEffect(() => {
     async function load() {
-      const [ing, sup] = await Promise.all([
-        supabase.schema('production').from('ingredients').select('ingredient_id, ingredient_name, unit').order('ingredient_name'),
-        supabase.schema('production').from('suppliers').select('supplier_id, supplier_name').order('supplier_name'),
+      const [itemsRes, vendorsRes] = await Promise.all([
+        supabase.schema('production').from('rm_items')
+          .select('id, name, unit')
+          .eq('is_stockable', true)
+          .order('name'),
+        supabase.schema('production').from('vendors')
+          .select('id, name')
+          .eq('status', 'active')
+          .order('name'),
       ]);
-      setIngredients(ing.data || []);
-      setSuppliers(sup.data || []);
+      setItems((itemsRes.data || []).map((r: Record<string, unknown>) => ({
+        rm_item_id: r.id as number,
+        name: r.name as string,
+        unit: r.unit as string,
+      })));
+      setVendors(vendorsRes.data || []);
       setLoading(false);
     }
     load();
   }, [supabase]);
 
-  function addLine(ingredient: Ingredient) {
-    if (lines.some(l => l.ingredient_id === ingredient.ingredient_id)) {
-      toast.error(`${ingredient.ingredient_name} is already in this delivery.`);
+  function addLine(item: RmItem) {
+    if (lines.some(l => l.rm_item_id === item.rm_item_id)) {
+      toast.error(`${item.name} is already in this delivery.`);
       return;
     }
     setLines(prev => [...prev, {
-      ingredient_id: ingredient.ingredient_id,
-      ingredient_name: ingredient.ingredient_name,
-      unit: ingredient.unit,
+      rm_item_id: item.rm_item_id,
+      name: item.name,
+      unit: item.unit,
       qty_received: '',
       cost_per_unit: '',
     }]);
@@ -83,55 +91,44 @@ export default function ReceivePage() {
     setLines(prev => prev.filter((_, i) => i !== idx));
   }
 
-  function updateLine(idx: number, field: keyof ReceiptLine, value: string) {
+  function updateLine(idx: number, field: 'qty_received' | 'cost_per_unit', value: string) {
     setLines(prev => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
   }
 
   async function handleSubmit() {
-    if (!supplierId) { toast.error('Please select who delivered these ingredients.'); return; }
-    if (lines.length === 0) { toast.error('Please add at least one ingredient to this delivery.'); return; }
+    if (!vendorId) { toast.error('Please select a vendor.'); return; }
+    if (lines.length === 0) { toast.error('Add at least one ingredient.'); return; }
     for (const l of lines) {
       if (!l.qty_received || parseFloat(l.qty_received) <= 0) {
-        toast.error(`Please enter a quantity for ${l.ingredient_name}.`);
+        toast.error(`Please enter a quantity for ${l.name}.`);
         return;
       }
     }
 
     setSubmitting(true);
     try {
-      const { data: receipt, error: rErr } = await supabase
-        .schema('production')
-        .from('rm_receipts')
-        .insert({
-          supplier_id: parseInt(supplierId),
-          received_by: user?.id,
-          received_at: new Date(deliveryDate).toISOString(),
-          notes: notes || null,
-          invoice_ref: invoiceRef || null,
-        })
-        .select('receipt_id')
-        .single();
+      const { data, error } = await supabase.schema('production').rpc('create_rm_receipt', {
+        p_source_type: 'vendor',
+        p_vendor_id: parseInt(vendorId),
+        p_received_by: user?.id,
+        p_note: note || null,
+        p_lines: lines.map(l => ({
+          rm_item_id: l.rm_item_id,
+          qty: parseFloat(l.qty_received),
+          unit_cost: l.cost_per_unit ? parseFloat(l.cost_per_unit) : null,
+          lot_no: null,
+        })),
+      });
 
-      if (rErr || !receipt) throw new Error(rErr?.message || 'Could not create receipt');
-
-      const { error: lErr } = await supabase
-        .schema('production')
-        .from('rm_receipt_lines')
-        .insert(lines.map(l => ({
-          receipt_id: receipt.receipt_id,
-          ingredient_id: l.ingredient_id,
-          qty_received: parseFloat(l.qty_received),
-          cost_per_unit: l.cost_per_unit ? parseFloat(l.cost_per_unit) : null,
-        })));
-
-      if (lErr) throw new Error(lErr.message);
+      if (error) throw new Error(error.message);
+      const result = data as { success: boolean; error?: string };
+      if (!result.success) throw new Error(result.error || 'Failed to record delivery');
 
       setSuccess(true);
       toast.success('Delivery recorded! Stock levels have been updated.');
       setLines([]);
-      setSupplierId('');
-      setNotes('');
-      setInvoiceRef('');
+      setVendorId('');
+      setNote('');
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       toast.error(parseSupabaseError(msg));
@@ -147,7 +144,7 @@ export default function ReceivePage() {
       <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
         <CheckCircle className="text-green-500" size={64} />
         <h2 className="text-2xl font-bold text-gray-900">Delivery Recorded!</h2>
-        <p className="text-gray-500 text-lg">The stock levels have been updated.</p>
+        <p className="text-gray-500 text-lg">Stock levels have been updated.</p>
         <button onClick={() => setSuccess(false)} className="btn-primary mt-4" style={{ maxWidth: 320 }}>
           Record Another Delivery
         </button>
@@ -160,51 +157,41 @@ export default function ReceivePage() {
       <ScreenHeader
         icon="📦"
         title="Receive Ingredients"
-        description="Use this when a delivery arrives. Enter what came in and the stock count goes up automatically."
+        description="Log a new delivery of raw materials. Stock count goes up automatically."
       />
 
       <div className="card space-y-4">
         <h2 className="section-title">Delivery Details</h2>
 
         <div>
-          <label className="label-text block mb-2">Who delivered it?</label>
-          <select value={supplierId} onChange={e => setSupplierId(e.target.value)} className="input-field">
-            <option value="">Select supplier...</option>
-            {suppliers.map(s => (
-              <option key={s.supplier_id} value={s.supplier_id}>{s.supplier_name}</option>
+          <label className="label-text block mb-2">Vendor / Supplier</label>
+          <select value={vendorId} onChange={e => setVendorId(e.target.value)} className="input-field">
+            <option value="">Select vendor...</option>
+            {vendors.map(v => (
+              <option key={v.id} value={v.id}>{v.name}</option>
             ))}
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="label-text block mb-2">Delivery Date</label>
-            <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="input-field" />
-          </div>
-          <div>
-            <label className="label-text block mb-2">Invoice / Ref # (optional)</label>
-            <input type="text" value={invoiceRef} onChange={e => setInvoiceRef(e.target.value)} placeholder="e.g. INV-1234" className="input-field" />
-          </div>
-        </div>
-
         <div>
-          <label className="label-text block mb-2">Notes (optional)</label>
-          <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any notes about this delivery..." className="input-field" rows={2} />
+          <label className="label-text block mb-2">Note (optional)</label>
+          <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Invoice #1234, delivery notes..." className="input-field" rows={2} />
         </div>
       </div>
 
       <div className="card space-y-4">
         <h2 className="section-title">Ingredients Received</h2>
-        <p className="text-gray-500 text-sm">Search for each ingredient and enter the quantity that arrived.</p>
+        <p className="text-gray-500 text-sm">Search for each ingredient and enter the quantity received.</p>
 
         <div className="relative">
           <input
             type="text"
-            placeholder="Search for an ingredient (e.g. Mango Pulp)..."
+            placeholder="Search ingredient (e.g. Mango Pulp)..."
             className="input-field"
             value={search}
             onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
             onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
           />
           {showDropdown && search && (
             <div className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 mt-1 overflow-hidden z-20">
@@ -212,11 +199,11 @@ export default function ReceivePage() {
                 <p className="p-4 text-gray-500 text-sm">No ingredients found for &quot;{search}&quot;</p>
               ) : filtered.map(i => (
                 <button
-                  key={i.ingredient_id}
+                  key={i.rm_item_id}
                   className="flex items-center justify-between w-full px-4 py-3 hover:bg-orange-50 text-left touch-manipulation border-b border-gray-50 last:border-0"
-                  onClick={() => addLine(i)}
+                  onMouseDown={() => addLine(i)}
                 >
-                  <span className="font-medium text-gray-900">{i.ingredient_name}</span>
+                  <span className="font-medium text-gray-900">{i.name}</span>
                   <span className="text-gray-400 text-sm ml-2">{i.unit}</span>
                 </button>
               ))}
@@ -229,20 +216,18 @@ export default function ReceivePage() {
         ) : (
           <div className="space-y-3">
             {lines.map((line, idx) => (
-              <div key={line.ingredient_id} className="bg-orange-50 rounded-2xl p-4 space-y-3">
+              <div key={line.rm_item_id} className="bg-orange-50 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-gray-900">{line.ingredient_name}</p>
+                  <p className="font-bold text-gray-900">{line.name}</p>
                   <button onClick={() => removeLine(idx)} className="text-red-400 hover:text-red-600 p-1 touch-manipulation">
                     <Trash2 size={18} />
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label-text block mb-1">Quantity received ({line.unit})</label>
+                    <label className="label-text block mb-1">Qty received ({line.unit})</label>
                     <input
-                      type="number"
-                      min="0"
-                      step="0.1"
+                      type="number" min="0" step="0.1"
                       value={line.qty_received}
                       onChange={e => updateLine(idx, 'qty_received', e.target.value)}
                       placeholder={`Amount in ${line.unit}`}
@@ -250,11 +235,9 @@ export default function ReceivePage() {
                     />
                   </div>
                   <div>
-                    <label className="label-text block mb-1">Cost per {line.unit} (₹, optional)</label>
+                    <label className="label-text block mb-1">Cost / {line.unit} (₹, optional)</label>
                     <input
-                      type="number"
-                      min="0"
-                      step="0.01"
+                      type="number" min="0" step="0.01"
                       value={line.cost_per_unit}
                       onChange={e => updateLine(idx, 'cost_per_unit', e.target.value)}
                       placeholder="e.g. 120.00"
@@ -271,7 +254,7 @@ export default function ReceivePage() {
           <div className="pt-2">
             <p className="text-sm text-gray-500 mb-3 text-center">{lines.length} ingredient{lines.length > 1 ? 's' : ''} ready to record</p>
             <button onClick={handleSubmit} disabled={submitting} className="btn-primary">
-              {submitting ? 'Recording delivery...' : `✓ Record This Delivery`}
+              {submitting ? 'Recording delivery...' : '✓ Record This Delivery'}
             </button>
           </div>
         )}

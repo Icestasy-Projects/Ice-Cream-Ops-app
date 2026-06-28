@@ -7,50 +7,77 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 
-interface FgStock {
-  fg_product_id: number;
+interface FgSku {
+  fg_sku_id: number;
   product_name: string;
   unit: string;
   qty_on_hand: number;
 }
 
-interface SalesOrder {
-  order_id: number;
-  order_ref: string;
-  customer_name: string;
+interface DispatchRecord {
+  id: number;
+  fg_sku_id: number;
+  product_name: string;
+  qty: number;
+  unit: string;
+  dispatched_at: string;
+  note: string | null;
+  status: string;
 }
 
 export default function DispatchPage() {
   const supabase = createClient();
   const { user } = useUser();
 
-  const [stock, setStock] = useState<FgStock[]>([]);
-  const [orders, setOrders] = useState<SalesOrder[]>([]);
+  const [stock, setStock] = useState<FgSku[]>([]);
+  const [history, setHistory] = useState<DispatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<FgStock | null>(null);
+  const [selected, setSelected] = useState<FgSku | null>(null);
   const [qty, setQty] = useState('');
-  const [orderId, setOrderId] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [notes, setNotes] = useState('');
+  const [note, setNote] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    const [stockRes, ordersRes] = await Promise.all([
+    const [stockRes, histRes] = await Promise.all([
       supabase.schema('production').from('v_fg_stock')
-        .select('fg_product_id, product_name, unit, qty_on_hand')
+        .select('fg_sku_id, product_name, unit, qty_on_hand')
         .gt('qty_on_hand', 0)
         .order('product_name'),
-      supabase.schema('sales').from('sales_orders')
-        .select('order_id, order_ref, customer_name')
-        .order('order_id', { ascending: false })
-        .limit(50),
+      supabase.schema('production').from('fg_dispatches')
+        .select('id, fg_sku_id, qty, dispatched_at, note, status')
+        .order('dispatched_at', { ascending: false })
+        .limit(20),
     ]);
-    setStock(stockRes.data || []);
-    setOrders(ordersRes.data || []);
+
+    const stockData: FgSku[] = (stockRes.data || []).map((r: Record<string, unknown>) => ({
+      fg_sku_id: r.fg_sku_id as number,
+      product_name: r.product_name as string,
+      unit: r.unit as string,
+      qty_on_hand: (r.qty_on_hand as number) || 0,
+    }));
+    setStock(stockData);
+
+    const histData = histRes.data || [];
+    const allStock = stockData;
+    const dispatchHistory: DispatchRecord[] = histData.map((r: Record<string, unknown>) => {
+      const sku = allStock.find(s => s.fg_sku_id === (r.fg_sku_id as number));
+      return {
+        id: r.id as number,
+        fg_sku_id: r.fg_sku_id as number,
+        product_name: sku?.product_name || `SKU #${r.fg_sku_id}`,
+        qty: r.qty as number,
+        unit: sku?.unit || 'tubs',
+        dispatched_at: r.dispatched_at as string,
+        note: r.note as string | null,
+        status: r.status as string,
+      };
+    });
+    setHistory(dispatchHistory);
     setLoading(false);
   }, [supabase]);
 
@@ -58,23 +85,24 @@ export default function DispatchPage() {
 
   async function handleSubmit() {
     if (!selected) return;
-    if (!qty || parseFloat(qty) <= 0) { toast.error('Please enter the quantity to dispatch.'); return; }
+    if (!qty || parseFloat(qty) <= 0) { toast.error('Enter the quantity to dispatch.'); return; }
+    if (parseFloat(qty) > selected.qty_on_hand) {
+      toast.error(`Only ${formatNumber(selected.qty_on_hand)} ${selected.unit} in stock.`);
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const insertData: Record<string, unknown> = {
-        fg_product_id: selected.fg_product_id,
-        qty_dispatched: parseFloat(qty),
-        dispatched_by: user?.id,
-        notes: notes || null,
-        customer_name: customerName || null,
-      };
-      if (orderId) insertData.order_id = parseInt(orderId);
-
       const { error } = await supabase
         .schema('production')
         .from('fg_dispatches')
-        .insert(insertData);
+        .insert({
+          fg_sku_id: selected.fg_sku_id,
+          qty: parseFloat(qty),
+          dispatched_by: user?.id,
+          note: note || null,
+          status: 'posted',
+        });
 
       if (error) throw new Error(error.message);
 
@@ -85,14 +113,12 @@ export default function DispatchPage() {
       setShowConfirm(false);
       setSelected(null);
       setQty('');
-      setOrderId('');
-      setCustomerName('');
-      setNotes('');
+      setNote('');
       await loadData();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.toLowerCase().includes('insufficient') || msg.toLowerCase().includes('negative')) {
-        toast.error(`Not enough ${selected.product_name} in stock (you have ${formatNumber(selected.qty_on_hand)} ${selected.unit}, trying to dispatch ${qty} ${selected.unit}).`);
+        toast.error(`Not enough ${selected.product_name} in stock.`);
       } else {
         toast.error(parseSupabaseError(msg));
       }
@@ -109,13 +135,13 @@ export default function DispatchPage() {
       <ScreenHeader
         icon="🚚"
         title="Dispatch Order"
-        description="Record tubs being sent out to a customer. This reduces your finished goods stock count."
+        description="Record tubs sent out to a customer. Reduces finished goods stock."
       />
 
       {stock.length === 0 ? (
         <div className="card text-center py-10">
           <p className="text-4xl mb-3">📦</p>
-          <p className="font-bold text-gray-900 text-lg">No finished goods in stock right now</p>
+          <p className="font-bold text-gray-900 text-lg">No finished goods in stock</p>
           <p className="text-gray-500 mt-2">Fill some tubs first before dispatching.</p>
         </div>
       ) : (
@@ -124,10 +150,10 @@ export default function DispatchPage() {
           <div className="space-y-2">
             {stock.map(s => (
               <button
-                key={s.fg_product_id}
+                key={s.fg_sku_id}
                 onClick={() => { setSelected(s); setQty(''); setLastResult(null); }}
                 className={`w-full text-left px-5 py-4 rounded-2xl border-2 transition-all touch-manipulation ${
-                  selected?.fg_product_id === s.fg_product_id
+                  selected?.fg_sku_id === s.fg_sku_id
                     ? 'border-brand-500 bg-orange-50'
                     : 'border-gray-100 bg-white hover:border-orange-200'
                 }`}
@@ -147,9 +173,7 @@ export default function DispatchPage() {
           <div>
             <label className="label-text block mb-2">How many {selected.unit} are you sending?</label>
             <input
-              type="number"
-              min="1"
-              step="1"
+              type="number" min="1" step="1"
               max={selected.qty_on_hand}
               value={qty}
               onChange={e => setQty(e.target.value)}
@@ -159,25 +183,8 @@ export default function DispatchPage() {
           </div>
 
           <div>
-            <label className="label-text block mb-2">Customer Name (optional)</label>
-            <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="e.g. Hotel Taj Mumbai" className="input-field" />
-          </div>
-
-          <div>
-            <label className="label-text block mb-2">Link to a Sales Order (optional)</label>
-            <select value={orderId} onChange={e => setOrderId(e.target.value)} className="input-field">
-              <option value="">No order — ad hoc dispatch</option>
-              {orders.map(o => (
-                <option key={o.order_id} value={o.order_id}>
-                  {o.order_ref} — {o.customer_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="label-text block mb-2">Notes (optional)</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Delivery notes, driver details, etc." className="input-field" rows={2} />
+            <label className="label-text block mb-2">Note (optional)</label>
+            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Customer name, delivery details, etc." className="input-field" rows={2} />
           </div>
 
           {qty && parseFloat(qty) > 0 && (
@@ -195,17 +202,53 @@ export default function DispatchPage() {
         </div>
       )}
 
+      {/* Dispatch History */}
+      <div className="card space-y-3">
+        <div className="flex items-center gap-2">
+          <Clock size={18} className="text-gray-400" />
+          <h2 className="section-title">Recent Dispatches</h2>
+        </div>
+        {history.length === 0 ? (
+          <p className="text-center text-gray-400 py-4 text-sm">No dispatches recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto -mx-5">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left px-5 py-2 text-gray-500 font-semibold">Flavour</th>
+                  <th className="text-right px-4 py-2 text-gray-500 font-semibold">Qty</th>
+                  <th className="text-left px-4 py-2 text-gray-500 font-semibold hidden sm:table-cell">Note</th>
+                  <th className="text-right px-5 py-2 text-gray-500 font-semibold">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map(d => (
+                  <tr key={d.id} className="border-b border-gray-50 hover:bg-orange-50 transition-colors">
+                    <td className="px-5 py-3 font-medium text-gray-900">{d.product_name}</td>
+                    <td className="px-4 py-3 text-right text-gray-700 whitespace-nowrap">{formatNumber(d.qty)} {d.unit}</td>
+                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell max-w-[180px] truncate">{d.note || '—'}</td>
+                    <td className="px-5 py-3 text-right text-gray-400 whitespace-nowrap">
+                      {format(new Date(d.dispatched_at), 'd MMM')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {showConfirm && selected && (
         <ConfirmModal
           title="Confirm Dispatch"
           message={
             <div className="space-y-2">
-              <p>Dispatching to {customerName || 'customer'}:</p>
+              <p>Dispatching:</p>
               <p className="text-xl font-bold text-gray-900">
                 {qty} {selected.unit} of {selected.product_name}
               </p>
               <p className="text-sm text-gray-500">
-                Stock after dispatch: {formatNumber(selected.qty_on_hand - parseFloat(qty))} {selected.unit}
+                Stock after: {formatNumber(selected.qty_on_hand - parseFloat(qty))} {selected.unit}
               </p>
             </div>
           }
