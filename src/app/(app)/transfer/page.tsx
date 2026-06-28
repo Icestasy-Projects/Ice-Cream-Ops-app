@@ -29,7 +29,7 @@ export default function TransferPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
-  const [notes, setNotes] = useState('');
+  const [note, setNote] = useState('');
 
   const loadStock = useCallback(async () => {
     const { data } = await supabase
@@ -50,37 +50,34 @@ export default function TransferPage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      const insertData: Record<string, unknown> = {
-        prep_product_id: selected.prep_product_id,
-        transferred_by: user?.id,
-        notes: notes || null,
-      };
-      if (useCustomQty && customQty && parseFloat(customQty) > 0) {
-        insertData.qty = parseFloat(customQty);
-      }
+      const transferQty = useCustomQty && customQty && parseFloat(customQty) > 0
+        ? parseFloat(customQty)
+        : selected.qty_kitchen;
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .schema('production')
         .from('prep_transfers')
-        .insert(insertData)
-        .select('transfer_id, qty')
-        .single();
+        .insert({
+          prep_product_id: selected.prep_product_id,
+          qty: transferQty,
+          transferred_by: user?.id,
+          note: note || null,
+        });
 
       if (error) throw new Error(error.message);
 
-      const qty = (data as { transfer_id: number; qty: number })?.qty ?? effectiveQty ?? 0;
-      setLastResult(`Transferred ${formatNumber(qty)} ${selected.unit} of ${selected.product_name} from kitchen to factory. Factory stock has been updated.`);
-      toast.success(`Transferred ${formatNumber(qty)} ${selected.unit} of ${selected.product_name} to the factory!`);
+      setLastResult(`Transferred ${formatNumber(transferQty)} ${selected.unit} of ${selected.product_name} from kitchen to factory.`);
+      toast.success(`Transferred ${formatNumber(transferQty)} ${selected.unit} of ${selected.product_name} to the factory!`);
       setShowConfirm(false);
       setSelected(null);
-      setNotes('');
+      setNote('');
       setUseCustomQty(false);
       setCustomQty('');
       await loadStock();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.toLowerCase().includes('insufficient')) {
-        toast.error(`Not enough ${selected.product_name} in the kitchen right now (you have ${formatNumber(selected.qty_kitchen)} ${selected.unit}). Make a new batch first.`);
+        toast.error(`Not enough ${selected.product_name} in the kitchen (have ${formatNumber(selected.qty_kitchen)} ${selected.unit}).`);
       } else {
         toast.error(parseSupabaseError(msg));
       }
@@ -97,14 +94,14 @@ export default function TransferPage() {
       <ScreenHeader
         icon="➡️"
         title="Transfer to Factory"
-        description="Move flavour mix from the kitchen to the factory floor so tubs can be filled. Normally you transfer everything at once."
+        description="Move flavour mix from the kitchen to the factory floor so tubs can be filled."
       />
 
       {stock.length === 0 ? (
         <div className="card text-center py-10">
           <p className="text-4xl mb-3">🧪</p>
           <p className="font-bold text-gray-900 text-lg">No mix in the kitchen right now</p>
-          <p className="text-gray-500 mt-2">Make a new kitchen batch first, then come back here to transfer it.</p>
+          <p className="text-gray-500 mt-2">Make a kitchen batch first, then come back here to transfer it.</p>
         </div>
       ) : (
         <div className="card space-y-4">
@@ -139,7 +136,7 @@ export default function TransferPage() {
             <p className="font-bold text-blue-800 text-lg">
               Transfer all {formatNumber(selected.qty_kitchen)} {selected.unit}
             </p>
-            <p className="text-blue-600 text-sm mt-1">This moves everything currently in the kitchen to the factory — the usual action.</p>
+            <p className="text-blue-600 text-sm mt-1">Moves everything from kitchen to factory — the usual action.</p>
           </div>
 
           <button onClick={() => setShowConfirm(true)} className="btn-primary">
@@ -154,10 +151,7 @@ export default function TransferPage() {
             <div className="px-4 pb-4 space-y-3 bg-gray-50">
               <p className="text-xs text-gray-500 pt-3">Available in kitchen: {formatNumber(selected.qty_kitchen)} {selected.unit}</p>
               <input
-                type="number"
-                min="0.1"
-                max={selected.qty_kitchen}
-                step="0.1"
+                type="number" min="0.1" max={selected.qty_kitchen} step="0.1"
                 value={customQty}
                 onChange={e => { setCustomQty(e.target.value); setUseCustomQty(true); }}
                 placeholder={`Amount in ${selected.unit}`}
@@ -172,8 +166,8 @@ export default function TransferPage() {
           </details>
 
           <div>
-            <label className="label-text block mb-2">Notes (optional)</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Any notes..." className="input-field" rows={2} />
+            <label className="label-text block mb-2">Note (optional)</label>
+            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Any notes..." className="input-field" rows={2} />
           </div>
         </div>
       )}
@@ -192,9 +186,9 @@ export default function TransferPage() {
             <div className="space-y-2">
               <p>Moving from <strong>Kitchen → Factory</strong>:</p>
               <p className="text-xl font-bold text-gray-900">
-                {useCustomQty && customQty ? `${customQty} ${selected.unit}` : `${formatNumber(selected.qty_kitchen)} ${selected.unit}`} of {selected.product_name}
+                {formatNumber(effectiveQty ?? 0)} {selected.unit} of {selected.product_name}
               </p>
-              <p className="text-sm text-gray-500">Kitchen stock will decrease. Factory stock will increase.</p>
+              <p className="text-sm text-gray-500">Kitchen stock decreases. Factory stock increases.</p>
             </div>
           }
           confirmLabel="Yes, Transfer Now"
