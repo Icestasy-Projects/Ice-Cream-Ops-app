@@ -46,13 +46,19 @@ export default function RawMaterialsDashboard() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [queryError, setQueryError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setQueryError(null);
     const [stockRes, alertRes] = await Promise.all([
       supabase.schema('production').from('v_rm_stock').select('*').order('status', { ascending: false }),
       supabase.schema('production').from('v_stock_alerts_rm').select('*').order('status', { ascending: false }),
     ]);
+    if (stockRes.error) {
+      console.error('v_rm_stock error:', stockRes.error);
+      setQueryError(stockRes.error.message);
+    }
     setData(stockRes.data || []);
     setAlerts(alertRes.data || []);
     setLoading(false);
@@ -96,6 +102,12 @@ export default function RawMaterialsDashboard() {
           Refresh
         </button>
       </div>
+
+      {queryError && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-800">
+          <strong>Query error:</strong> {queryError}
+        </div>
+      )}
 
       {loading ? <LoadingSpinner text="Loading stock levels..." /> : (
         <div className="flex flex-col lg:flex-row gap-4 items-start">
