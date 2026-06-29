@@ -20,15 +20,4 @@ CREATE TABLE IF NOT EXISTS production.rm_purchase_order_lines (
   status        TEXT NOT NULL DEFAULT 'pending'  -- pending | partial | received
 );
 
--- Enable RLS
-ALTER TABLE production.rm_purchase_orders      ENABLE ROW LEVEL SECURITY;
-ALTER TABLE production.rm_purchase_order_lines ENABLE ROW LEVEL SECURITY;
-
--- Policies — authenticated users can read/insert/update (no delete)
-CREATE POLICY "auth_read_orders"   ON production.rm_purchase_orders      FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_insert_orders" ON production.rm_purchase_orders      FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "auth_update_orders" ON production.rm_purchase_orders      FOR UPDATE USING (auth.role() = 'authenticated');
-
-CREATE POLICY "auth_read_lines"    ON production.rm_purchase_order_lines FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_insert_lines"  ON production.rm_purchase_order_lines FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "auth_update_lines"  ON production.rm_purchase_order_lines FOR UPDATE USING (auth.role() = 'authenticated');
+-- No RLS — access controlled at the application/role level
