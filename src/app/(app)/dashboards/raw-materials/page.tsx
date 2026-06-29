@@ -87,8 +87,8 @@ function CategoryCard({ category, items }: { category: string; items: RmStock[] 
         />
       </div>
 
-      {/* Items */}
-      <div className="-mx-5 -mb-5">
+      {/* Items — fixed min-height prevents card jumping when search filters results */}
+      <div className="-mx-5 -mb-5 min-h-[200px] flex flex-col">
         {pageItems.length === 0 ? (
           <p className="text-center text-gray-400 text-xs py-4">No results.</p>
         ) : pageItems.map((item, idx) => (
