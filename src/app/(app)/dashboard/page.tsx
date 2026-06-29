@@ -3,39 +3,51 @@ import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
+import { useRole } from '@/hooks/useRole';
 import { AlertTriangle, Package, Beaker, Box } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
+import type { AppRole } from '@/lib/roles';
 
-const actions = [
-  { href: '/receive', icon: '📦', label: 'Receive Ingredients', desc: 'Log a new delivery of raw materials', color: 'bg-blue-50 border-blue-100' },
-  { href: '/make-prep', icon: '🧪', label: 'Make Kitchen Mix', desc: 'Make a batch of flavour mix in the kitchen', color: 'bg-purple-50 border-purple-100' },
-  { href: '/transfer', icon: '➡️', label: 'Transfer to Factory', desc: 'Move mix from kitchen to the factory', color: 'bg-yellow-50 border-yellow-100' },
-  { href: '/make-tubs', icon: '🍦', label: 'Make Tubs', desc: 'Fill tubs from factory stock', color: 'bg-pink-50 border-pink-100' },
-  { href: '/dispatch', icon: '🚚', label: 'Dispatch Order', desc: 'Send finished tubs to a customer', color: 'bg-green-50 border-green-100' },
+interface Action {
+  href: string;
+  icon: string;
+  label: string;
+  desc: string;
+  color: string;
+}
+
+const ALL_ACTIONS: Action[] = [
+  { href: '/receive',   icon: '📦', label: 'Receive Ingredients',  desc: 'Log a new delivery of raw materials',       color: 'bg-blue-50 border-blue-100' },
+  { href: '/make-prep', icon: '🧪', label: 'Make Kitchen Mix',      desc: 'Make a batch of flavour mix in the kitchen', color: 'bg-purple-50 border-purple-100' },
+  { href: '/transfer',  icon: '➡️', label: 'Transfer to Factory',   desc: 'Move mix from kitchen to the factory',       color: 'bg-yellow-50 border-yellow-100' },
+  { href: '/make-tubs', icon: '🍦', label: 'Make Tubs',             desc: 'Fill tubs from factory stock',               color: 'bg-pink-50 border-pink-100' },
+  { href: '/dispatch',  icon: '🚚', label: 'Dispatch Order',        desc: 'Send finished tubs to a customer',           color: 'bg-green-50 border-green-100' },
 ];
 
-const dashboards = [
-  { href: '/dashboards/raw-materials', label: 'RM Dashboard', emoji: '🌿' },
-  { href: '/dashboards/prep', label: 'Prep Dashboard', emoji: '🧪' },
-  { href: '/dashboards/finished-goods', label: 'FG Dashboard', emoji: '🍦' },
-];
+const KITCHEN_ACTIONS = new Set(['/receive', '/make-prep', '/transfer']);
+const FACTORY_ACTIONS = new Set(['/make-tubs', '/dispatch']);
+
+function actionsForRole(role: AppRole | null): Action[] {
+  if (!role) return [];
+  if (role === 'super_admin') return ALL_ACTIONS;
+  if (role === 'kitchen') return ALL_ACTIONS.filter(a => KITCHEN_ACTIONS.has(a.href));
+  if (role === 'factory') return ALL_ACTIONS.filter(a => FACTORY_ACTIONS.has(a.href));
+  return [];
+}
 
 interface StockSummary {
-  rmCritical: number;
-  rmLow: number;
-  prepCritical: number;
-  prepLow: number;
-  fgCritical: number;
-  fgLow: number;
-  fgTotal: number;
+  rmCritical: number; rmLow: number;
+  prepCritical: number; prepLow: number;
+  fgCritical: number; fgLow: number;
   fgOnHand: number;
 }
 
 export default function DashboardPage() {
   const { displayName, loading: userLoading } = useUser();
+  const { role, loading: roleLoading } = useRole();
   const [summary, setSummary] = useState<StockSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(true);
   const supabase = createClient();
 
   const loadSummary = useCallback(async () => {
@@ -56,10 +68,9 @@ export default function DashboardPage() {
       prepLow: prep.filter(r => r.status === 'low').length,
       fgCritical: fg.filter(r => r.status === 'critical').length,
       fgLow: fg.filter(r => r.status === 'low').length,
-      fgTotal: fgData.length,
-      fgOnHand: fgData.reduce((sum, r) => sum + ((r.qty_on_hand as number) || 0), 0),
+      fgOnHand: fgData.reduce((s, r) => s + ((r.qty_on_hand as number) || 0), 0),
     });
-    setLoading(false);
+    setSummaryLoading(false);
   }, [supabase]);
 
   useEffect(() => { loadSummary(); }, [loadSummary]);
@@ -67,9 +78,18 @@ export default function DashboardPage() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  const totalAlerts = summary ? summary.rmCritical + summary.rmLow + summary.prepCritical + summary.prepLow + summary.fgCritical + summary.fgLow : 0;
+  if (userLoading || roleLoading) return <LoadingSpinner />;
 
-  if (userLoading) return <LoadingSpinner />;
+  const actions = actionsForRole(role);
+  const showRM    = role === 'kitchen'  || role === 'super_admin';
+  const showPrep  = role === 'factory'  || role === 'super_admin';
+  const showFG    = role === 'factory'  || role === 'super_admin';
+
+  const relevantAlerts = (summary ? [
+    showRM  ? summary.rmCritical + summary.rmLow : 0,
+    showPrep ? summary.prepCritical + summary.prepLow : 0,
+    showFG  ? summary.fgCritical + summary.fgLow : 0,
+  ] : []).reduce((a, b) => a + b, 0);
 
   return (
     <div className="space-y-6">
@@ -78,59 +98,63 @@ export default function DashboardPage() {
         <p className="text-gray-500 mt-1">What would you like to do today?</p>
       </div>
 
-      {totalAlerts > 0 && (
+      {relevantAlerts > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
           <AlertTriangle className="text-amber-600 shrink-0" size={22} />
           <div>
-            <p className="font-semibold text-amber-800">{totalAlerts} item{totalAlerts > 1 ? 's' : ''} need attention</p>
+            <p className="font-semibold text-amber-800">{relevantAlerts} item{relevantAlerts > 1 ? 's' : ''} need attention</p>
             <p className="text-amber-600 text-sm">Check the dashboards below for details.</p>
           </div>
         </div>
       )}
 
-      {/* Stock overview cards */}
-      {!loading && summary && (
+      {/* Stock overview cards — shown only for relevant dashboards */}
+      {!summaryLoading && summary && (showRM || showPrep || showFG) && (
         <section>
           <h2 className="text-lg font-bold text-gray-700 mb-3">Stock Overview</h2>
-          <div className="grid grid-cols-3 gap-3">
-            <Link href="/dashboards/raw-materials"
-              className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
-              <Package size={22} className="mx-auto text-orange-500" />
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Raw Materials</p>
-              {summary.rmCritical > 0 ? (
-                <p className="text-sm font-bold text-red-600">{summary.rmCritical} Critical</p>
-              ) : summary.rmLow > 0 ? (
-                <p className="text-sm font-bold text-amber-600">{summary.rmLow} Low</p>
-              ) : (
-                <p className="text-sm font-bold text-green-600">All OK</p>
-              )}
-            </Link>
-
-            <Link href="/dashboards/prep"
-              className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
-              <Beaker size={22} className="mx-auto text-purple-500" />
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Prep / Mix</p>
-              {summary.prepCritical > 0 ? (
-                <p className="text-sm font-bold text-red-600">{summary.prepCritical} Critical</p>
-              ) : summary.prepLow > 0 ? (
-                <p className="text-sm font-bold text-amber-600">{summary.prepLow} Low</p>
-              ) : (
-                <p className="text-sm font-bold text-green-600">All OK</p>
-              )}
-            </Link>
-
-            <Link href="/dashboards/finished-goods"
-              className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
-              <Box size={22} className="mx-auto text-pink-500" />
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Finished Goods</p>
-              {summary.fgCritical > 0 ? (
-                <p className="text-sm font-bold text-red-600">{summary.fgCritical} Critical</p>
-              ) : summary.fgLow > 0 ? (
-                <p className="text-sm font-bold text-amber-600">{summary.fgLow} Low</p>
-              ) : (
-                <p className="text-sm font-bold text-green-600">{formatNumber(summary.fgOnHand)} tubs</p>
-              )}
-            </Link>
+          <div className={`grid gap-3 ${[showRM, showPrep, showFG].filter(Boolean).length === 3 ? 'grid-cols-3' : [showRM, showPrep, showFG].filter(Boolean).length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {showRM && (
+              <Link href="/dashboards/raw-materials"
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
+                <Package size={22} className="mx-auto text-orange-500" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Raw Materials</p>
+                {summary.rmCritical > 0 ? (
+                  <p className="text-sm font-bold text-red-600">{summary.rmCritical} Critical</p>
+                ) : summary.rmLow > 0 ? (
+                  <p className="text-sm font-bold text-amber-600">{summary.rmLow} Low</p>
+                ) : (
+                  <p className="text-sm font-bold text-green-600">All OK</p>
+                )}
+              </Link>
+            )}
+            {showPrep && (
+              <Link href="/dashboards/prep"
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
+                <Beaker size={22} className="mx-auto text-purple-500" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Prep / Mix</p>
+                {summary.prepCritical > 0 ? (
+                  <p className="text-sm font-bold text-red-600">{summary.prepCritical} Critical</p>
+                ) : summary.prepLow > 0 ? (
+                  <p className="text-sm font-bold text-amber-600">{summary.prepLow} Low</p>
+                ) : (
+                  <p className="text-sm font-bold text-green-600">All OK</p>
+                )}
+              </Link>
+            )}
+            {showFG && (
+              <Link href="/dashboards/finished-goods"
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
+                <Box size={22} className="mx-auto text-pink-500" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Finished Goods</p>
+                {summary.fgCritical > 0 ? (
+                  <p className="text-sm font-bold text-red-600">{summary.fgCritical} Critical</p>
+                ) : summary.fgLow > 0 ? (
+                  <p className="text-sm font-bold text-amber-600">{summary.fgLow} Low</p>
+                ) : (
+                  <p className="text-sm font-bold text-green-600">{formatNumber(summary.fgOnHand)} tubs</p>
+                )}
+              </Link>
+            )}
           </div>
         </section>
       )}
@@ -146,19 +170,6 @@ export default function DashboardPage() {
                 <p className="font-bold text-gray-900 text-base">{a.label}</p>
                 <p className="text-gray-500 text-sm">{a.desc}</p>
               </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-lg font-bold text-gray-700 mb-3">Dashboards</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {dashboards.map(d => (
-            <Link key={d.href} href={d.href}
-              className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-orange-100 hover:shadow-sm transition-all touch-manipulation text-center">
-              <span className="text-3xl">{d.emoji}</span>
-              <span className="text-xs font-bold text-gray-700 leading-tight">{d.label}</span>
             </Link>
           ))}
         </div>
