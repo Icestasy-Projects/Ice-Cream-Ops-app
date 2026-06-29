@@ -183,8 +183,6 @@ export default function PrepDashboard() {
                       <span className="text-xs text-gray-400">{formatNumber(item.qty_factory)} batch{item.qty_factory !== 1 ? 'es' : ''} = {formatNumber(fL)}L →</span>
                       <div className="flex flex-wrap gap-1">
                         {fBulk > 0 ? yieldChip('4L Bulk', fBulk, 'bg-orange-100 text-orange-800') : <span className="text-xs text-gray-300 italic">none</span>}
-                        {fSq  > 0 && yieldChip('12 Sq', fSq,  'bg-purple-100 text-purple-800')}
-                        {fSmp > 0 && yieldChip('50ml',  fSmp, 'bg-blue-100 text-blue-800')}
                       </div>
                     </div>
 
@@ -195,8 +193,6 @@ export default function PrepDashboard() {
                         <span className="text-xs text-gray-400">{formatNumber(item.qty_kitchen)} batch{item.qty_kitchen !== 1 ? 'es' : ''} = {formatNumber(kL)}L →</span>
                         <div className="flex flex-wrap gap-1">
                           {kBulk > 0 && yieldChip('4L Bulk', kBulk, 'bg-sky-100 text-sky-800')}
-                          {kSq   > 0 && yieldChip('12 Sq',   kSq,   'bg-indigo-100 text-indigo-800')}
-                          {kSmp  > 0 && yieldChip('50ml',    kSmp,  'bg-cyan-100 text-cyan-800')}
                         </div>
                       </div>
                     )}
