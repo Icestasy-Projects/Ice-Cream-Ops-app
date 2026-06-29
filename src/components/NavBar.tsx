@@ -55,7 +55,7 @@ export default function NavBar() {
             className="p-2 rounded-xl bg-orange-50 text-brand-600 hover:bg-orange-100 transition-colors touch-manipulation shrink-0"
             aria-label="Menu"
           >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
+            <Menu size={22} />
           </button>
         </div>
       </header>
@@ -64,9 +64,14 @@ export default function NavBar() {
         <div className="fixed inset-0 z-30 flex" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/30" />
           <div className="relative ml-auto w-72 bg-white h-full shadow-xl overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="p-4 border-b border-orange-100 bg-orange-50">
-              <p className="font-semibold text-gray-900">{displayName}</p>
-              <p className="text-sm text-gray-500">{role ? ROLE_LABELS[role] : 'Loading...'}</p>
+            <div className="flex items-center justify-between px-4 h-14 border-b border-orange-100 shrink-0">
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">{displayName}</p>
+                <p className="text-xs text-gray-400">{role ? ROLE_LABELS[role] : ''}</p>
+              </div>
+              <button onClick={() => setMenuOpen(false)} className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 touch-manipulation">
+                <X size={20} />
+              </button>
             </div>
 
             <nav className="p-3 flex-1 space-y-4 overflow-y-auto">
