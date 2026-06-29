@@ -17,14 +17,6 @@ interface RmStock {
   category: string;
 }
 
-interface Alert {
-  item_id: number;
-  item_name: string;
-  qty_on_hand: number;
-  threshold_qty: number;
-  status: string;
-}
-
 const CAT_PAGE_SIZE = 8;
 const ALERT_PAGE_SIZE = 8;
 const STATUS_ORDER: Record<string, number> = { critical: 0, low: 1 };
@@ -138,15 +130,13 @@ function CategoryCard({ category, items }: { category: string; items: RmStock[] 
 export default function RawMaterialsDashboard() {
   const supabase = createClient();
   const [data, setData] = useState<RmStock[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [alertPage, setAlertPage] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [stockRes, alertRes, itemsRes, catsRes] = await Promise.all([
+    const [stockRes, itemsRes, catsRes] = await Promise.all([
       supabase.schema('production').from('v_rm_stock').select('*').order('ingredient_name'),
-      supabase.schema('production').from('v_stock_alerts_rm').select('*').in('status', ['low', 'critical']),
       supabase.schema('production').from('rm_items').select('id, category_id'),
       supabase.schema('production').from('rm_categories').select('id, name'),
     ]);
@@ -173,13 +163,6 @@ export default function RawMaterialsDashboard() {
         category: itemCatMap.get(r.rm_item_id as number) || 'Other',
       }))
     );
-
-    const sortedAlerts = [...(alertRes.data || [])].sort((a, b) => {
-      const ao = STATUS_ORDER[a.status] ?? 2;
-      const bo = STATUS_ORDER[b.status] ?? 2;
-      return ao !== bo ? ao - bo : a.item_name.localeCompare(b.item_name);
-    });
-    setAlerts(sortedAlerts);
     setLoading(false);
   }, [supabase]);
 
@@ -207,8 +190,9 @@ export default function RawMaterialsDashboard() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [data]);
 
-  const critical = alerts.filter(a => a.status === 'critical');
-  const low = alerts.filter(a => a.status === 'low');
+  // Derive alerts from stock data (same source as cards — always in sync)
+  const critical = data.filter(d => d.status === 'critical').sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name));
+  const low = data.filter(d => d.status === 'low').sort((a, b) => a.ingredient_name.localeCompare(b.ingredient_name));
   const lowTotalPages = Math.ceil(low.length / ALERT_PAGE_SIZE);
   const lowPageData = low.slice(alertPage * ALERT_PAGE_SIZE, (alertPage + 1) * ALERT_PAGE_SIZE);
 
@@ -255,28 +239,28 @@ export default function RawMaterialsDashboard() {
                 <AlertTriangle size={16} className="text-red-500" />
                 <h3 className="font-bold text-gray-900 text-sm">Needs Attention</h3>
               </div>
-              {alerts.length === 0 ? (
+              {critical.length === 0 && low.length === 0 ? (
                 <p className="text-sm text-green-700 bg-green-50 rounded-xl p-3 text-center">✓ All stock levels OK</p>
               ) : (
                 <div className="space-y-2">
                   {/* All critical items always visible */}
                   {critical.map(a => (
-                    <div key={a.item_id} className="rounded-xl p-3 bg-red-50 border border-red-100">
-                      <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
-                      <p className="text-xs mt-0.5 text-red-700">🔴 Critical — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
+                    <div key={a.rm_item_id} className="rounded-xl p-3 bg-red-50 border border-red-100">
+                      <p className="font-semibold text-gray-900 text-sm">{a.ingredient_name}</p>
+                      <p className="text-xs mt-0.5 text-red-700">🔴 Critical — {formatNumber(a.qty_on_hand)} {a.unit}{a.reorder_point ? ` / reorder at ${formatNumber(a.reorder_point)}` : ''}</p>
                     </div>
                   ))}
 
                   {/* Low items paginated */}
                   {low.length > 0 && (
                     <>
-                      {critical.length > 0 && low.length > 0 && (
+                      {critical.length > 0 && (
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wide pt-1">Low Stock</p>
                       )}
                       {lowPageData.map(a => (
-                        <div key={a.item_id} className="rounded-xl p-3 bg-amber-50 border border-amber-100">
-                          <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
-                          <p className="text-xs mt-0.5 text-amber-700">🟡 Low — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
+                        <div key={a.rm_item_id} className="rounded-xl p-3 bg-amber-50 border border-amber-100">
+                          <p className="font-semibold text-gray-900 text-sm">{a.ingredient_name}</p>
+                          <p className="text-xs mt-0.5 text-amber-700">🟡 Low — {formatNumber(a.qty_on_hand)} {a.unit}{a.reorder_point ? ` / reorder at ${formatNumber(a.reorder_point)}` : ''}</p>
                         </div>
                       ))}
                       {lowTotalPages > 1 && (
