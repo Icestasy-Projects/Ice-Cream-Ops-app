@@ -55,9 +55,9 @@ export default function RawMaterialsDashboard() {
     setQueryError(null);
     const [stockRes, alertRes, itemsRes, catsRes] = await Promise.all([
       supabase.schema('production').from('v_rm_stock').select('*').order('ingredient_name'),
-      supabase.schema('production').from('v_stock_alerts_rm').select('*'),
+      supabase.schema('production').from('v_stock_alerts_rm').select('*').in('status', ['low', 'critical']),
       supabase.schema('production').from('rm_items').select('id, category_id'),
-      supabase.schema('production').from('categories').select('id, name'),
+      supabase.schema('production').from('rm_categories').select('id, name'),
     ]);
 
     if (stockRes.error) {
@@ -197,11 +197,11 @@ export default function RawMaterialsDashboard() {
                               <p className="font-medium text-gray-900">{item.ingredient_name}</p>
                               <p className="text-xs text-gray-400">{item.unit}</p>
                             </td>
-                            <td className="px-3 py-3 text-right whitespace-nowrap">
+                            <td className="px-3 py-3 text-left whitespace-nowrap">
                               <span className="font-bold text-gray-900">{formatNumber(item.qty_on_hand)}</span>
                               <span className="text-xs text-gray-400 ml-1">{item.unit}</span>
                             </td>
-                            <td className="px-3 py-3 text-right text-gray-500 hidden sm:table-cell whitespace-nowrap">
+                            <td className="px-3 py-3 text-left text-gray-500 hidden sm:table-cell whitespace-nowrap">
                               {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
                             </td>
                             <td className="px-5 py-3 text-center">

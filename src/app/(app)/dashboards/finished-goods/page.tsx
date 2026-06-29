@@ -52,7 +52,7 @@ export default function FinishedGoodsDashboard() {
     setLoading(true);
     const [stockRes, alertRes] = await Promise.all([
       supabase.schema('production').from('v_fg_stock').select('*').order('product_name'),
-      supabase.schema('production').from('v_stock_alerts_fg').select('*'),
+      supabase.schema('production').from('v_stock_alerts_fg').select('*').in('status', ['low', 'critical']),
     ]);
 
     setData((stockRes.data || []).map((r: Record<string, unknown>) => ({
@@ -167,11 +167,11 @@ export default function FinishedGoodsDashboard() {
                             <td className="px-5 py-3">
                               <p className="font-medium text-gray-900">{item.product_name}</p>
                             </td>
-                            <td className="px-3 py-3 text-right whitespace-nowrap">
+                            <td className="px-3 py-3 text-left whitespace-nowrap">
                               <span className="font-bold text-gray-900">{formatNumber(item.qty_on_hand)}</span>
                               <span className="text-xs text-gray-400 ml-1">{item.unit}</span>
                             </td>
-                            <td className="px-3 py-3 text-right text-gray-500 hidden sm:table-cell whitespace-nowrap">
+                            <td className="px-3 py-3 text-left text-gray-500 hidden sm:table-cell whitespace-nowrap">
                               {item.par_qty ? `${formatNumber(item.par_qty)} ${item.unit}` : '—'}
                             </td>
                             <td className="px-5 py-3 text-center">
