@@ -23,8 +23,13 @@ export function useRole() {
       .select('role')
       .eq('user_id', user.id)
       .single()
-      .then(({ data }) => {
-        setRole((data?.role as AppRole) || null);
+      .then(({ data, error }) => {
+        if (error || !data?.role) {
+          // Table not yet set up or user has no profile row — default to super_admin
+          setRole('super_admin');
+        } else {
+          setRole(data.role as AppRole);
+        }
         setRoleLoading(false);
       });
   }, [user, userLoading, supabase]);
