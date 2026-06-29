@@ -147,42 +147,34 @@ export default function FinishedGoodsDashboard() {
             {grouped.length === 0 ? (
               <p className="text-center text-gray-400 py-8">No results found.</p>
             ) : (
-              <div className="space-y-4 overflow-x-auto -mx-5">
+              <div className="space-y-4 -mx-5">
                 {grouped.map(([packFormat, items]) => (
                   <div key={packFormat}>
                     <div className="px-5 py-1.5 bg-gray-50 border-y border-gray-100">
                       <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{packFormat}</span>
                       <span className="ml-2 text-xs text-gray-400">{items.length} SKU{items.length !== 1 ? 's' : ''}</span>
                     </div>
-                    <table className="w-full text-sm">
-                      <colgroup>
-                        <col className="w-auto" />
-                        <col className="w-32" />
-                        <col className="w-28 hidden sm:table-column" />
-                        <col className="w-24" />
-                      </colgroup>
-                      <tbody>
-                        {items.map(item => (
-                          <tr key={item.fg_sku_id} className="border-b border-gray-50 hover:bg-orange-50 transition-colors">
-                            <td className="px-5 py-3">
-                              <p className="font-medium text-gray-900">{item.product_name}</p>
-                            </td>
-                            <td className="px-3 py-3 text-left whitespace-nowrap">
-                              <span className="font-bold text-gray-900">{formatNumber(item.qty_on_hand)}</span>
-                              <span className="text-xs text-gray-400 ml-1">{item.unit}</span>
-                            </td>
-                            <td className="px-3 py-3 text-left text-gray-500 hidden sm:table-cell whitespace-nowrap">
-                              {item.par_qty ? `${formatNumber(item.par_qty)} ${item.unit}` : '—'}
-                            </td>
-                            <td className="px-5 py-3 text-center">
-                              <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
-                                {statusLabel(item.status)}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div>
+                      {items.map(item => (
+                        <div key={item.fg_sku_id} className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-50 hover:bg-orange-50 transition-colors">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Par: {item.par_qty ? `${formatNumber(item.par_qty)} ${item.unit}` : '—'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              <p className="font-bold text-gray-900 text-sm">{formatNumber(item.qty_on_hand)}</p>
+                              <p className="text-xs text-gray-400">{item.unit}</p>
+                            </div>
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
+                              {statusLabel(item.status)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
