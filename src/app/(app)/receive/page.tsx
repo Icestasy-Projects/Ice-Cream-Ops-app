@@ -182,7 +182,7 @@ export default function ReceivePage() {
         .select('id')
         .single();
 
-      if (orderErr || !order) throw new Error(orderErr?.message || 'Failed to create order');
+      if (orderErr || !order) throw new Error(orderErr?.message || 'Table not found — run supabase/purchase_orders.sql in Supabase SQL Editor first');
 
       const { error: linesErr } = await supabase
         .schema('production')

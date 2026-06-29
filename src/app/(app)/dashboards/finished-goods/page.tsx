@@ -16,15 +16,6 @@ interface FgStock {
   status: string | null;
 }
 
-interface Alert {
-  item_id: number;
-  flavour_name: string;
-  sku_code: string;
-  qty_on_hand: number;
-  threshold_qty: number;
-  status: string;
-}
-
 const CAT_PAGE_SIZE = 8;
 const ALERT_PAGE_SIZE = 8;
 const STATUS_ORDER: Record<string, number> = { critical: 0, low: 1 };
@@ -137,17 +128,12 @@ function FormatCard({ packFormat, items }: { packFormat: string; items: FgStock[
 export default function FinishedGoodsDashboard() {
   const supabase = createClient();
   const [data, setData] = useState<FgStock[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [alertPage, setAlertPage] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [stockRes, alertRes] = await Promise.all([
-      supabase.schema('production').from('v_fg_stock').select('*').order('product_name'),
-      supabase.schema('production').from('v_stock_alerts_fg').select('*').in('status', ['low', 'critical']),
-    ]);
-
+    const stockRes = await supabase.schema('production').from('v_fg_stock').select('*').order('product_name');
     setData((stockRes.data || []).map((r: Record<string, unknown>) => ({
       fg_sku_id: r.fg_sku_id as number,
       product_name: r.product_name as string,
@@ -157,13 +143,6 @@ export default function FinishedGoodsDashboard() {
       par_qty: r.par_qty as number | null,
       status: r.status as string | null,
     })));
-
-    const sortedAlerts = [...(alertRes.data || [])].sort((a, b) => {
-      const ao = STATUS_ORDER[a.status] ?? 2;
-      const bo = STATUS_ORDER[b.status] ?? 2;
-      return ao !== bo ? ao - bo : a.flavour_name.localeCompare(b.flavour_name);
-    });
-    setAlerts(sortedAlerts);
     setLoading(false);
   }, [supabase]);
 
@@ -192,8 +171,9 @@ export default function FinishedGoodsDashboard() {
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
   }, [data]);
 
-  const critical = alerts.filter(a => a.status === 'critical');
-  const low = alerts.filter(a => a.status === 'low');
+  // Derive alerts from stock data (same source as cards — always in sync)
+  const critical = data.filter(d => d.status === 'critical').sort((a, b) => a.product_name.localeCompare(b.product_name));
+  const low = data.filter(d => d.status === 'low').sort((a, b) => a.product_name.localeCompare(b.product_name));
   const lowTotalPages = Math.ceil(low.length / ALERT_PAGE_SIZE);
   const lowPageData = low.slice(alertPage * ALERT_PAGE_SIZE, (alertPage + 1) * ALERT_PAGE_SIZE);
 
@@ -240,16 +220,16 @@ export default function FinishedGoodsDashboard() {
                 <AlertTriangle size={16} className="text-red-500" />
                 <h3 className="font-bold text-gray-900 text-sm">Needs Attention</h3>
               </div>
-              {alerts.length === 0 ? (
+              {critical.length === 0 && low.length === 0 ? (
                 <p className="text-sm text-green-700 bg-green-50 rounded-xl p-3 text-center">✓ All stock levels OK</p>
               ) : (
                 <div className="space-y-2">
                   {/* All critical items always visible */}
                   {critical.map(a => (
-                    <div key={a.item_id} className="rounded-xl p-3 bg-red-50 border border-red-100">
-                      <p className="font-semibold text-gray-900 text-sm">{a.flavour_name}</p>
-                      <p className="text-xs text-gray-400">{a.sku_code}</p>
-                      <p className="text-xs mt-0.5 text-red-700">🔴 Critical — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
+                    <div key={a.fg_sku_id} className="rounded-xl p-3 bg-red-50 border border-red-100">
+                      <p className="font-semibold text-gray-900 text-sm">{a.product_name}</p>
+                      <p className="text-xs text-gray-400">{a.unit}</p>
+                      <p className="text-xs mt-0.5 text-red-700">🔴 Critical — {formatNumber(a.qty_on_hand)} on hand</p>
                     </div>
                   ))}
 
@@ -260,10 +240,10 @@ export default function FinishedGoodsDashboard() {
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wide pt-1">Low Stock</p>
                       )}
                       {lowPageData.map(a => (
-                        <div key={a.item_id} className="rounded-xl p-3 bg-amber-50 border border-amber-100">
-                          <p className="font-semibold text-gray-900 text-sm">{a.flavour_name}</p>
-                          <p className="text-xs text-gray-400">{a.sku_code}</p>
-                          <p className="text-xs mt-0.5 text-amber-700">🟡 Low — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
+                        <div key={a.fg_sku_id} className="rounded-xl p-3 bg-amber-50 border border-amber-100">
+                          <p className="font-semibold text-gray-900 text-sm">{a.product_name}</p>
+                          <p className="text-xs text-gray-400">{a.unit}</p>
+                          <p className="text-xs mt-0.5 text-amber-700">🟡 Low — {formatNumber(a.qty_on_hand)} on hand{a.par_qty ? ` / par ${formatNumber(a.par_qty)}` : ''}</p>
                         </div>
                       ))}
                       {lowTotalPages > 1 && (

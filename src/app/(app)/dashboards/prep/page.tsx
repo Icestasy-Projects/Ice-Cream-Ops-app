@@ -17,14 +17,6 @@ interface PrepStock {
   batch_yield_l: number;  // litres of bulk per 1 unit of prep
 }
 
-interface Alert {
-  item_id: number;
-  item_name: string;
-  qty_on_hand: number;
-  threshold_qty: number;
-  status: string;
-}
-
 // FG format volumes in litres
 const BULK_4L   = 4;       // 1 × 4L Bulk tub
 const SQ_12_L   = 1.8;     // 1 × 12-square pack = 12 × 150ml = 1800ml
@@ -56,16 +48,14 @@ function yieldChip(label: string, count: number, color: string) {
 export default function PrepDashboard() {
   const supabase = createClient();
   const [data, setData] = useState<PrepStock[]>([]);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [alertPage, setAlertPage] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [stockRes, alertRes, prodRes] = await Promise.all([
+    const [stockRes, prodRes] = await Promise.all([
       supabase.schema('production').from('v_prep_stock').select('*').order('product_name'),
-      supabase.schema('production').from('v_stock_alerts_prep').select('*').in('status', ['low', 'critical']),
       supabase.schema('production').from('prep_products').select('id, batch_yield_l'),
     ]);
 
@@ -85,13 +75,6 @@ export default function PrepDashboard() {
         batch_yield_l: yieldMap.get(r.prep_product_id as number) || 0,
       }))
     );
-
-    const sorted = [...(alertRes.data || [])].sort((a, b) => {
-      const ao = STATUS_ORDER[a.status] ?? 2;
-      const bo = STATUS_ORDER[b.status] ?? 2;
-      return ao !== bo ? ao - bo : (a.item_name as string).localeCompare(b.item_name as string);
-    });
-    setAlerts(sorted);
     setLoading(false);
   }, [supabase]);
 
@@ -108,8 +91,9 @@ export default function PrepDashboard() {
     [data, search]
   );
 
-  const critical = alerts.filter(a => a.status === 'critical');
-  const low = alerts.filter(a => a.status === 'low');
+  // Derive alerts from stock data (same source as cards — always in sync)
+  const critical = data.filter(d => d.status === 'critical').sort((a, b) => a.product_name.localeCompare(b.product_name));
+  const low = data.filter(d => d.status === 'low').sort((a, b) => a.product_name.localeCompare(b.product_name));
   const lowTotalPages = Math.ceil(low.length / ALERT_PAGE_SIZE);
   const lowPageData = low.slice(alertPage * ALERT_PAGE_SIZE, (alertPage + 1) * ALERT_PAGE_SIZE);
 
@@ -209,15 +193,15 @@ export default function PrepDashboard() {
                 <AlertTriangle size={16} className="text-red-500" />
                 <h3 className="font-bold text-gray-900 text-sm">Needs Attention</h3>
               </div>
-              {alerts.length === 0 ? (
+              {critical.length === 0 && low.length === 0 ? (
                 <p className="text-sm text-green-700 bg-green-50 rounded-xl p-3 text-center">✓ All mix levels OK</p>
               ) : (
                 <div className="space-y-2">
                   {/* All critical items always visible */}
                   {critical.map(a => (
-                    <div key={a.item_id} className="rounded-xl p-3 bg-red-50 border border-red-100">
-                      <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
-                      <p className="text-xs mt-0.5 text-red-700">🔴 Critical — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
+                    <div key={a.prep_product_id} className="rounded-xl p-3 bg-red-50 border border-red-100">
+                      <p className="font-semibold text-gray-900 text-sm">{a.product_name}</p>
+                      <p className="text-xs mt-0.5 text-red-700">🔴 Critical — {formatNumber(a.qty_total)} {a.unit} total</p>
                     </div>
                   ))}
 
@@ -228,9 +212,9 @@ export default function PrepDashboard() {
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wide pt-1">Low Stock</p>
                       )}
                       {lowPageData.map(a => (
-                        <div key={a.item_id} className="rounded-xl p-3 bg-amber-50 border border-amber-100">
-                          <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
-                          <p className="text-xs mt-0.5 text-amber-700">🟡 Low — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
+                        <div key={a.prep_product_id} className="rounded-xl p-3 bg-amber-50 border border-amber-100">
+                          <p className="font-semibold text-gray-900 text-sm">{a.product_name}</p>
+                          <p className="text-xs mt-0.5 text-amber-700">🟡 Low — {formatNumber(a.qty_total)} {a.unit} total</p>
                         </div>
                       ))}
                       {lowTotalPages > 1 && (
