@@ -22,10 +22,10 @@ interface Alert {
   item_name: string;
   qty_on_hand: number;
   threshold_qty: number;
-  threshold_type: string;
   status: string;
 }
 
+const CAT_PAGE_SIZE = 8;
 const ALERT_PAGE_SIZE = 8;
 const STATUS_ORDER: Record<string, number> = { critical: 0, low: 1 };
 
@@ -36,9 +36,103 @@ function statusColor(status: string | null) {
 }
 
 function statusLabel(status: string | null) {
-  if (status === 'critical') return '🔴 Critical';
-  if (status === 'low') return '🟡 Low';
-  return '🟢 OK';
+  if (status === 'critical') return 'Critical';
+  if (status === 'low') return 'Low';
+  return 'OK';
+}
+
+function CategoryCard({ category, items }: { category: string; items: RmStock[] }) {
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return items.filter(i => i.ingredient_name.toLowerCase().includes(q));
+  }, [items, search]);
+
+  const totalPages = Math.ceil(filtered.length / CAT_PAGE_SIZE);
+  const pageItems = filtered.slice(page * CAT_PAGE_SIZE, (page + 1) * CAT_PAGE_SIZE);
+
+  // Reset page when search changes
+  const handleSearch = (v: string) => { setSearch(v); setPage(0); };
+
+  const critCount = items.filter(i => i.status === 'critical').length;
+  const lowCount = items.filter(i => i.status === 'low').length;
+
+  return (
+    <div className="card flex flex-col gap-3">
+      {/* Category header */}
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h3 className="font-bold text-gray-900 text-sm">{category}</h3>
+          <div className="flex gap-1 mt-0.5 flex-wrap">
+            {critCount > 0 && <span className="text-xs font-semibold text-red-600">{critCount} critical</span>}
+            {critCount > 0 && lowCount > 0 && <span className="text-xs text-gray-300">·</span>}
+            {lowCount > 0 && <span className="text-xs font-semibold text-amber-600">{lowCount} low</span>}
+            {critCount === 0 && lowCount === 0 && <span className="text-xs text-green-600 font-semibold">All OK</span>}
+          </div>
+        </div>
+        <span className="text-xs text-gray-400 shrink-0">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={e => handleSearch(e.target.value)}
+          className="w-full pl-7 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-300"
+        />
+      </div>
+
+      {/* Items */}
+      <div className="-mx-5 -mb-5">
+        {pageItems.length === 0 ? (
+          <p className="text-center text-gray-400 text-xs py-4">No results.</p>
+        ) : pageItems.map((item, idx) => (
+          <div
+            key={item.rm_item_id}
+            className={`flex items-center justify-between gap-2 px-5 py-2.5 ${idx < pageItems.length - 1 ? 'border-b border-gray-50' : ''} hover:bg-orange-50 transition-colors`}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-gray-900 text-xs leading-tight">{item.ingredient_name}</p>
+              <p className="text-xs text-gray-400">
+                Reorder: {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="text-right">
+                <p className="font-bold text-gray-900 text-xs">{formatNumber(item.qty_on_hand)}</p>
+                <p className="text-xs text-gray-400">{item.unit}</p>
+              </div>
+              <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
+                {statusLabel(item.status)}
+              </span>
+            </div>
+          </div>
+        ))}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-2 border-t border-gray-50">
+            <p className="text-xs text-gray-400">{page * CAT_PAGE_SIZE + 1}–{Math.min((page + 1) * CAT_PAGE_SIZE, filtered.length)} of {filtered.length}</p>
+            <div className="flex gap-1">
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+                className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
+                <ChevronLeft size={13} />
+              </button>
+              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
+                <ChevronRight size={13} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function RawMaterialsDashboard() {
@@ -46,24 +140,16 @@ export default function RawMaterialsDashboard() {
   const [data, setData] = useState<RmStock[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [queryError, setQueryError] = useState<string | null>(null);
   const [alertPage, setAlertPage] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setQueryError(null);
     const [stockRes, alertRes, itemsRes, catsRes] = await Promise.all([
       supabase.schema('production').from('v_rm_stock').select('*').order('ingredient_name'),
       supabase.schema('production').from('v_stock_alerts_rm').select('*').in('status', ['low', 'critical']),
       supabase.schema('production').from('rm_items').select('id, category_id'),
       supabase.schema('production').from('rm_categories').select('id, name'),
     ]);
-
-    if (stockRes.error) {
-      console.error('v_rm_stock error:', stockRes.error);
-      setQueryError(stockRes.error.message);
-    }
 
     const catMap = new Map<number, string>(
       (catsRes.data || []).map((c: Record<string, unknown>) => [c.id as number, c.name as string])
@@ -106,13 +192,10 @@ export default function RawMaterialsDashboard() {
   }, [supabase, load]);
 
   const grouped = useMemo(() => {
-    const q = search.toLowerCase();
-    const filtered = data.filter(d => d.ingredient_name.toLowerCase().includes(q));
     const groups: Record<string, RmStock[]> = {};
-    for (const item of filtered) {
-      const cat = item.category;
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(item);
+    for (const item of data) {
+      if (!groups[item.category]) groups[item.category] = [];
+      groups[item.category].push(item);
     }
     for (const cat in groups) {
       groups[cat].sort((a, b) => {
@@ -122,12 +205,10 @@ export default function RawMaterialsDashboard() {
       });
     }
     return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [data, search]);
+  }, [data]);
 
-  const totalItems = grouped.reduce((s, [, items]) => s + items.length, 0);
   const critical = alerts.filter(a => a.status === 'critical');
   const low = alerts.filter(a => a.status === 'low');
-
   const alertTotalPages = Math.ceil(alerts.length / ALERT_PAGE_SIZE);
   const alertPageData = alerts.slice(alertPage * ALERT_PAGE_SIZE, (alertPage + 1) * ALERT_PAGE_SIZE);
 
@@ -140,7 +221,7 @@ export default function RawMaterialsDashboard() {
       />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex gap-2 text-sm flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           {critical.length > 0 && <span className="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded-full">{critical.length} Critical</span>}
           {low.length > 0 && <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">{low.length} Low</span>}
           <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full">{data.length} Total</span>
@@ -151,73 +232,24 @@ export default function RawMaterialsDashboard() {
         </button>
       </div>
 
-      {queryError && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-800">
-          <strong>Query error:</strong> {queryError}
-        </div>
-      )}
-
       {loading ? <LoadingSpinner text="Loading stock levels..." /> : (
         <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-          {/* Main grouped table */}
-          <div className="flex-1 min-w-0 card space-y-3">
-            <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search ingredients..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-              />
-            </div>
-
+          {/* 2-column category grid */}
+          <div className="flex-1 min-w-0">
             {grouped.length === 0 ? (
-              <p className="text-center text-gray-400 py-8">No results found.</p>
+              <p className="text-center text-gray-400 py-8">No stock data found.</p>
             ) : (
-              <div className="space-y-4 -mx-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {grouped.map(([category, items]) => (
-                  <div key={category}>
-                    <div className="px-5 py-1.5 bg-gray-50 border-y border-gray-100">
-                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{category}</span>
-                      <span className="ml-2 text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
-                    </div>
-                    <div>
-                      {items.map(item => (
-                        <div key={item.rm_item_id} className="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-50 hover:bg-orange-50 transition-colors">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-gray-900 text-sm">{item.ingredient_name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              Reorder: {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <div className="text-right">
-                              <p className="font-bold text-gray-900 text-sm">{formatNumber(item.qty_on_hand)}</p>
-                              <p className="text-xs text-gray-400">{item.unit}</p>
-                            </div>
-                            <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
-                              {statusLabel(item.status)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  <CategoryCard key={category} category={category} items={items} />
                 ))}
               </div>
-            )}
-
-            {search && (
-              <p className="text-xs text-gray-400 pt-1 text-center">
-                {totalItems} result{totalItems !== 1 ? 's' : ''} across {grouped.length} categor{grouped.length !== 1 ? 'ies' : 'y'}
-              </p>
             )}
           </div>
 
           {/* Alerts sidebar */}
-          <div className="w-full lg:w-72 shrink-0 space-y-3">
+          <div className="w-full lg:w-72 shrink-0">
             <div className="card space-y-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle size={16} className="text-red-500" />
