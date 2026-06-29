@@ -1,5 +1,5 @@
 -- Run this in the Supabase SQL Editor (production schema)
--- Creates tables for purchase order placement and receipt confirmation
+-- Safe to re-run: uses IF NOT EXISTS / IF EXISTS guards
 
 CREATE TABLE IF NOT EXISTS production.rm_purchase_orders (
   id            SERIAL PRIMARY KEY,
@@ -20,4 +20,14 @@ CREATE TABLE IF NOT EXISTS production.rm_purchase_order_lines (
   status        TEXT NOT NULL DEFAULT 'pending'  -- pending | partial | received
 );
 
--- No RLS — access controlled at the application/role level
+-- Disable RLS (also handles case where it was previously enabled)
+ALTER TABLE production.rm_purchase_orders      DISABLE ROW LEVEL SECURITY;
+ALTER TABLE production.rm_purchase_order_lines DISABLE ROW LEVEL SECURITY;
+
+-- Drop any policies that may have been created before
+DROP POLICY IF EXISTS "auth_read_orders"   ON production.rm_purchase_orders;
+DROP POLICY IF EXISTS "auth_insert_orders" ON production.rm_purchase_orders;
+DROP POLICY IF EXISTS "auth_update_orders" ON production.rm_purchase_orders;
+DROP POLICY IF EXISTS "auth_read_lines"    ON production.rm_purchase_order_lines;
+DROP POLICY IF EXISTS "auth_insert_lines"  ON production.rm_purchase_order_lines;
+DROP POLICY IF EXISTS "auth_update_lines"  ON production.rm_purchase_order_lines;

@@ -110,8 +110,8 @@ export default function PrepDashboard() {
 
   const critical = alerts.filter(a => a.status === 'critical');
   const low = alerts.filter(a => a.status === 'low');
-  const alertTotalPages = Math.ceil(alerts.length / ALERT_PAGE_SIZE);
-  const alertPageData = alerts.slice(alertPage * ALERT_PAGE_SIZE, (alertPage + 1) * ALERT_PAGE_SIZE);
+  const lowTotalPages = Math.ceil(low.length / ALERT_PAGE_SIZE);
+  const lowPageData = low.slice(alertPage * ALERT_PAGE_SIZE, (alertPage + 1) * ALERT_PAGE_SIZE);
 
   return (
     <div className="space-y-4">
@@ -212,33 +212,45 @@ export default function PrepDashboard() {
               {alerts.length === 0 ? (
                 <p className="text-sm text-green-700 bg-green-50 rounded-xl p-3 text-center">✓ All mix levels OK</p>
               ) : (
-                <>
-                  <div className="space-y-2">
-                    {alertPageData.map(a => (
-                      <div key={a.item_id} className={`rounded-xl p-3 ${a.status === 'critical' ? 'bg-red-50 border border-red-100' : 'bg-amber-50 border border-amber-100'}`}>
-                        <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
-                        <p className={`text-xs mt-0.5 ${a.status === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>
-                          {a.status === 'critical' ? '🔴 Critical' : '🟡 Low'} — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                  {alertTotalPages > 1 && (
-                    <div className="flex items-center justify-between pt-1">
-                      <p className="text-xs text-gray-400">{alertPage * ALERT_PAGE_SIZE + 1}–{Math.min((alertPage + 1) * ALERT_PAGE_SIZE, alerts.length)} of {alerts.length}</p>
-                      <div className="flex gap-1">
-                        <button onClick={() => setAlertPage(p => Math.max(0, p - 1))} disabled={alertPage === 0}
-                          className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
-                          <ChevronLeft size={14} />
-                        </button>
-                        <button onClick={() => setAlertPage(p => Math.min(alertTotalPages - 1, p + 1))} disabled={alertPage >= alertTotalPages - 1}
-                          className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
-                          <ChevronRight size={14} />
-                        </button>
-                      </div>
+                <div className="space-y-2">
+                  {/* All critical items always visible */}
+                  {critical.map(a => (
+                    <div key={a.item_id} className="rounded-xl p-3 bg-red-50 border border-red-100">
+                      <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
+                      <p className="text-xs mt-0.5 text-red-700">🔴 Critical — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
                     </div>
+                  ))}
+
+                  {/* Low items paginated */}
+                  {low.length > 0 && (
+                    <>
+                      {critical.length > 0 && (
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide pt-1">Low Stock</p>
+                      )}
+                      {lowPageData.map(a => (
+                        <div key={a.item_id} className="rounded-xl p-3 bg-amber-50 border border-amber-100">
+                          <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
+                          <p className="text-xs mt-0.5 text-amber-700">🟡 Low — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}</p>
+                        </div>
+                      ))}
+                      {lowTotalPages > 1 && (
+                        <div className="flex items-center justify-between pt-1">
+                          <p className="text-xs text-gray-400">{alertPage * ALERT_PAGE_SIZE + 1}–{Math.min((alertPage + 1) * ALERT_PAGE_SIZE, low.length)} of {low.length} low</p>
+                          <div className="flex gap-1">
+                            <button onClick={() => setAlertPage(p => Math.max(0, p - 1))} disabled={alertPage === 0}
+                              className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
+                              <ChevronLeft size={14} />
+                            </button>
+                            <button onClick={() => setAlertPage(p => Math.min(lowTotalPages - 1, p + 1))} disabled={alertPage >= lowTotalPages - 1}
+                              className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
+                              <ChevronRight size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
