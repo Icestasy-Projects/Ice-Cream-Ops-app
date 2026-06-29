@@ -14,6 +14,7 @@ interface RmStock {
   reorder_point: number | null;
   par_qty: number | null;
   status: string | null;
+  category: string;
 }
 
 interface Alert {
@@ -25,7 +26,8 @@ interface Alert {
   status: string;
 }
 
-const PAGE_SIZE = 10;
+const ALERT_PAGE_SIZE = 8;
+const STATUS_ORDER: Record<string, number> = { critical: 0, low: 1 };
 
 function statusColor(status: string | null) {
   if (status === 'critical') return 'bg-red-100 text-red-700';
@@ -45,22 +47,53 @@ export default function RawMaterialsDashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
   const [queryError, setQueryError] = useState<string | null>(null);
+  const [alertPage, setAlertPage] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     setQueryError(null);
-    const [stockRes, alertRes] = await Promise.all([
-      supabase.schema('production').from('v_rm_stock').select('*').order('status', { ascending: false }),
-      supabase.schema('production').from('v_stock_alerts_rm').select('*').order('status', { ascending: false }),
+    const [stockRes, alertRes, itemsRes, catsRes] = await Promise.all([
+      supabase.schema('production').from('v_rm_stock').select('*').order('ingredient_name'),
+      supabase.schema('production').from('v_stock_alerts_rm').select('*').in('status', ['low', 'critical']),
+      supabase.schema('production').from('rm_items').select('id, category_id'),
+      supabase.schema('production').from('rm_categories').select('id, name'),
     ]);
+
     if (stockRes.error) {
       console.error('v_rm_stock error:', stockRes.error);
       setQueryError(stockRes.error.message);
     }
-    setData(stockRes.data || []);
-    setAlerts(alertRes.data || []);
+
+    const catMap = new Map<number, string>(
+      (catsRes.data || []).map((c: Record<string, unknown>) => [c.id as number, c.name as string])
+    );
+    const itemCatMap = new Map<number, string>(
+      (itemsRes.data || []).map((i: Record<string, unknown>) => [
+        i.id as number,
+        catMap.get(i.category_id as number) || 'Other',
+      ])
+    );
+
+    setData(
+      (stockRes.data || []).map((r: Record<string, unknown>) => ({
+        rm_item_id: r.rm_item_id as number,
+        ingredient_name: r.ingredient_name as string,
+        unit: r.unit as string,
+        qty_on_hand: (r.qty_on_hand as number) || 0,
+        reorder_point: r.reorder_point as number | null,
+        par_qty: r.par_qty as number | null,
+        status: r.status as string | null,
+        category: itemCatMap.get(r.rm_item_id as number) || 'Other',
+      }))
+    );
+
+    const sortedAlerts = [...(alertRes.data || [])].sort((a, b) => {
+      const ao = STATUS_ORDER[a.status] ?? 2;
+      const bo = STATUS_ORDER[b.status] ?? 2;
+      return ao !== bo ? ao - bo : a.item_name.localeCompare(b.item_name);
+    });
+    setAlerts(sortedAlerts);
     setLoading(false);
   }, [supabase]);
 
@@ -72,23 +105,38 @@ export default function RawMaterialsDashboard() {
     return () => { supabase.removeChannel(channel); };
   }, [supabase, load]);
 
-  const filtered = useMemo(() =>
-    data.filter(d => d.ingredient_name.toLowerCase().includes(search.toLowerCase())),
-    [data, search]
-  );
+  const grouped = useMemo(() => {
+    const q = search.toLowerCase();
+    const filtered = data.filter(d => d.ingredient_name.toLowerCase().includes(q));
+    const groups: Record<string, RmStock[]> = {};
+    for (const item of filtered) {
+      const cat = item.category;
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    }
+    for (const cat in groups) {
+      groups[cat].sort((a, b) => {
+        const ao = STATUS_ORDER[a.status ?? ''] ?? 2;
+        const bo = STATUS_ORDER[b.status ?? ''] ?? 2;
+        return ao !== bo ? ao - bo : a.ingredient_name.localeCompare(b.ingredient_name);
+      });
+    }
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  }, [data, search]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const pageData = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-
+  const totalItems = grouped.reduce((s, [, items]) => s + items.length, 0);
   const critical = alerts.filter(a => a.status === 'critical');
   const low = alerts.filter(a => a.status === 'low');
+
+  const alertTotalPages = Math.ceil(alerts.length / ALERT_PAGE_SIZE);
+  const alertPageData = alerts.slice(alertPage * ALERT_PAGE_SIZE, (alertPage + 1) * ALERT_PAGE_SIZE);
 
   return (
     <div className="space-y-4">
       <ScreenHeader
         icon="🌿"
         title="Raw Materials Stock"
-        description="Stock levels for all ingredients. Red = order now. Amber = order soon."
+        description="Stock levels grouped by category. Red = order now. Amber = order soon."
       />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -112,7 +160,7 @@ export default function RawMaterialsDashboard() {
       {loading ? <LoadingSpinner text="Loading stock levels..." /> : (
         <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-          {/* Main table */}
+          {/* Main grouped table */}
           <div className="flex-1 min-w-0 card space-y-3">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -120,64 +168,60 @@ export default function RawMaterialsDashboard() {
                 type="text"
                 placeholder="Search ingredients..."
                 value={search}
-                onChange={e => { setSearch(e.target.value); setPage(0); }}
+                onChange={e => setSearch(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
               />
             </div>
 
-            <div className="overflow-x-auto -mx-5">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="text-left px-5 py-2 text-gray-500 font-semibold">Ingredient</th>
-                    <th className="text-right px-3 py-2 text-gray-500 font-semibold">On Hand</th>
-                    <th className="text-right px-3 py-2 text-gray-500 font-semibold hidden sm:table-cell">Reorder At</th>
-                    <th className="text-center px-5 py-2 text-gray-500 font-semibold">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pageData.map(item => (
-                    <tr key={item.rm_item_id} className="border-b border-gray-50 hover:bg-orange-50 transition-colors">
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-gray-900">{item.ingredient_name}</p>
-                        <p className="text-xs text-gray-400">{item.unit}</p>
-                      </td>
-                      <td className="px-3 py-3 text-right font-bold text-gray-900 whitespace-nowrap">
-                        {formatNumber(item.qty_on_hand)} <span className="text-xs font-normal text-gray-400">{item.unit}</span>
-                      </td>
-                      <td className="px-3 py-3 text-right text-gray-500 hidden sm:table-cell whitespace-nowrap">
-                        {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
-                          {statusLabel(item.status)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {pageData.length === 0 && (
-                    <tr><td colSpan={4} className="px-5 py-8 text-center text-gray-400">No results found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between pt-1">
-                <p className="text-xs text-gray-400">
-                  Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}
-                </p>
-                <div className="flex gap-2">
-                  <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-                    className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                    className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
+            {grouped.length === 0 ? (
+              <p className="text-center text-gray-400 py-8">No results found.</p>
+            ) : (
+              <div className="space-y-4 overflow-x-auto -mx-5">
+                {grouped.map(([category, items]) => (
+                  <div key={category}>
+                    <div className="px-5 py-1.5 bg-gray-50 border-y border-gray-100">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{category}</span>
+                      <span className="ml-2 text-xs text-gray-400">{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <table className="w-full text-sm">
+                      <colgroup>
+                        <col className="w-auto" />
+                        <col className="w-32" />
+                        <col className="w-28 hidden sm:table-column" />
+                        <col className="w-24" />
+                      </colgroup>
+                      <tbody>
+                        {items.map(item => (
+                          <tr key={item.rm_item_id} className="border-b border-gray-50 hover:bg-orange-50 transition-colors">
+                            <td className="px-5 py-3">
+                              <p className="font-medium text-gray-900">{item.ingredient_name}</p>
+                              <p className="text-xs text-gray-400">{item.unit}</p>
+                            </td>
+                            <td className="px-3 py-3 text-left whitespace-nowrap">
+                              <span className="font-bold text-gray-900">{formatNumber(item.qty_on_hand)}</span>
+                              <span className="text-xs text-gray-400 ml-1">{item.unit}</span>
+                            </td>
+                            <td className="px-3 py-3 text-left text-gray-500 hidden sm:table-cell whitespace-nowrap">
+                              {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
+                            </td>
+                            <td className="px-5 py-3 text-center">
+                              <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
+                                {statusLabel(item.status)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
               </div>
+            )}
+
+            {search && (
+              <p className="text-xs text-gray-400 pt-1 text-center">
+                {totalItems} result{totalItems !== 1 ? 's' : ''} across {grouped.length} categor{grouped.length !== 1 ? 'ies' : 'y'}
+              </p>
             )}
           </div>
 
@@ -191,16 +235,33 @@ export default function RawMaterialsDashboard() {
               {alerts.length === 0 ? (
                 <p className="text-sm text-green-700 bg-green-50 rounded-xl p-3 text-center">✓ All stock levels OK</p>
               ) : (
-                <div className="space-y-2">
-                  {alerts.map(a => (
-                    <div key={a.item_id} className={`rounded-xl p-3 ${a.status === 'critical' ? 'bg-red-50 border border-red-100' : 'bg-amber-50 border border-amber-100'}`}>
-                      <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
-                      <p className={`text-xs mt-0.5 ${a.status === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>
-                        {a.status === 'critical' ? '🔴 Critical' : '🟡 Low'} — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}
-                      </p>
+                <>
+                  <div className="space-y-2">
+                    {alertPageData.map(a => (
+                      <div key={a.item_id} className={`rounded-xl p-3 ${a.status === 'critical' ? 'bg-red-50 border border-red-100' : 'bg-amber-50 border border-amber-100'}`}>
+                        <p className="font-semibold text-gray-900 text-sm">{a.item_name}</p>
+                        <p className={`text-xs mt-0.5 ${a.status === 'critical' ? 'text-red-700' : 'text-amber-700'}`}>
+                          {a.status === 'critical' ? '🔴 Critical' : '🟡 Low'} — {formatNumber(a.qty_on_hand)} / {formatNumber(a.threshold_qty)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  {alertTotalPages > 1 && (
+                    <div className="flex items-center justify-between pt-1">
+                      <p className="text-xs text-gray-400">{alertPage * ALERT_PAGE_SIZE + 1}–{Math.min((alertPage + 1) * ALERT_PAGE_SIZE, alerts.length)} of {alerts.length}</p>
+                      <div className="flex gap-1">
+                        <button onClick={() => setAlertPage(p => Math.max(0, p - 1))} disabled={alertPage === 0}
+                          className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
+                          <ChevronLeft size={14} />
+                        </button>
+                        <button onClick={() => setAlertPage(p => Math.min(alertTotalPages - 1, p + 1))} disabled={alertPage >= alertTotalPages - 1}
+                          className="p-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 touch-manipulation">
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
