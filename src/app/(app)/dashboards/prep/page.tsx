@@ -149,50 +149,57 @@ export default function PrepDashboard() {
               />
             </div>
 
-            {/* Column header */}
-            <div className="grid grid-cols-[1fr_auto_auto] gap-3 px-1 pb-1 border-b border-gray-100">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Flavour</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide text-right">Kitchen</span>
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide text-right w-28">Status</span>
-            </div>
-
             <div className="-mx-5">
               {filtered.length === 0 ? (
                 <p className="text-center text-gray-400 py-8">No results found.</p>
               ) : filtered.map(item => {
-                // qty_factory × batch_yield_l = total litres of bulk available
-                const factoryLitres = item.qty_factory * item.batch_yield_l;
-                const kitchenLitres = item.qty_kitchen * item.batch_yield_l;
-                const bulk4L   = Math.floor(factoryLitres / BULK_4L);
-                const sq12     = Math.floor(factoryLitres / SQ_12_L);
-                const s50ml    = Math.floor(factoryLitres / SAMPLE_50);
+                // Factory: qty_factory batches × batch_yield_l L/batch → litres → tubs
+                const fL = item.qty_factory * item.batch_yield_l;
+                const fBulk = Math.floor(fL / BULK_4L);
+                const fSq   = Math.floor(fL / SQ_12_L);
+                const fSmp  = Math.floor(fL / SAMPLE_50);
+
+                // Kitchen: same calculation but from kitchen batches
+                const kL = item.qty_kitchen * item.batch_yield_l;
+                const kBulk = Math.floor(kL / BULK_4L);
+                const kSq   = Math.floor(kL / SQ_12_L);
+                const kSmp  = Math.floor(kL / SAMPLE_50);
 
                 return (
-                  <div key={item.prep_product_id} className="px-5 py-3 border-b border-gray-50 hover:bg-orange-50 transition-colors">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
+                  <div key={item.prep_product_id} className="px-5 py-4 border-b border-gray-50 hover:bg-orange-50 transition-colors">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
                         <p className="font-semibold text-gray-900 text-sm">{item.product_name}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Yield: {item.batch_yield_l}L/batch · Factory: {formatNumber(item.qty_factory)} batches ({formatNumber(factoryLitres)}L)
-                          {item.qty_kitchen > 0 && (
-                            <span className="ml-1 text-blue-500">· Kitchen: {formatNumber(item.qty_kitchen)} batches ({formatNumber(kitchenLitres)}L)</span>
-                          )}
-                        </p>
-
-                        {/* FG potential chips */}
-                        <div className="flex flex-wrap gap-1.5 mt-2">
-                          {bulk4L > 0
-                            ? yieldChip('4L Bulk', bulk4L, 'bg-orange-100 text-orange-800')
-                            : <span className="text-xs text-gray-300 italic">No factory stock</span>
-                          }
-                          {sq12 > 0 && yieldChip('12 Sq', sq12, 'bg-purple-100 text-purple-800')}
-                          {s50ml > 0 && yieldChip('50ml', s50ml, 'bg-blue-100 text-blue-800')}
-                        </div>
+                        <p className="text-xs text-gray-400">Yield: {item.batch_yield_l}L per batch</p>
                       </div>
-                      <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap mt-0.5 ${statusColor(item.status)}`}>
+                      <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
                         {statusLabel(item.status)}
                       </span>
                     </div>
+
+                    {/* Factory row */}
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs font-bold text-green-700 w-14 shrink-0">🏭 Factory</span>
+                      <span className="text-xs text-gray-400">{formatNumber(item.qty_factory)} batch{item.qty_factory !== 1 ? 'es' : ''} = {formatNumber(fL)}L →</span>
+                      <div className="flex flex-wrap gap-1">
+                        {fBulk > 0 ? yieldChip('4L Bulk', fBulk, 'bg-orange-100 text-orange-800') : <span className="text-xs text-gray-300 italic">none</span>}
+                        {fSq  > 0 && yieldChip('12 Sq', fSq,  'bg-purple-100 text-purple-800')}
+                        {fSmp > 0 && yieldChip('50ml',  fSmp, 'bg-blue-100 text-blue-800')}
+                      </div>
+                    </div>
+
+                    {/* Kitchen row — only shown if there's stock */}
+                    {item.qty_kitchen > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-blue-600 w-14 shrink-0">🧪 Kitchen</span>
+                        <span className="text-xs text-gray-400">{formatNumber(item.qty_kitchen)} batch{item.qty_kitchen !== 1 ? 'es' : ''} = {formatNumber(kL)}L →</span>
+                        <div className="flex flex-wrap gap-1">
+                          {kBulk > 0 && yieldChip('4L Bulk', kBulk, 'bg-sky-100 text-sky-800')}
+                          {kSq   > 0 && yieldChip('12 Sq',   kSq,   'bg-indigo-100 text-indigo-800')}
+                          {kSmp  > 0 && yieldChip('50ml',    kSmp,  'bg-cyan-100 text-cyan-800')}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
