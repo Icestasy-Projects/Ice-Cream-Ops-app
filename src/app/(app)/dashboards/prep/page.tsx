@@ -179,7 +179,7 @@ export default function PrepDashboard() {
 
                     {/* Factory row */}
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-xs font-bold text-green-700 w-14 shrink-0">🏭 Factory</span>
+                      <span className="text-xs font-bold text-green-700 w-14 shrink-0">Factory</span>
                       <span className="text-xs text-gray-400">{formatNumber(item.qty_factory)} batch{item.qty_factory !== 1 ? 'es' : ''} = {formatNumber(fL)}L →</span>
                       <div className="flex flex-wrap gap-1">
                         {fBulk > 0 ? yieldChip('4L Bulk', fBulk, 'bg-orange-100 text-orange-800') : <span className="text-xs text-gray-300 italic">none</span>}
@@ -189,7 +189,7 @@ export default function PrepDashboard() {
                     {/* Kitchen row — only shown if there's stock */}
                     {item.qty_kitchen > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-blue-600 w-14 shrink-0">🧪 Kitchen</span>
+                        <span className="text-xs font-bold text-blue-600 w-14 shrink-0">Kitchen</span>
                         <span className="text-xs text-gray-400">{formatNumber(item.qty_kitchen)} batch{item.qty_kitchen !== 1 ? 'es' : ''} = {formatNumber(kL)}L →</span>
                         <div className="flex flex-wrap gap-1">
                           {kBulk > 0 && yieldChip('4L Bulk', kBulk, 'bg-sky-100 text-sky-800')}
