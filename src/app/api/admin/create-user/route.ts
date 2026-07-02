@@ -47,30 +47,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'full_name, email, and role are required' }, { status: 400 });
     }
 
-    const adminClient = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      SERVICE_ROLE_KEY,
-    );
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://acngdpcpxburkzqxjpbf.supabase.co';
 
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password: 'test@123',
-      email_confirm: true,
+    const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+        'apikey': SERVICE_ROLE_KEY,
+      },
+      body: JSON.stringify({ email, password: 'test@123', email_confirm: true }),
     });
 
-    if (createError || !newUser?.user) {
+    const createBody = await createRes.json();
+
+    if (!createRes.ok || !createBody.id) {
       return NextResponse.json({
-        error: errMsg(createError),
-        raw: JSON.stringify(createError),
-        status_code: createError ? (createError as unknown as Record<string, unknown>).status : null,
+        error: createBody.msg || createBody.message || createBody.error_description || JSON.stringify(createBody),
+        raw: JSON.stringify(createBody),
+        status_code: createRes.status,
       }, { status: 400 });
     }
+
+    const newUserId: string = createBody.id;
+    const adminClient = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     const { error: profileError } = await adminClient
       .schema('production')
       .from('user_profiles')
       .insert({
-        user_id: newUser.user.id,
+        user_id: newUserId,
         role,
         full_name,
         email,
@@ -78,11 +84,14 @@ export async function POST(req: NextRequest) {
       });
 
     if (profileError) {
-      await adminClient.auth.admin.deleteUser(newUser.user.id);
+      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${newUserId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${SERVICE_ROLE_KEY}`, 'apikey': SERVICE_ROLE_KEY },
+      });
       return NextResponse.json({ error: errMsg(profileError) }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, user_id: newUser.user.id });
+    return NextResponse.json({ success: true, user_id: newUserId });
   } catch (e: unknown) {
     return NextResponse.json({ error: errMsg(e) }, { status: 500 });
   }
