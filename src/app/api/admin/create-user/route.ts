@@ -75,13 +75,13 @@ export async function POST(req: NextRequest) {
     const { error: profileError } = await adminClient
       .schema('production')
       .from('user_profiles')
-      .insert({
+      .upsert({
         user_id: newUserId,
         role,
         full_name,
         email,
         must_change_password: true,
-      });
+      }, { onConflict: 'user_id' });
 
     if (profileError) {
       await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${newUserId}`, {
