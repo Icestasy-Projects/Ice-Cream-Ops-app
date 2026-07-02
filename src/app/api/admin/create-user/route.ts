@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         error: errMsg(createError),
         raw: JSON.stringify(createError),
-        status_code: (createError as Record<string, unknown>)?.status,
+        status_code: createError ? (createError as unknown as Record<string, unknown>).status : null,
       }, { status: 400 });
     }
 
