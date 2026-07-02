@@ -59,7 +59,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (createError || !newUser?.user) {
-      return NextResponse.json({ error: errMsg(createError) }, { status: 400 });
+      return NextResponse.json({
+        error: errMsg(createError),
+        raw: JSON.stringify(createError),
+        status_code: (createError as Record<string, unknown>)?.status,
+      }, { status: 400 });
     }
 
     const { error: profileError } = await adminClient
