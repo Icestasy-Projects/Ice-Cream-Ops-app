@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
 import { getNavItemsForRole, ROLE_LABELS } from '@/lib/roles';
-import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X } from 'lucide-react';
+import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -18,6 +18,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/dashboards/raw-materials': BarChart3,
   '/dashboards/prep': BarChart3,
   '/dashboards/finished-goods': BarChart3,
+  '/admin/users': Users,
 };
 
 export default function NavBar() {
