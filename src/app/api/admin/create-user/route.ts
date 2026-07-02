@@ -1,69 +1,89 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+
+function errMsg(e: unknown): string {
+  if (!e) return 'Unknown error';
+  if (typeof e === 'string') return e;
+  if (typeof e === 'object') {
+    const o = e as Record<string, unknown>;
+    if (o.message && typeof o.message === 'string') return o.message;
+    if (o.msg && typeof o.msg === 'string') return o.msg;
+    const s = JSON.stringify(e);
+    return s === '{}' ? 'Supabase returned an empty error — check SUPABASE_SERVICE_ROLE_KEY in Vercel env vars' : s;
+  }
+  return String(e);
+}
 
 export async function POST(req: NextRequest) {
-  // Verify caller is authenticated and is a super_admin
-  const cookieStore = cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'SUPABASE_SERVICE_ROLE_KEY is not set. Add it in Vercel → Settings → Environment Variables.' },
+        { status: 500 }
+      );
+    }
 
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+    // Verify caller is authenticated and is a super_admin
+    const cookieStore = cookies();
+    const supabase = createServerComponentClient({ cookies: () => cookieStore });
+    const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: profile } = await supabase
-    .schema('production')
-    .from('user_profiles')
-    .select('role')
-    .eq('user_id', user.id)
-    .single();
+    if (!user) {
+      return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
+    }
 
-  if (profile?.role !== 'super_admin') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+    const { data: profile } = await supabase
+      .schema('production')
+      .from('user_profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
 
-  const { full_name, email, role } = await req.json();
+    if (profile?.role !== 'super_admin') {
+      return NextResponse.json({ error: 'Only Super Admins can create users' }, { status: 403 });
+    }
 
-  if (!full_name || !email || !role) {
-    return NextResponse.json({ error: 'full_name, email, and role are required' }, { status: 400 });
-  }
+    const { full_name, email, role } = await req.json();
 
-  // Use service role client to create auth user
-  const adminClient = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+    if (!full_name || !email || !role) {
+      return NextResponse.json({ error: 'full_name, email, and role are required' }, { status: 400 });
+    }
 
-  const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-    email,
-    password: 'test@123',
-    email_confirm: true, // skip email confirmation
-  });
+    const adminClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
+    );
 
-  if (createError || !newUser.user) {
-    return NextResponse.json({ error: createError?.message || 'Failed to create user' }, { status: 400 });
-  }
-
-  // Insert into user_profiles
-  const { error: profileError } = await adminClient
-    .schema('production')
-    .from('user_profiles')
-    .insert({
-      user_id: newUser.user.id,
-      role,
-      full_name,
+    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
-      must_change_password: true,
+      password: 'test@123',
+      email_confirm: true,
     });
 
-  if (profileError) {
-    // Clean up the auth user if profile insert fails
-    await adminClient.auth.admin.deleteUser(newUser.user.id);
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
-  }
+    if (createError || !newUser?.user) {
+      return NextResponse.json({ error: errMsg(createError) }, { status: 400 });
+    }
 
-  return NextResponse.json({ success: true, user_id: newUser.user.id });
+    const { error: profileError } = await adminClient
+      .schema('production')
+      .from('user_profiles')
+      .insert({
+        user_id: newUser.user.id,
+        role,
+        full_name,
+        email,
+        must_change_password: true,
+      });
+
+    if (profileError) {
+      await adminClient.auth.admin.deleteUser(newUser.user.id);
+      return NextResponse.json({ error: errMsg(profileError) }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, user_id: newUser.user.id });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: errMsg(e) }, { status: 500 });
+  }
 }
