@@ -46,12 +46,22 @@ export default function AdminUsersPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .schema('production')
       .from('user_profiles')
       .select('user_id, full_name, email, role, must_change_password')
       .order('full_name');
-    setEmployees((data || []) as Employee[]);
+    if (error) {
+      // Column might not exist yet — fall back to basic select
+      const { data: fallback } = await supabase
+        .schema('production')
+        .from('user_profiles')
+        .select('user_id, full_name, email, role')
+        .order('full_name');
+      setEmployees(((fallback || []) as Employee[]).map(e => ({ ...e, must_change_password: false })));
+    } else {
+      setEmployees((data || []) as Employee[]);
+    }
     setLoading(false);
   }, [supabase]);
 

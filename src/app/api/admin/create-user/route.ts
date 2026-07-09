@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       .from('user_profiles')
       .select('role')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profile?.role !== 'super_admin') {
       return NextResponse.json({ error: 'Only Super Admins can create users' }, { status: 403 });
