@@ -22,10 +22,9 @@ export function useRole() {
       .from('user_profiles')
       .select('role')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
       .then(({ data, error }) => {
         if (error || !data?.role) {
-          // Table not yet set up or user has no profile row — default to super_admin
           setRole('super_admin');
         } else {
           setRole(data.role as AppRole);

@@ -36,6 +36,7 @@ interface PurchaseOrderLine {
   qty_received: number;
   status: string;
   qty_now: string;
+  qty_spoilt: string;
 }
 
 interface PurchaseOrder {
@@ -137,6 +138,7 @@ export default function ReceivePage() {
             qty_received: qtyReceived,
             status: l.status as string,
             qty_now: String(qtyOrdered - qtyReceived > 0 ? qtyOrdered - qtyReceived : qtyOrdered),
+            qty_spoilt: '0',
           };
         }),
       };
@@ -214,36 +216,51 @@ export default function ReceivePage() {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, expanded: !o.expanded } : o));
   }
 
-  function updateQtyNow(orderId: number, lineId: number, value: string) {
+  function updateLineField(orderId: number, lineId: number, field: 'qty_now' | 'qty_spoilt', value: string) {
     setOrders(prev => prev.map(o =>
       o.id === orderId
-        ? { ...o, lines: o.lines.map(l => l.id === lineId ? { ...l, qty_now: value } : l) }
+        ? { ...o, lines: o.lines.map(l => l.id === lineId ? { ...l, [field]: value } : l) }
         : o
     ));
   }
 
   async function confirmReceipt(order: PurchaseOrder) {
     for (const l of order.lines) {
-      if (!l.qty_now || parseFloat(l.qty_now) < 0) {
-        toast.error(`Enter a valid quantity for ${l.ingredient_name}.`);
+      const received = parseFloat(l.qty_now) || 0;
+      const spoilt = parseFloat(l.qty_spoilt) || 0;
+      if (received < 0 || spoilt < 0) {
+        toast.error(`Enter valid quantities for ${l.ingredient_name}.`);
+        return;
+      }
+      if (spoilt > received) {
+        toast.error(`Spoilt qty cannot exceed received qty for ${l.ingredient_name}.`);
         return;
       }
     }
 
+    // Only good stock (received - spoilt) goes to inventory
     const receiptLines = order.lines
-      .filter(l => parseFloat(l.qty_now) > 0)
-      .map(l => ({ rm_item_id: l.rm_item_id, qty: parseFloat(l.qty_now), unit_cost: null, lot_no: null }));
+      .map(l => {
+        const received = parseFloat(l.qty_now) || 0;
+        const spoilt = parseFloat(l.qty_spoilt) || 0;
+        return { rm_item_id: l.rm_item_id, qty: received - spoilt, unit_cost: null, lot_no: null };
+      })
+      .filter(l => l.qty > 0);
 
-    if (receiptLines.length === 0) { toast.error('No quantities entered.'); return; }
+    if (receiptLines.length === 0) { toast.error('No usable stock entered.'); return; }
 
     setConfirming(order.id);
     try {
-      // Record stock receipt
+      const spoiltNote = order.lines
+        .filter(l => parseFloat(l.qty_spoilt) > 0)
+        .map(l => `${l.ingredient_name}: ${l.qty_spoilt} ${l.unit} spoilt`)
+        .join(', ');
+
       const { data, error } = await supabase.schema('production').rpc('create_rm_receipt', {
         p_source_type: 'vendor',
         p_vendor_id: order.lines[0]?.rm_item_id ? parseInt(String(order.id)) : null,
         p_received_by: user?.id,
-        p_note: `Confirmed receipt of PO #${order.id}`,
+        p_note: [`Confirmed receipt of PO #${order.id}`, spoiltNote].filter(Boolean).join(' | '),
         p_lines: receiptLines,
       });
 
@@ -251,25 +268,25 @@ export default function ReceivePage() {
       const result = data as { success: boolean; error?: string };
       if (!result.success) throw new Error(result.error || 'Failed to record receipt');
 
-      // Update each order line
+      // Update each order line (qty_received = total received including spoilt, since that's what arrived)
       for (const l of order.lines) {
-        const newQtyReceived = l.qty_received + parseFloat(l.qty_now || '0');
+        const newQtyReceived = l.qty_received + (parseFloat(l.qty_now) || 0);
         const lineStatus = newQtyReceived >= l.qty_ordered ? 'received' : 'partial';
         await supabase.schema('production').from('rm_purchase_order_lines')
           .update({ qty_received: newQtyReceived, status: lineStatus })
           .eq('id', l.id);
       }
 
-      // Update order status
       const allReceived = order.lines.every(l => {
-        const newQty = l.qty_received + parseFloat(l.qty_now || '0');
+        const newQty = l.qty_received + (parseFloat(l.qty_now) || 0);
         return newQty >= l.qty_ordered;
       });
       await supabase.schema('production').from('rm_purchase_orders')
         .update({ status: allReceived ? 'received' : 'partially_received' })
         .eq('id', order.id);
 
-      toast.success(`Receipt confirmed for PO #${order.id}. Stock updated!`);
+      const spoiltMsg = spoiltNote ? ` (${spoiltNote})` : '';
+      toast.success(`Receipt confirmed for PO #${order.id}. Stock updated!${spoiltMsg}`);
       loadOrders();
     } catch (e: unknown) {
       toast.error(parseSupabaseError(e instanceof Error ? e.message : String(e)));
@@ -483,21 +500,42 @@ export default function ReceivePage() {
                               Already received: {formatNumber(line.qty_received)} {line.unit} · Remaining: {formatNumber(remaining)} {line.unit}
                             </p>
                           )}
-                          <div>
-                            <label className="label-text block mb-1">
-                              Qty received now ({line.unit})
-                            </label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.1"
-                              max={remaining}
-                              value={line.qty_now}
-                              onChange={e => updateQtyNow(order.id, line.id, e.target.value)}
-                              placeholder={`Max ${formatNumber(remaining)} ${line.unit}`}
-                              className="input-field"
-                            />
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="label-text block mb-1">
+                                Qty received ({line.unit})
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                max={remaining}
+                                value={line.qty_now}
+                                onChange={e => updateLineField(order.id, line.id, 'qty_now', e.target.value)}
+                                placeholder={`Max ${formatNumber(remaining)}`}
+                                className="input-field"
+                              />
+                            </div>
+                            <div>
+                              <label className="label-text block mb-1 text-red-600">
+                                Spoilt / damaged ({line.unit})
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={line.qty_spoilt}
+                                onChange={e => updateLineField(order.id, line.id, 'qty_spoilt', e.target.value)}
+                                placeholder="0"
+                                className="input-field border-red-200 focus:border-red-400"
+                              />
+                            </div>
                           </div>
+                          {parseFloat(line.qty_spoilt) > 0 && parseFloat(line.qty_now) > 0 && (
+                            <p className="text-xs text-green-700 mt-1">
+                              ✓ {formatNumber(parseFloat(line.qty_now) - parseFloat(line.qty_spoilt))} {line.unit} will be added to stock
+                            </p>
+                          )}
                         </div>
                       );
                     })}
