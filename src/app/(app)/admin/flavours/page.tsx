@@ -168,7 +168,7 @@ export default function FlavoursPage() {
         <div className="card space-y-5">
           <h2 className="section-title">New Flavour</h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label-text block mb-1">Flavour Name</label>
               <input

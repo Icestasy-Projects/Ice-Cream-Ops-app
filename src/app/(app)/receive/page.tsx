@@ -397,7 +397,7 @@ export default function ReceivePage() {
                         <Trash2 size={18} />
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="label-text block mb-1">Qty to order ({line.unit})</label>
                         <input
@@ -500,7 +500,7 @@ export default function ReceivePage() {
                               Already received: {formatNumber(line.qty_received)} {line.unit} · Remaining: {formatNumber(remaining)} {line.unit}
                             </p>
                           )}
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                               <label className="label-text block mb-1">
                                 Qty received ({line.unit})

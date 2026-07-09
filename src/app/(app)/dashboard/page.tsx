@@ -122,12 +122,12 @@ export default function DashboardPage() {
       {!summaryLoading && summary && (showRM || showPrep || showFG) && (
         <section>
           <h2 className="text-lg font-bold text-gray-700 mb-3">Stock Overview</h2>
-          <div className={`grid gap-3 ${[showRM, showPrep, showFG].filter(Boolean).length === 3 ? 'grid-cols-3' : [showRM, showPrep, showFG].filter(Boolean).length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className={`grid gap-2 sm:gap-3 ${[showRM, showPrep, showFG].filter(Boolean).length === 3 ? 'grid-cols-3' : [showRM, showPrep, showFG].filter(Boolean).length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {showRM && (
               <Link href="/dashboards/raw-materials"
-                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-3 sm:p-4">
                 <Package size={22} className="mx-auto text-orange-500" />
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Raw Materials</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide leading-tight">Raw Materials</p>
                 {summary.rmCritical > 0 ? (
                   <p className="text-sm font-bold text-red-600">{summary.rmCritical} Critical</p>
                 ) : summary.rmLow > 0 ? (
@@ -139,7 +139,7 @@ export default function DashboardPage() {
             )}
             {showPrep && (
               <Link href="/dashboards/prep"
-                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-3 sm:p-4">
                 <Beaker size={22} className="mx-auto text-purple-500" />
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Prep / Mix</p>
                 {summary.prepCritical > 0 ? (
@@ -153,7 +153,7 @@ export default function DashboardPage() {
             )}
             {showFG && (
               <Link href="/dashboards/finished-goods"
-                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-4">
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-3 sm:p-4">
                 <Box size={22} className="mx-auto text-pink-500" />
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Finished Goods</p>
                 {summary.fgCritical > 0 ? (

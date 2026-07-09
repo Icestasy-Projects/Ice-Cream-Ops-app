@@ -168,7 +168,7 @@ export default function DispatchPage() {
           <p className="text-gray-500 mt-2">Fill some tubs first before dispatching.</p>
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-4 items-start">
+        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-start">
 
           {/* Left: SKU selector grouped by pack format */}
           <div className="flex-1 min-w-0 card space-y-5">
