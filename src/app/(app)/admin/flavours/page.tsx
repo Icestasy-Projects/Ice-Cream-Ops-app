@@ -9,7 +9,7 @@ import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react
 
 interface RmItem { id: number; name: string; unit: string; }
 
-interface RecipeLine { rm_item_id: number; name: string; unit: string; qty_per_batch: string; }
+interface RecipeLine { rm_item_id: number; name: string; unit: string; qty_per_unit: string; }
 
 interface Flavour {
   id: number;
@@ -17,7 +17,7 @@ interface Flavour {
   batch_yield_l: number | null;
   status: string;
   expanded: boolean;
-  recipes: { rm_item_id: number; name: string; unit: string; qty_per_batch: number }[];
+  recipes: { rm_item_id: number; name: string; unit: string; qty_per_unit: number }[];
 }
 
 export default function FlavoursPage() {
@@ -44,12 +44,12 @@ export default function FlavoursPage() {
       supabase.schema('production').from('prep_products')
         .select('id, name, batch_yield_l, status')
         .order('name'),
-      supabase.schema('production').from('prep_product_recipes')
-        .select('prep_product_id, rm_item_id, qty_per_batch, item:rm_item_id(name, unit)'),
+      supabase.schema('production').from('prep_recipes')
+        .select('prep_product_id, rm_item_id, qty_per_unit, item:rm_item_id(name, unit)'),
     ]);
 
     const recipes = (recipeRes.data || []) as Record<string, unknown>[];
-    const recipeMap = new Map<number, { rm_item_id: number; name: string; unit: string; qty_per_batch: number }[]>();
+    const recipeMap = new Map<number, { rm_item_id: number; name: string; unit: string; qty_per_unit: number }[]>();
     for (const r of recipes) {
       const pid = r.prep_product_id as number;
       const item = r.item as Record<string, unknown> | null;
@@ -58,7 +58,7 @@ export default function FlavoursPage() {
         rm_item_id: r.rm_item_id as number,
         name: (item?.name as string) || '',
         unit: (item?.unit as string) || '',
-        qty_per_batch: r.qty_per_batch as number,
+        qty_per_unit: r.qty_per_unit as number,
       });
     }
 
@@ -90,13 +90,13 @@ export default function FlavoursPage() {
   }
 
   function addRmLine(item: RmItem) {
-    setRecipeLines(prev => [...prev, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_batch: '' }]);
+    setRecipeLines(prev => [...prev, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '' }]);
     setRmSearch('');
     setShowRmDrop(false);
   }
 
   function updateRecipeLine(idx: number, val: string) {
-    setRecipeLines(prev => prev.map((l, i) => i === idx ? { ...l, qty_per_batch: val } : l));
+    setRecipeLines(prev => prev.map((l, i) => i === idx ? { ...l, qty_per_unit: val } : l));
   }
 
   function removeRecipeLine(idx: number) {
@@ -107,7 +107,7 @@ export default function FlavoursPage() {
     if (!newName.trim()) { toast.error('Enter a flavour name.'); return; }
     if (!newYield || parseFloat(newYield) <= 0) { toast.error('Enter batch yield in litres.'); return; }
     for (const l of recipeLines) {
-      if (!l.qty_per_batch || parseFloat(l.qty_per_batch) <= 0) {
+      if (!l.qty_per_unit || parseFloat(l.qty_per_unit) <= 0) {
         toast.error(`Enter quantity for ${l.name}.`);
         return;
       }
@@ -122,11 +122,11 @@ export default function FlavoursPage() {
       if (flavErr || !flavour) throw new Error(flavErr?.message || 'Failed to create flavour');
 
       if (recipeLines.length > 0) {
-        const { error: recipeErr } = await supabase.schema('production').from('prep_product_recipes')
+        const { error: recipeErr } = await supabase.schema('production').from('prep_recipes')
           .insert(recipeLines.map(l => ({
             prep_product_id: flavour.id,
             rm_item_id: l.rm_item_id,
-            qty_per_batch: parseFloat(l.qty_per_batch),
+            qty_per_unit: parseFloat(l.qty_per_unit),
           })));
         if (recipeErr) throw new Error(recipeErr.message);
       }
@@ -238,7 +238,7 @@ export default function FlavoursPage() {
                     <div className="w-32">
                       <input
                         type="number" min="0" step="0.1"
-                        value={l.qty_per_batch}
+                        value={l.qty_per_unit}
                         onChange={e => updateRecipeLine(idx, e.target.value)}
                         placeholder={`qty (${l.unit})`}
                         className="input-field text-sm py-2"
@@ -299,7 +299,7 @@ export default function FlavoursPage() {
                     {f.recipes.map(r => (
                       <div key={r.rm_item_id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                         <span className="text-sm text-gray-700">{r.name}</span>
-                        <span className="text-sm font-semibold text-gray-900">{formatNumber(r.qty_per_batch)} {r.unit}</span>
+                        <span className="text-sm font-semibold text-gray-900">{formatNumber(r.qty_per_unit)} {r.unit}</span>
                       </div>
                     ))}
                   </div>

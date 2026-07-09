@@ -1,22 +1,21 @@
 -- Run in Supabase SQL Editor
 
--- 1. Recipe table: RM items + qty per batch for each prep_product (flavour)
-CREATE TABLE IF NOT EXISTS production.prep_product_recipes (
-  id                SERIAL PRIMARY KEY,
-  prep_product_id   INTEGER NOT NULL REFERENCES production.prep_products(id) ON DELETE CASCADE,
-  rm_item_id        INTEGER NOT NULL REFERENCES production.rm_items(id),
-  qty_per_batch     NUMERIC NOT NULL CHECK (qty_per_batch > 0),
-  created_at        TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(prep_product_id, rm_item_id)
-);
-ALTER TABLE production.prep_product_recipes DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON production.prep_product_recipes TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE production.prep_product_recipes_id_seq TO authenticated;
-
--- 2. Allow admin to create new prep_products (flavours)
+-- 1. Grants for admin to manage prep_products and prep_recipes
 GRANT ALL ON production.prep_products TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE production.prep_products_id_seq TO authenticated;
-
--- 3. Allow break bulk to create new fg_skus and fg_unit entries
-GRANT ALL ON production.fg_skus TO authenticated;
+GRANT ALL ON production.prep_recipes TO authenticated;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA production TO authenticated;
+
+-- 2. Grants for break bulk to read/create sales.skus and sales.pack_formats
+GRANT ALL ON sales.skus TO authenticated;
+GRANT SELECT ON sales.flavours TO authenticated;
+GRANT SELECT ON sales.pack_formats TO authenticated;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA sales TO authenticated;
+
+-- 3. Ensure 12-squares and sample pack formats exist
+INSERT INTO sales.pack_formats (name, unit_volume_ml, units_per_pack, is_sample, status)
+SELECT '12 Squares', 150, 12, false, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM sales.pack_formats WHERE unit_volume_ml = 150 AND units_per_pack = 12);
+
+INSERT INTO sales.pack_formats (name, unit_volume_ml, units_per_pack, is_sample, status)
+SELECT 'Sample 50ml', 50, 1, true, 'active'
+WHERE NOT EXISTS (SELECT 1 FROM sales.pack_formats WHERE is_sample = true AND unit_volume_ml = 50);
