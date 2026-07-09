@@ -24,8 +24,8 @@ export function useRole() {
       .eq('user_id', user.id)
       .maybeSingle()
       .then(({ data, error }) => {
-        if (error || !data?.role) {
-          setRole('super_admin');
+        if (!data?.role) {
+          setRole(null);
         } else {
           setRole(data.role as AppRole);
         }

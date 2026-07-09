@@ -80,6 +80,16 @@ export default function DashboardPage() {
 
   if (userLoading || roleLoading) return <LoadingSpinner />;
 
+  if (!role) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <span className="text-5xl mb-4">🔒</span>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">No role assigned</h2>
+        <p className="text-gray-500 text-sm max-w-xs">Your account hasn&apos;t been assigned a role yet. Ask your Super Admin to set up your account.</p>
+      </div>
+    );
+  }
+
   const actions = actionsForRole(role);
   const showRM    = role === 'kitchen'  || role === 'super_admin';
   const showPrep  = role === 'factory'  || role === 'super_admin';
