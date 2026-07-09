@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, Search, AlertTriangle, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { formatNumber } from '@/lib/utils';
 
 interface PrepStock {
@@ -111,10 +111,20 @@ export default function PrepDashboard() {
           {low.length > 0 && <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">{low.length} Low</span>}
           <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-full">{data.length} Flavours</span>
         </div>
-        <button onClick={load} className="flex items-center gap-2 text-gray-500 text-sm hover:text-orange-600 touch-manipulation">
-          <RefreshCw size={16} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href="/api/reports/stock-export"
+            download
+            className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-xl hover:bg-green-100 touch-manipulation"
+          >
+            <Download size={13} />
+            Export Excel
+          </a>
+          <button onClick={load} className="flex items-center gap-2 text-gray-500 text-sm hover:text-orange-600 touch-manipulation">
+            <RefreshCw size={16} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {loading ? <LoadingSpinner text="Loading mix levels..." /> : (
@@ -162,22 +172,18 @@ export default function PrepDashboard() {
                     </div>
 
                     {/* Factory row */}
-                    <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
                       <span className="text-xs font-bold text-green-700 w-14 shrink-0">Factory</span>
                       <span className="text-xs text-gray-400">{formatNumber(item.qty_factory)} batch{item.qty_factory !== 1 ? 'es' : ''} = {formatNumber(fL)}L →</span>
-                      <div className="flex flex-wrap gap-1">
-                        {fBulk > 0 ? yieldChip('4L Bulk', fBulk, 'bg-orange-100 text-orange-800') : <span className="text-xs text-gray-300 italic">none</span>}
-                      </div>
+                      {fBulk > 0 ? yieldChip('4L Bulk', fBulk, 'bg-orange-100 text-orange-800') : <span className="text-xs text-gray-300 italic">none</span>}
                     </div>
 
                     {/* Kitchen row — only shown if there's stock */}
                     {item.qty_kitchen > 0 && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                         <span className="text-xs font-bold text-blue-600 w-14 shrink-0">Kitchen</span>
                         <span className="text-xs text-gray-400">{formatNumber(item.qty_kitchen)} batch{item.qty_kitchen !== 1 ? 'es' : ''} = {formatNumber(kL)}L →</span>
-                        <div className="flex flex-wrap gap-1">
-                          {kBulk > 0 && yieldChip('4L Bulk', kBulk, 'bg-sky-100 text-sky-800')}
-                        </div>
+                        {kBulk > 0 && yieldChip('4L Bulk', kBulk, 'bg-sky-100 text-sky-800')}
                       </div>
                     )}
                   </div>
