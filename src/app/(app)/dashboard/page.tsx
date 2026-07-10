@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
-import { AlertTriangle, Package, Beaker, Box } from 'lucide-react';
+import { AlertTriangle, Package, Beaker, Box, FlaskConical, Users } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
 import type { AppRole } from '@/lib/roles';
@@ -184,6 +184,29 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
+
+      {role === 'super_admin' && (
+        <section>
+          <h2 className="text-lg font-bold text-gray-700 mb-3">Admin</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <Link href="/admin/flavours"
+              className="card hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center">
+              <FlaskConical size={22} className="text-brand-600" />
+              <p className="text-xs font-bold text-gray-700 leading-tight">Manage Flavours</p>
+            </Link>
+            <Link href="/admin/rm-items"
+              className="card hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center">
+              <Package size={22} className="text-orange-500" />
+              <p className="text-xs font-bold text-gray-700 leading-tight">Manage Ingredients</p>
+            </Link>
+            <Link href="/admin/users"
+              className="card hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center">
+              <Users size={22} className="text-blue-500" />
+              <p className="text-xs font-bold text-gray-700 leading-tight">Manage Employees</p>
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
