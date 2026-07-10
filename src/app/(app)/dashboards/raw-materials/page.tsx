@@ -19,7 +19,7 @@ interface RmStock {
 
 const CAT_PAGE_SIZE = 8;
 const ALERT_PAGE_SIZE = 8;
-const STATUS_ORDER: Record<string, number> = { critical: 0, low: 1 };
+const STATUS_ORDER: Record<string, number> = { critical: 2, low: 1 };
 
 function statusColor(status: string | null) {
   if (status === 'critical') return 'bg-red-100 text-red-700';
