@@ -91,7 +91,7 @@ export default function RmItemsPage() {
         unit: finalUnit,
         category_id: catId,
         is_stockable: true,
-        reorder_level: reorderPoint ? parseFloat(reorderPoint) : 0,
+        reorder_level: 0,
         status: 'active',
       });
       if (error) throw new Error(error.message);
