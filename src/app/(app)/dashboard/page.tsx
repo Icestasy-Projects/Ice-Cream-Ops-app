@@ -171,15 +171,12 @@ export default function DashboardPage() {
 
       <section>
         <h2 className="text-lg font-bold text-gray-700 mb-3">Operations</h2>
-        <div className="space-y-3">
+        <div className="grid grid-cols-3 gap-3">
           {actions.map(a => (
             <Link key={a.href} href={a.href}
-              className={`flex items-center gap-4 p-4 rounded-2xl border ${a.color} hover:shadow-sm transition-all touch-manipulation`}>
-              <span className="text-3xl">{a.icon}</span>
-              <div>
-                <p className="font-bold text-gray-900 text-base">{a.label}</p>
-                <p className="text-gray-500 text-sm">{a.desc}</p>
-              </div>
+              className={`card border ${a.color} hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center`}>
+              <span className="text-2xl">{a.icon}</span>
+              <p className="text-xs font-bold text-gray-700 leading-tight">{a.label}</p>
             </Link>
           ))}
         </div>
