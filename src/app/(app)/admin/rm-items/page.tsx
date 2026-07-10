@@ -41,7 +41,7 @@ export default function RmItemsPage() {
   const load = useCallback(async () => {
     const [itemsRes, catsRes] = await Promise.all([
       supabase.schema('production').from('rm_items')
-        .select('id, name, unit, category_id, is_stockable, reorder_point, par_qty')
+        .select('id, name, unit, category_id, is_stockable, reorder_level, status')
         .order('name'),
       supabase.schema('production').from('rm_categories').select('id, name').order('name'),
     ]);
@@ -56,8 +56,8 @@ export default function RmItemsPage() {
       category_id: r.category_id as number | null,
       category_name: catMap.get(r.category_id as number) || 'Uncategorised',
       is_stockable: r.is_stockable as boolean,
-      reorder_point: r.reorder_point as number | null,
-      par_qty: r.par_qty as number | null,
+      reorder_point: r.reorder_level as number | null,
+      par_qty: null,
       expanded: false,
     })));
     setLoading(false);
@@ -93,8 +93,8 @@ export default function RmItemsPage() {
         unit: finalUnit,
         category_id: catId,
         is_stockable: true,
-        reorder_point: reorderPoint ? parseFloat(reorderPoint) : null,
-        par_qty: parQty ? parseFloat(parQty) : null,
+        reorder_level: reorderPoint ? parseFloat(reorderPoint) : 0,
+        status: 'active',
       });
       if (error) throw new Error(error.message);
 
