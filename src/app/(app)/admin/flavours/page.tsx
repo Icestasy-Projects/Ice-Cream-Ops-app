@@ -56,7 +56,7 @@ export default function FlavoursPage() {
     ]);
 
     const recipes = (recipeRes.data || []) as Record<string, unknown>[];
-    const recipeMap = new Map<number, { rm_item_id: number; name: string; unit: string; qty_per_unit: number }[]>();
+    const recipeMap = new Map<number, { rm_item_id: number; name: string; unit: string; qty_per_unit: number; purpose: string }[]>();
     for (const r of recipes) {
       const pid = r.prep_product_id as number;
       const item = r.item as Record<string, unknown> | null;
