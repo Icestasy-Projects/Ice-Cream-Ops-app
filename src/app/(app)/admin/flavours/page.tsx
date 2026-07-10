@@ -8,7 +8,7 @@ import { formatNumber } from '@/lib/utils';
 import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator, Pencil, Check, X } from 'lucide-react';
 
 interface RmItem { id: number; name: string; unit: string; }
-interface RecipeLine { rm_item_id: number; name: string; unit: string; qty_per_unit: string; }
+interface RecipeLine { rm_item_id: number; name: string; unit: string; qty_per_unit: string; purpose: 'mix' | 'topping'; }
 
 interface Flavour {
   id: number;
@@ -18,7 +18,7 @@ interface Flavour {
   expanded: boolean;
   editing: boolean;
   batches: string;
-  recipes: { rm_item_id: number; name: string; unit: string; qty_per_unit: number }[];
+  recipes: { rm_item_id: number; name: string; unit: string; qty_per_unit: number; purpose: string }[];
   // edit state (only populated when editing=true)
   editName: string;
   editYield: string;
@@ -52,11 +52,11 @@ export default function FlavoursPage() {
         .select('id, name, batch_yield_l, status')
         .order('name'),
       supabase.schema('production').from('prep_recipes')
-        .select('prep_product_id, rm_item_id, qty_per_unit, item:rm_item_id(name, unit)'),
+        .select('prep_product_id, rm_item_id, qty_per_unit, purpose, item:rm_item_id(name, unit)'),
     ]);
 
     const recipes = (recipeRes.data || []) as Record<string, unknown>[];
-    const recipeMap = new Map<number, { rm_item_id: number; name: string; unit: string; qty_per_unit: number }[]>();
+    const recipeMap = new Map<number, { rm_item_id: number; name: string; unit: string; qty_per_unit: number; purpose: string }[]>();
     for (const r of recipes) {
       const pid = r.prep_product_id as number;
       const item = r.item as Record<string, unknown> | null;
@@ -66,6 +66,7 @@ export default function FlavoursPage() {
         name: (item?.name as string) || '',
         unit: (item?.unit as string) || '',
         qty_per_unit: r.qty_per_unit as number,
+        purpose: (r.purpose as string) || 'mix',
       });
     }
 
@@ -112,7 +113,7 @@ export default function FlavoursPage() {
       editName: f.name,
       editYield: f.batch_yield_l?.toString() || '',
       editStatus: f.status,
-      editRecipes: f.recipes.map(r => ({ ...r, qty_per_unit: r.qty_per_unit.toString() })),
+      editRecipes: f.recipes.map(r => ({ ...r, qty_per_unit: r.qty_per_unit.toString(), purpose: (r.purpose || 'mix') as 'mix' | 'topping' })),
       editSearch: '',
       editShowDrop: false,
     } : f));
@@ -133,7 +134,7 @@ export default function FlavoursPage() {
   function addEditRmLine(id: number, item: RmItem) {
     setFlavours(prev => prev.map(f => f.id === id ? {
       ...f,
-      editRecipes: [...f.editRecipes, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '' }],
+      editRecipes: [...f.editRecipes, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '', purpose: 'mix' as const }],
       editSearch: '',
       editShowDrop: false,
     } : f));
@@ -143,6 +144,13 @@ export default function FlavoursPage() {
     setFlavours(prev => prev.map(f => f.id === id ? {
       ...f,
       editRecipes: f.editRecipes.map((l, i) => i === idx ? { ...l, qty_per_unit: val } : l),
+    } : f));
+  }
+
+  function updateEditRecipePurpose(id: number, idx: number, purpose: 'mix' | 'topping') {
+    setFlavours(prev => prev.map(f => f.id === id ? {
+      ...f,
+      editRecipes: f.editRecipes.map((l, i) => i === idx ? { ...l, purpose } : l),
     } : f));
   }
 
@@ -177,6 +185,7 @@ export default function FlavoursPage() {
             prep_product_id: f.id,
             rm_item_id: l.rm_item_id,
             qty_per_unit: parseFloat(l.qty_per_unit),
+            purpose: l.purpose,
           }))
         );
         if (recErr) throw new Error(recErr.message);
@@ -193,11 +202,14 @@ export default function FlavoursPage() {
 
   // Add new flavour handlers
   function addRmLine(item: RmItem) {
-    setRecipeLines(prev => [...prev, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '' }]);
+    setRecipeLines(prev => [...prev, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '', purpose: 'mix' as const }]);
     setRmSearch(''); setShowRmDrop(false);
   }
   function updateRecipeLine(idx: number, val: string) {
     setRecipeLines(prev => prev.map((l, i) => i === idx ? { ...l, qty_per_unit: val } : l));
+  }
+  function updateRecipePurpose(idx: number, purpose: 'mix' | 'topping') {
+    setRecipeLines(prev => prev.map((l, i) => i === idx ? { ...l, purpose } : l));
   }
   function removeRecipeLine(idx: number) {
     setRecipeLines(prev => prev.filter((_, i) => i !== idx));
@@ -225,6 +237,7 @@ export default function FlavoursPage() {
             prep_product_id: flavour.id,
             rm_item_id: l.rm_item_id,
             qty_per_unit: parseFloat(l.qty_per_unit),
+            purpose: l.purpose,
           })));
         if (recipeErr) throw new Error(recipeErr.message);
       }
@@ -302,17 +315,31 @@ export default function FlavoursPage() {
             {recipeLines.length > 0 && (
               <div className="mt-3 space-y-2">
                 {recipeLines.map((l, idx) => (
-                  <div key={l.rm_item_id} className="flex items-center gap-3 bg-orange-50 rounded-xl px-4 py-3">
-                    <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
-                    <div className="w-32">
-                      <input type="number" min="0" step="0.1" value={l.qty_per_unit}
-                        onChange={e => updateRecipeLine(idx, e.target.value)}
-                        placeholder={`qty (${l.unit})`} className="input-field text-sm py-2" />
+                  <div key={l.rm_item_id} className="bg-orange-50 rounded-xl px-4 py-3 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
+                      <div className="w-32">
+                        <input type="number" min="0" step="0.1" value={l.qty_per_unit}
+                          onChange={e => updateRecipeLine(idx, e.target.value)}
+                          placeholder={`qty (${l.unit})`} className="input-field text-sm py-2" />
+                      </div>
+                      <span className="text-xs text-gray-500 w-8">{l.unit}</span>
+                      <button onClick={() => removeRecipeLine(idx)} className="text-red-400 hover:text-red-600 touch-manipulation">
+                        <Trash2 size={16} />
+                      </button>
                     </div>
-                    <span className="text-xs text-gray-500 w-8">{l.unit}</span>
-                    <button onClick={() => removeRecipeLine(idx)} className="text-red-400 hover:text-red-600 touch-manipulation">
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-2">
+                      {(['mix', 'topping'] as const).map(p => (
+                        <button key={p} onClick={() => updateRecipePurpose(idx, p)}
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors touch-manipulation ${
+                            l.purpose === p
+                              ? p === 'mix' ? 'bg-blue-600 text-white border-blue-600' : 'bg-amber-500 text-white border-amber-500'
+                              : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                          }`}>
+                          {p === 'mix' ? '🥣 Mix' : '🍫 Topping'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -392,7 +419,12 @@ export default function FlavoursPage() {
                       <div className="space-y-1">
                         {f.recipes.map(r => (
                           <div key={r.rm_item_id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                            <span className="text-sm text-gray-700">{r.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-gray-700">{r.name}</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.purpose === 'topping' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {r.purpose === 'topping' ? 'Topping' : 'Mix'}
+                              </span>
+                            </div>
                             <span className="text-sm font-semibold text-gray-900">{formatNumber(r.qty_per_unit)} {r.unit}</span>
                           </div>
                         ))}
@@ -503,18 +535,32 @@ export default function FlavoursPage() {
                     {f.editRecipes.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {f.editRecipes.map((l, idx) => (
-                          <div key={l.rm_item_id} className="flex items-center gap-3 bg-orange-50 rounded-xl px-4 py-3">
-                            <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
-                            <div className="w-32">
-                              <input type="number" min="0" step="0.1" value={l.qty_per_unit}
-                                onChange={e => updateEditRecipeLine(f.id, idx, e.target.value)}
-                                placeholder={`qty (${l.unit})`} className="input-field text-sm py-2" />
+                          <div key={l.rm_item_id} className="bg-orange-50 rounded-xl px-4 py-3 space-y-2">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
+                              <div className="w-32">
+                                <input type="number" min="0" step="0.1" value={l.qty_per_unit}
+                                  onChange={e => updateEditRecipeLine(f.id, idx, e.target.value)}
+                                  placeholder={`qty (${l.unit})`} className="input-field text-sm py-2" />
+                              </div>
+                              <span className="text-xs text-gray-500 w-8">{l.unit}</span>
+                              <button onClick={() => removeEditRecipeLine(f.id, idx)}
+                                className="text-red-400 hover:text-red-600 touch-manipulation">
+                                <Trash2 size={16} />
+                              </button>
                             </div>
-                            <span className="text-xs text-gray-500 w-8">{l.unit}</span>
-                            <button onClick={() => removeEditRecipeLine(f.id, idx)}
-                              className="text-red-400 hover:text-red-600 touch-manipulation">
-                              <Trash2 size={16} />
-                            </button>
+                            <div className="flex gap-2">
+                              {(['mix', 'topping'] as const).map(p => (
+                                <button key={p} onClick={() => updateEditRecipePurpose(f.id, idx, p)}
+                                  className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors touch-manipulation ${
+                                    l.purpose === p
+                                      ? p === 'mix' ? 'bg-blue-600 text-white border-blue-600' : 'bg-amber-500 text-white border-amber-500'
+                                      : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
+                                  }`}>
+                                  {p === 'mix' ? '🥣 Mix' : '🍫 Topping'}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         ))}
                       </div>
