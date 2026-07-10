@@ -35,8 +35,6 @@ export default function RmItemsPage() {
   const [customUnit, setCustomUnit] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [newCatName, setNewCatName] = useState('');
-  const [reorderPoint, setReorderPoint] = useState('');
-  const [parQty, setParQty] = useState('');
 
   const load = useCallback(async () => {
     const [itemsRes, catsRes] = await Promise.all([
@@ -93,14 +91,14 @@ export default function RmItemsPage() {
         unit: finalUnit,
         category_id: catId,
         is_stockable: true,
-        reorder_level: reorderPoint ? parseFloat(reorderPoint) : 0,
+        reorder_level: 0,
         status: 'active',
       });
       if (error) throw new Error(error.message);
 
       toast.success(`${trimName} added!`);
       setName(''); setUnit('kg'); setCustomUnit(''); setCategoryId('');
-      setNewCatName(''); setReorderPoint(''); setParQty('');
+      setNewCatName('');
       setShowAdd(false);
       await load();
     } catch (e: unknown) {
@@ -119,8 +117,6 @@ export default function RmItemsPage() {
   const groupEntries = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
 
   if (loading) return <LoadingSpinner text="Loading ingredients..." />;
-
-  const finalUnit = unit === '__custom__' ? customUnit.trim() : unit;
 
   return (
     <div className="space-y-4">
@@ -187,30 +183,6 @@ export default function RmItemsPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label-text block mb-1">Reorder Point ({finalUnit || 'unit'})</label>
-              <input
-                type="number" min="0" step="0.1"
-                value={reorderPoint}
-                onChange={e => setReorderPoint(e.target.value)}
-                placeholder="Alert when stock falls below..."
-                className="input-field"
-              />
-              <p className="text-xs text-gray-400 mt-1">Stock alert triggers at this level</p>
-            </div>
-            <div>
-              <label className="label-text block mb-1">Par Qty ({finalUnit || 'unit'})</label>
-              <input
-                type="number" min="0" step="0.1"
-                value={parQty}
-                onChange={e => setParQty(e.target.value)}
-                placeholder="Ideal stock level..."
-                className="input-field"
-              />
-              <p className="text-xs text-gray-400 mt-1">Target stock to maintain</p>
-            </div>
-          </div>
 
           <button onClick={handleSave} disabled={saving} className="btn-primary">
             {saving ? 'Saving...' : '✓ Add Ingredient'}
