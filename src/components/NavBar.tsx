@@ -20,6 +20,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/dashboards/prep': BarChart3,
   '/dashboards/finished-goods': BarChart3,
   '/admin/flavours': FlaskConical,
+  '/admin/rm-items': Package,
   '/admin/users': Users,
 };
 
