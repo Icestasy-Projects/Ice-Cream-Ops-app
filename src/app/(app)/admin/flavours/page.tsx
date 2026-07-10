@@ -5,10 +5,9 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
-import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator, Pencil, Check, X } from 'lucide-react';
 
 interface RmItem { id: number; name: string; unit: string; }
-
 interface RecipeLine { rm_item_id: number; name: string; unit: string; qty_per_unit: string; }
 
 interface Flavour {
@@ -17,8 +16,16 @@ interface Flavour {
   batch_yield_l: number | null;
   status: string;
   expanded: boolean;
-  batches: string; // calculator input
+  editing: boolean;
+  batches: string;
   recipes: { rm_item_id: number; name: string; unit: string; qty_per_unit: number }[];
+  // edit state (only populated when editing=true)
+  editName: string;
+  editYield: string;
+  editStatus: string;
+  editRecipes: RecipeLine[];
+  editSearch: string;
+  editShowDrop: boolean;
 }
 
 export default function FlavoursPage() {
@@ -26,6 +33,7 @@ export default function FlavoursPage() {
   const [flavours, setFlavours] = useState<Flavour[]>([]);
   const [rmItems, setRmItems] = useState<RmItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Add form
   const [showAdd, setShowAdd] = useState(false);
@@ -34,11 +42,9 @@ export default function FlavoursPage() {
   const [recipeLines, setRecipeLines] = useState<RecipeLine[]>([]);
   const [rmSearch, setRmSearch] = useState('');
   const [showRmDrop, setShowRmDrop] = useState(false);
-  const [saving, setSaving] = useState(false);
 
-  const filteredRm = rmItems
-    .filter(r => r.name.toLowerCase().includes(rmSearch.toLowerCase()) && !recipeLines.some(l => l.rm_item_id === r.id))
-    .slice(0, 8);
+  const filteredRm = (search: string, excludeIds: number[]) =>
+    rmItems.filter(r => r.name.toLowerCase().includes(search.toLowerCase()) && !excludeIds.includes(r.id)).slice(0, 8);
 
   const loadFlavours = useCallback(async () => {
     const [flavRes, recipeRes] = await Promise.all([
@@ -67,10 +73,17 @@ export default function FlavoursPage() {
       id: f.id as number,
       name: f.name as string,
       batch_yield_l: f.batch_yield_l as number | null,
-      status: f.status as string,
+      status: (f.status as string) || 'active',
       expanded: false,
+      editing: false,
       batches: '1',
       recipes: recipeMap.get(f.id as number) || [],
+      editName: '',
+      editYield: '',
+      editStatus: 'active',
+      editRecipes: [],
+      editSearch: '',
+      editShowDrop: false,
     })));
     setLoading(false);
   }, [supabase]);
@@ -88,23 +101,104 @@ export default function FlavoursPage() {
   }, [supabase, loadFlavours]);
 
   function toggleFlavour(id: number) {
-    setFlavours(prev => prev.map(f => f.id === id ? { ...f, expanded: !f.expanded } : f));
+    setFlavours(prev => prev.map(f => f.id === id ? { ...f, expanded: !f.expanded, editing: false } : f));
+  }
+
+  function startEdit(id: number) {
+    setFlavours(prev => prev.map(f => f.id === id ? {
+      ...f,
+      editing: true,
+      expanded: true,
+      editName: f.name,
+      editYield: f.batch_yield_l?.toString() || '',
+      editStatus: f.status,
+      editRecipes: f.recipes.map(r => ({ ...r, qty_per_unit: r.qty_per_unit.toString() })),
+      editSearch: '',
+      editShowDrop: false,
+    } : f));
+  }
+
+  function cancelEdit(id: number) {
+    setFlavours(prev => prev.map(f => f.id === id ? { ...f, editing: false } : f));
+  }
+
+  function setEditField(id: number, field: Partial<Flavour>) {
+    setFlavours(prev => prev.map(f => f.id === id ? { ...f, ...field } : f));
   }
 
   function setBatches(id: number, val: string) {
     setFlavours(prev => prev.map(f => f.id === id ? { ...f, batches: val } : f));
   }
 
-  function addRmLine(item: RmItem) {
-    setRecipeLines(prev => [...prev, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '' }]);
-    setRmSearch('');
-    setShowRmDrop(false);
+  function addEditRmLine(id: number, item: RmItem) {
+    setFlavours(prev => prev.map(f => f.id === id ? {
+      ...f,
+      editRecipes: [...f.editRecipes, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '' }],
+      editSearch: '',
+      editShowDrop: false,
+    } : f));
   }
 
+  function updateEditRecipeLine(id: number, idx: number, val: string) {
+    setFlavours(prev => prev.map(f => f.id === id ? {
+      ...f,
+      editRecipes: f.editRecipes.map((l, i) => i === idx ? { ...l, qty_per_unit: val } : l),
+    } : f));
+  }
+
+  function removeEditRecipeLine(id: number, idx: number) {
+    setFlavours(prev => prev.map(f => f.id === id ? {
+      ...f,
+      editRecipes: f.editRecipes.filter((_, i) => i !== idx),
+    } : f));
+  }
+
+  async function handleSaveEdit(f: Flavour) {
+    if (!f.editName.trim()) { toast.error('Enter a flavour name.'); return; }
+    if (!f.editYield || parseFloat(f.editYield) <= 0) { toast.error('Enter batch yield.'); return; }
+    for (const l of f.editRecipes) {
+      if (!l.qty_per_unit || parseFloat(l.qty_per_unit) <= 0) {
+        toast.error(`Enter quantity for ${l.name}.`); return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const { error: updErr } = await supabase.schema('production').from('prep_products')
+        .update({ name: f.editName.trim(), batch_yield_l: parseFloat(f.editYield), status: f.editStatus })
+        .eq('id', f.id);
+      if (updErr) throw new Error(updErr.message);
+
+      // Replace all recipe lines
+      await supabase.schema('production').from('prep_recipes').delete().eq('prep_product_id', f.id);
+      if (f.editRecipes.length > 0) {
+        const { error: recErr } = await supabase.schema('production').from('prep_recipes').insert(
+          f.editRecipes.map(l => ({
+            prep_product_id: f.id,
+            rm_item_id: l.rm_item_id,
+            qty_per_unit: parseFloat(l.qty_per_unit),
+          }))
+        );
+        if (recErr) throw new Error(recErr.message);
+      }
+
+      toast.success('Flavour updated!');
+      await loadFlavours();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Add new flavour handlers
+  function addRmLine(item: RmItem) {
+    setRecipeLines(prev => [...prev, { rm_item_id: item.id, name: item.name, unit: item.unit, qty_per_unit: '' }]);
+    setRmSearch(''); setShowRmDrop(false);
+  }
   function updateRecipeLine(idx: number, val: string) {
     setRecipeLines(prev => prev.map((l, i) => i === idx ? { ...l, qty_per_unit: val } : l));
   }
-
   function removeRecipeLine(idx: number) {
     setRecipeLines(prev => prev.filter((_, i) => i !== idx));
   }
@@ -114,8 +208,7 @@ export default function FlavoursPage() {
     if (!newYield || parseFloat(newYield) <= 0) { toast.error('Enter batch yield in litres.'); return; }
     for (const l of recipeLines) {
       if (!l.qty_per_unit || parseFloat(l.qty_per_unit) <= 0) {
-        toast.error(`Enter quantity for ${l.name}.`);
-        return;
+        toast.error(`Enter quantity for ${l.name}.`); return;
       }
     }
 
@@ -124,7 +217,6 @@ export default function FlavoursPage() {
       const { data: flavour, error: flavErr } = await supabase.schema('production').from('prep_products')
         .insert({ name: newName.trim(), batch_yield_l: parseFloat(newYield), unit: 'L', status: 'active' })
         .select('id').single();
-
       if (flavErr || !flavour) throw new Error(flavErr?.message || 'Failed to create flavour');
 
       if (recipeLines.length > 0) {
@@ -138,10 +230,7 @@ export default function FlavoursPage() {
       }
 
       toast.success(`${newName} added!`);
-      setNewName('');
-      setNewYield('');
-      setRecipeLines([]);
-      setShowAdd(false);
+      setNewName(''); setNewYield(''); setRecipeLines([]); setShowAdd(false);
       await loadFlavours();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : String(e));
@@ -152,64 +241,44 @@ export default function FlavoursPage() {
 
   if (loading) return <LoadingSpinner text="Loading flavours..." />;
 
+  const addExcludeIds = recipeLines.map(l => l.rm_item_id);
+
   return (
     <div className="space-y-4">
       <ScreenHeader
         icon="🍨"
         title="Flavour Management"
-        description="Add flavours, define their RM recipe per batch, and set the batch yield."
+        description="Add and edit flavours, define RM recipe per batch, and toggle active status."
       />
 
-      {/* Add flavour button */}
-      <button
-        onClick={() => setShowAdd(s => !s)}
-        className="btn-primary flex items-center gap-2"
-      >
+      <button onClick={() => setShowAdd(s => !s)} className="btn-primary flex items-center gap-2">
         <Plus size={18} />
         {showAdd ? 'Cancel' : 'Add New Flavour'}
       </button>
 
-      {/* Add flavour form */}
       {showAdd && (
         <div className="card space-y-5">
           <h2 className="section-title">New Flavour</h2>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label-text block mb-1">Flavour Name</label>
-              <input
-                type="text"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                placeholder="e.g. Mango"
-                className="input-field"
-              />
+              <input type="text" value={newName} onChange={e => setNewName(e.target.value)}
+                placeholder="e.g. Mango" className="input-field" />
             </div>
             <div>
               <label className="label-text block mb-1">Batch Yield (Litres)</label>
-              <input
-                type="number" min="0" step="0.5"
-                value={newYield}
-                onChange={e => setNewYield(e.target.value)}
-                placeholder="e.g. 20"
-                className="input-field"
-              />
+              <input type="number" min="0" step="0.5" value={newYield} onChange={e => setNewYield(e.target.value)}
+                placeholder="e.g. 20" className="input-field" />
               {newYield && parseFloat(newYield) > 0 && (
-                <p className="text-xs text-green-700 mt-1">
-                  = {Math.floor(parseFloat(newYield) / 4)} × 4L bulk tubs per batch
-                </p>
+                <p className="text-xs text-green-700 mt-1">= {Math.floor(parseFloat(newYield) / 4)} × 4L bulk tubs per batch</p>
               )}
             </div>
           </div>
 
-          {/* Recipe lines */}
           <div>
             <label className="label-text block mb-2">Raw Materials per Batch</label>
             <div className="relative">
-              <input
-                type="text"
-                placeholder="Search RM ingredient..."
-                className="input-field"
+              <input type="text" placeholder="Search RM ingredient..." className="input-field"
                 value={rmSearch}
                 onChange={e => { setRmSearch(e.target.value); setShowRmDrop(true); }}
                 onFocus={() => setShowRmDrop(true)}
@@ -217,14 +286,11 @@ export default function FlavoursPage() {
               />
               {showRmDrop && rmSearch && (
                 <div className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 mt-1 z-20 overflow-hidden">
-                  {filteredRm.length === 0
-                    ? <p className="p-4 text-sm text-gray-400">No results — add the ingredient first in Admin → Manage Ingredients</p>
-                    : filteredRm.map(i => (
-                      <button
-                        key={i.id}
-                        className="flex items-center justify-between w-full px-4 py-3 hover:bg-orange-50 text-left touch-manipulation border-b border-gray-50 last:border-0"
-                        onMouseDown={() => addRmLine(i)}
-                      >
+                  {filteredRm(rmSearch, addExcludeIds).length === 0
+                    ? <p className="p-4 text-sm text-gray-400">No results — add the ingredient first in Manage Ingredients</p>
+                    : filteredRm(rmSearch, addExcludeIds).map(i => (
+                      <button key={i.id} className="flex items-center justify-between w-full px-4 py-3 hover:bg-orange-50 text-left touch-manipulation border-b border-gray-50 last:border-0"
+                        onMouseDown={() => addRmLine(i)}>
                         <span className="font-medium text-gray-900 text-sm">{i.name}</span>
                         <span className="text-gray-400 text-xs">{i.unit}</span>
                       </button>
@@ -233,22 +299,15 @@ export default function FlavoursPage() {
                 </div>
               )}
             </div>
-
             {recipeLines.length > 0 && (
               <div className="mt-3 space-y-2">
                 {recipeLines.map((l, idx) => (
                   <div key={l.rm_item_id} className="flex items-center gap-3 bg-orange-50 rounded-xl px-4 py-3">
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-900">{l.name}</p>
-                    </div>
+                    <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
                     <div className="w-32">
-                      <input
-                        type="number" min="0" step="0.1"
-                        value={l.qty_per_unit}
+                      <input type="number" min="0" step="0.1" value={l.qty_per_unit}
                         onChange={e => updateRecipeLine(idx, e.target.value)}
-                        placeholder={`qty (${l.unit})`}
-                        className="input-field text-sm py-2"
-                      />
+                        placeholder={`qty (${l.unit})`} className="input-field text-sm py-2" />
                     </div>
                     <span className="text-xs text-gray-500 w-8">{l.unit}</span>
                     <button onClick={() => removeRecipeLine(idx)} className="text-red-400 hover:text-red-600 touch-manipulation">
@@ -258,19 +317,12 @@ export default function FlavoursPage() {
                 ))}
               </div>
             )}
-
-            {/* Live preview for new flavour */}
             {recipeLines.length > 0 && newYield && parseFloat(newYield) > 0 && (
-              <div className="mt-4 bg-brand-50 border border-brand-200 rounded-2xl px-4 py-3 space-y-1">
-                <p className="text-xs font-bold text-brand-600 uppercase tracking-wide">Per Batch Preview</p>
-                <p className="text-sm text-gray-700">
-                  Yield: <strong>{newYield}L</strong> → <strong>{Math.floor(parseFloat(newYield) / 4)} × 4L tubs</strong>
-                </p>
-                <p className="text-xs font-semibold text-gray-500 mt-1">RM needed per batch:</p>
+              <div className="mt-4 bg-orange-50 border border-orange-100 rounded-2xl px-4 py-3 space-y-1">
+                <p className="text-xs font-bold text-orange-600 uppercase tracking-wide">Per Batch Preview</p>
+                <p className="text-sm text-gray-700">Yield: <strong>{newYield}L</strong> → <strong>{Math.floor(parseFloat(newYield) / 4)} × 4L tubs</strong></p>
                 {recipeLines.map(l => l.qty_per_unit && parseFloat(l.qty_per_unit) > 0 ? (
-                  <p key={l.rm_item_id} className="text-xs text-gray-700 ml-2">
-                    • {l.name}: <strong>{l.qty_per_unit} {l.unit}</strong>
-                  </p>
+                  <p key={l.rm_item_id} className="text-xs text-gray-700 ml-2">• {l.name}: <strong>{l.qty_per_unit} {l.unit}</strong></p>
                 ) : null)}
               </div>
             )}
@@ -282,7 +334,6 @@ export default function FlavoursPage() {
         </div>
       )}
 
-      {/* Existing flavours */}
       <div className="space-y-2">
         {flavours.length === 0 ? (
           <div className="card text-center py-10 text-gray-400">
@@ -295,34 +346,46 @@ export default function FlavoursPage() {
           const tubsPerBatch = f.batch_yield_l ? Math.floor(f.batch_yield_l / 4) : 0;
           const totalTubs = Math.floor(batchCount * (f.batch_yield_l || 0) / 4);
           const totalLitres = batchCount * (f.batch_yield_l || 0);
+          const editExcludeIds = f.editRecipes.map(l => l.rm_item_id);
 
           return (
             <div key={f.id} className="card p-0 overflow-hidden">
-              <button
-                onClick={() => toggleFlavour(f.id)}
-                className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left touch-manipulation hover:bg-orange-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                    <FlaskConical size={18} className="text-brand-600" />
+              {/* Header row */}
+              <div className="w-full px-5 py-4 flex items-center justify-between gap-3">
+                <button onClick={() => toggleFlavour(f.id)} className="flex items-center gap-3 flex-1 text-left touch-manipulation">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${f.status === 'active' ? 'bg-brand-50' : 'bg-gray-100'}`}>
+                    <FlaskConical size={18} className={f.status === 'active' ? 'text-brand-600' : 'text-gray-400'} />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-900">{f.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-gray-900">{f.name}</p>
+                      {f.status !== 'active' && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inactive</span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {f.batch_yield_l ? `${formatNumber(f.batch_yield_l)}L per batch · ${tubsPerBatch} × 4L tubs` : 'No yield set'}
                       {' · '}{f.recipes.length} RM item{f.recipes.length !== 1 ? 's' : ''}
                     </p>
                   </div>
+                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  {!f.editing && (
+                    <button onClick={() => startEdit(f.id)}
+                      className="p-2 rounded-xl text-gray-400 hover:text-orange-600 hover:bg-orange-50 touch-manipulation">
+                      <Pencil size={15} />
+                    </button>
+                  )}
+                  <button onClick={() => toggleFlavour(f.id)} className="p-1 touch-manipulation">
+                    {f.expanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+                  </button>
                 </div>
-                {f.expanded ? <ChevronUp size={18} className="text-gray-400 shrink-0" /> : <ChevronDown size={18} className="text-gray-400 shrink-0" />}
-              </button>
+              </div>
 
-              {f.expanded && (
+              {f.expanded && !f.editing && (
                 <div className="border-t border-gray-100 px-5 pb-5 pt-4 space-y-4">
-
-                  {/* Recipe per batch */}
                   {f.recipes.length === 0 ? (
-                    <p className="text-sm text-gray-400">No recipe defined yet.</p>
+                    <p className="text-sm text-gray-400">No recipe defined yet. Click ✏️ to add ingredients.</p>
                   ) : (
                     <div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recipe per batch</p>
@@ -337,7 +400,6 @@ export default function FlavoursPage() {
                     </div>
                   )}
 
-                  {/* Batch Calculator */}
                   {f.recipes.length > 0 && f.batch_yield_l && (
                     <div className="bg-orange-50 rounded-2xl p-4 space-y-3">
                       <div className="flex items-center gap-2">
@@ -346,37 +408,25 @@ export default function FlavoursPage() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold text-gray-600 block mb-1">How many batches to make?</label>
-                        <input
-                          type="number" min="1" step="1"
-                          value={f.batches}
+                        <input type="number" min="1" step="1" value={f.batches}
                           onChange={e => setBatches(f.id, e.target.value)}
-                          className="input-field text-sm py-2 bg-white"
-                          placeholder="e.g. 5"
-                        />
+                          className="input-field text-sm py-2 bg-white" placeholder="e.g. 5" />
                       </div>
-
                       {batchCount > 0 && (
                         <>
-                          {/* Output */}
                           <div className="bg-white rounded-xl px-4 py-3 space-y-1">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Output</p>
                             <p className="text-sm text-gray-700">
                               {formatNumber(batchCount)} batch{batchCount !== 1 ? 'es' : ''} × {f.batch_yield_l}L = <strong>{formatNumber(totalLitres)}L</strong>
                             </p>
-                            <p className="text-base font-bold text-brand-700">
-                              → {totalTubs} × 4L bulk tubs
-                            </p>
+                            <p className="text-base font-bold text-brand-700">→ {totalTubs} × 4L bulk tubs</p>
                           </div>
-
-                          {/* RM needed */}
                           <div className="bg-white rounded-xl px-4 py-3 space-y-1">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">RM Required</p>
                             {f.recipes.map(r => (
                               <div key={r.rm_item_id} className="flex items-center justify-between py-1 border-b border-gray-50 last:border-0">
                                 <span className="text-sm text-gray-700">{r.name}</span>
-                                <span className="text-sm font-bold text-gray-900">
-                                  {formatNumber(r.qty_per_unit * batchCount)} {r.unit}
-                                </span>
+                                <span className="text-sm font-bold text-gray-900">{formatNumber(r.qty_per_unit * batchCount)} {r.unit}</span>
                               </div>
                             ))}
                           </div>
@@ -384,6 +434,105 @@ export default function FlavoursPage() {
                       )}
                     </div>
                   )}
+                </div>
+              )}
+
+              {f.expanded && f.editing && (
+                <div className="border-t border-gray-100 px-5 pb-5 pt-4 space-y-4">
+                  <p className="text-xs font-bold text-brand-600 uppercase tracking-wide">Edit Flavour</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="label-text block mb-1">Flavour Name</label>
+                      <input type="text" value={f.editName}
+                        onChange={e => setEditField(f.id, { editName: e.target.value })}
+                        className="input-field" />
+                    </div>
+                    <div>
+                      <label className="label-text block mb-1">Batch Yield (Litres)</label>
+                      <input type="number" min="0" step="0.5" value={f.editYield}
+                        onChange={e => setEditField(f.id, { editYield: e.target.value })}
+                        className="input-field" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="label-text block mb-1">Status</label>
+                    <div className="flex gap-3">
+                      {['active', 'inactive'].map(s => (
+                        <button key={s}
+                          onClick={() => setEditField(f.id, { editStatus: s })}
+                          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors touch-manipulation ${
+                            f.editStatus === s
+                              ? s === 'active' ? 'bg-green-600 text-white border-green-600' : 'bg-gray-600 text-white border-gray-600'
+                              : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                          }`}>
+                          {s === 'active' ? '✓ Active' : '✗ Inactive'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="label-text block mb-2">Raw Materials per Batch</label>
+                    <div className="relative">
+                      <input type="text" placeholder="Search RM ingredient..."
+                        className="input-field"
+                        value={f.editSearch}
+                        onChange={e => setEditField(f.id, { editSearch: e.target.value, editShowDrop: true })}
+                        onFocus={() => setEditField(f.id, { editShowDrop: true })}
+                        onBlur={() => setTimeout(() => setEditField(f.id, { editShowDrop: false }), 150)}
+                      />
+                      {f.editShowDrop && f.editSearch && (
+                        <div className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 mt-1 z-20 overflow-hidden">
+                          {filteredRm(f.editSearch, editExcludeIds).length === 0
+                            ? <p className="p-4 text-sm text-gray-400">No results</p>
+                            : filteredRm(f.editSearch, editExcludeIds).map(i => (
+                              <button key={i.id}
+                                className="flex items-center justify-between w-full px-4 py-3 hover:bg-orange-50 text-left touch-manipulation border-b border-gray-50 last:border-0"
+                                onMouseDown={() => addEditRmLine(f.id, i)}>
+                                <span className="font-medium text-gray-900 text-sm">{i.name}</span>
+                                <span className="text-gray-400 text-xs">{i.unit}</span>
+                              </button>
+                            ))
+                          }
+                        </div>
+                      )}
+                    </div>
+
+                    {f.editRecipes.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {f.editRecipes.map((l, idx) => (
+                          <div key={l.rm_item_id} className="flex items-center gap-3 bg-orange-50 rounded-xl px-4 py-3">
+                            <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
+                            <div className="w-32">
+                              <input type="number" min="0" step="0.1" value={l.qty_per_unit}
+                                onChange={e => updateEditRecipeLine(f.id, idx, e.target.value)}
+                                placeholder={`qty (${l.unit})`} className="input-field text-sm py-2" />
+                            </div>
+                            <span className="text-xs text-gray-500 w-8">{l.unit}</span>
+                            <button onClick={() => removeEditRecipeLine(f.id, idx)}
+                              className="text-red-400 hover:text-red-600 touch-manipulation">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button onClick={() => handleSaveEdit(f)} disabled={saving}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-green-600 text-white font-semibold text-sm hover:bg-green-700 touch-manipulation disabled:opacity-60">
+                      <Check size={16} />
+                      {saving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    <button onClick={() => cancelEdit(f.id)}
+                      className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 touch-manipulation">
+                      <X size={16} />
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
