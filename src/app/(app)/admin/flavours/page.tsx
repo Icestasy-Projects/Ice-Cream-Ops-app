@@ -43,8 +43,16 @@ export default function FlavoursPage() {
   const [rmSearch, setRmSearch] = useState('');
   const [showRmDrop, setShowRmDrop] = useState(false);
 
-  const filteredRm = (search: string, excludeIds: number[]) =>
-    rmItems.filter(r => r.name.toLowerCase().includes(search.toLowerCase()) && !excludeIds.includes(r.id)).slice(0, 8);
+  // Exclude an item only if it already exists with BOTH purposes
+  const filteredRm = (search: string, lines: RecipeLine[]) => {
+    const bothUsed = new Set(
+      rmItems
+        .filter(r => lines.some(l => l.rm_item_id === r.id && l.purpose === 'mix') &&
+                     lines.some(l => l.rm_item_id === r.id && l.purpose === 'topping'))
+        .map(r => r.id)
+    );
+    return rmItems.filter(r => r.name.toLowerCase().includes(search.toLowerCase()) && !bothUsed.has(r.id)).slice(0, 8);
+  };
 
   const loadFlavours = useCallback(async () => {
     const [flavRes, recipeRes] = await Promise.all([
@@ -254,7 +262,6 @@ export default function FlavoursPage() {
 
   if (loading) return <LoadingSpinner text="Loading flavours..." />;
 
-  const addExcludeIds = recipeLines.map(l => l.rm_item_id);
 
   return (
     <div className="space-y-4">
@@ -299,9 +306,9 @@ export default function FlavoursPage() {
               />
               {showRmDrop && rmSearch && (
                 <div className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 mt-1 z-20 overflow-hidden">
-                  {filteredRm(rmSearch, addExcludeIds).length === 0
+                  {filteredRm(rmSearch, recipeLines).length === 0
                     ? <p className="p-4 text-sm text-gray-400">No results — add the ingredient first in Manage Ingredients</p>
-                    : filteredRm(rmSearch, addExcludeIds).map(i => (
+                    : filteredRm(rmSearch, recipeLines).map(i => (
                       <button key={i.id} className="flex items-center justify-between w-full px-4 py-3 hover:bg-orange-50 text-left touch-manipulation border-b border-gray-50 last:border-0"
                         onMouseDown={() => addRmLine(i)}>
                         <span className="font-medium text-gray-900 text-sm">{i.name}</span>
@@ -315,7 +322,7 @@ export default function FlavoursPage() {
             {recipeLines.length > 0 && (
               <div className="mt-3 space-y-2">
                 {recipeLines.map((l, idx) => (
-                  <div key={l.rm_item_id} className="bg-orange-50 rounded-xl px-4 py-3 space-y-2">
+                  <div key={`${l.rm_item_id}-${l.purpose}`} className="bg-orange-50 rounded-xl px-4 py-3 space-y-2">
                     <div className="flex items-center gap-3">
                       <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
                       <div className="w-32">
@@ -373,8 +380,6 @@ export default function FlavoursPage() {
           const tubsPerBatch = f.batch_yield_l ? Math.floor(f.batch_yield_l / 4) : 0;
           const totalTubs = Math.floor(batchCount * (f.batch_yield_l || 0) / 4);
           const totalLitres = batchCount * (f.batch_yield_l || 0);
-          const editExcludeIds = f.editRecipes.map(l => l.rm_item_id);
-
           return (
             <div key={f.id} className="card p-0 overflow-hidden">
               {/* Header row */}
@@ -417,8 +422,8 @@ export default function FlavoursPage() {
                     <div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recipe per batch</p>
                       <div className="space-y-1">
-                        {f.recipes.map(r => (
-                          <div key={r.rm_item_id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                        {f.recipes.map((r, i) => (
+                          <div key={`${r.rm_item_id}-${r.purpose}-${i}`} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-gray-700">{r.name}</span>
                               <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${r.purpose === 'topping' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
@@ -455,8 +460,8 @@ export default function FlavoursPage() {
                           </div>
                           <div className="bg-white rounded-xl px-4 py-3 space-y-1">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">RM Required</p>
-                            {f.recipes.map(r => (
-                              <div key={r.rm_item_id} className="flex items-center justify-between py-1 border-b border-gray-50 last:border-0">
+                            {f.recipes.map((r, i) => (
+                              <div key={`${r.rm_item_id}-${r.purpose}-${i}`} className="flex items-center justify-between py-1 border-b border-gray-50 last:border-0">
                                 <span className="text-sm text-gray-700">{r.name}</span>
                                 <span className="text-sm font-bold text-gray-900">{formatNumber(r.qty_per_unit * batchCount)} {r.unit}</span>
                               </div>
@@ -517,9 +522,9 @@ export default function FlavoursPage() {
                       />
                       {f.editShowDrop && f.editSearch && (
                         <div className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 mt-1 z-20 overflow-hidden">
-                          {filteredRm(f.editSearch, editExcludeIds).length === 0
+                          {filteredRm(f.editSearch, f.editRecipes).length === 0
                             ? <p className="p-4 text-sm text-gray-400">No results</p>
-                            : filteredRm(f.editSearch, editExcludeIds).map(i => (
+                            : filteredRm(f.editSearch, f.editRecipes).map(i => (
                               <button key={i.id}
                                 className="flex items-center justify-between w-full px-4 py-3 hover:bg-orange-50 text-left touch-manipulation border-b border-gray-50 last:border-0"
                                 onMouseDown={() => addEditRmLine(f.id, i)}>
@@ -535,7 +540,7 @@ export default function FlavoursPage() {
                     {f.editRecipes.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {f.editRecipes.map((l, idx) => (
-                          <div key={l.rm_item_id} className="bg-orange-50 rounded-xl px-4 py-3 space-y-2">
+                          <div key={`${l.rm_item_id}-${l.purpose}-${idx}`} className="bg-orange-50 rounded-xl px-4 py-3 space-y-2">
                             <div className="flex items-center gap-3">
                               <div className="flex-1"><p className="text-sm font-semibold text-gray-900">{l.name}</p></div>
                               <div className="w-32">
