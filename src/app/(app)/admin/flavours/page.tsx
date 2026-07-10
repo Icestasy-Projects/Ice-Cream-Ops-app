@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
-import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator } from 'lucide-react';
 
 interface RmItem { id: number; name: string; unit: string; }
 
@@ -17,6 +17,7 @@ interface Flavour {
   batch_yield_l: number | null;
   status: string;
   expanded: boolean;
+  batches: string; // calculator input
   recipes: { rm_item_id: number; name: string; unit: string; qty_per_unit: number }[];
 }
 
@@ -68,6 +69,7 @@ export default function FlavoursPage() {
       batch_yield_l: f.batch_yield_l as number | null,
       status: f.status as string,
       expanded: false,
+      batches: '1',
       recipes: recipeMap.get(f.id as number) || [],
     })));
     setLoading(false);
@@ -87,6 +89,10 @@ export default function FlavoursPage() {
 
   function toggleFlavour(id: number) {
     setFlavours(prev => prev.map(f => f.id === id ? { ...f, expanded: !f.expanded } : f));
+  }
+
+  function setBatches(id: number, val: string) {
+    setFlavours(prev => prev.map(f => f.id === id ? { ...f, batches: val } : f));
   }
 
   function addRmLine(item: RmItem) {
@@ -212,7 +218,7 @@ export default function FlavoursPage() {
               {showRmDrop && rmSearch && (
                 <div className="absolute top-full left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 mt-1 z-20 overflow-hidden">
                   {filteredRm.length === 0
-                    ? <p className="p-4 text-sm text-gray-400">No results</p>
+                    ? <p className="p-4 text-sm text-gray-400">No results — add the ingredient first in Admin → Manage Ingredients</p>
                     : filteredRm.map(i => (
                       <button
                         key={i.id}
@@ -252,6 +258,22 @@ export default function FlavoursPage() {
                 ))}
               </div>
             )}
+
+            {/* Live preview for new flavour */}
+            {recipeLines.length > 0 && newYield && parseFloat(newYield) > 0 && (
+              <div className="mt-4 bg-brand-50 border border-brand-200 rounded-2xl px-4 py-3 space-y-1">
+                <p className="text-xs font-bold text-brand-600 uppercase tracking-wide">Per Batch Preview</p>
+                <p className="text-sm text-gray-700">
+                  Yield: <strong>{newYield}L</strong> → <strong>{Math.floor(parseFloat(newYield) / 4)} × 4L tubs</strong>
+                </p>
+                <p className="text-xs font-semibold text-gray-500 mt-1">RM needed per batch:</p>
+                {recipeLines.map(l => l.qty_per_unit && parseFloat(l.qty_per_unit) > 0 ? (
+                  <p key={l.rm_item_id} className="text-xs text-gray-700 ml-2">
+                    • {l.name}: <strong>{l.qty_per_unit} {l.unit}</strong>
+                  </p>
+                ) : null)}
+              </div>
+            )}
           </div>
 
           <button onClick={handleSaveFlavour} disabled={saving} className="btn-primary">
@@ -268,46 +290,105 @@ export default function FlavoursPage() {
             <p className="font-semibold text-gray-600">No flavours yet</p>
             <p className="text-sm mt-1">Add your first flavour above.</p>
           </div>
-        ) : flavours.map(f => (
-          <div key={f.id} className="card p-0 overflow-hidden">
-            <button
-              onClick={() => toggleFlavour(f.id)}
-              className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left touch-manipulation hover:bg-orange-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-                  <FlaskConical size={18} className="text-brand-600" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900">{f.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {f.batch_yield_l ? `${formatNumber(f.batch_yield_l)}L per batch · ${Math.floor(f.batch_yield_l / 4)} × 4L tubs` : 'No yield set'}
-                    {' · '}{f.recipes.length} RM item{f.recipes.length !== 1 ? 's' : ''}
-                  </p>
-                </div>
-              </div>
-              {f.expanded ? <ChevronUp size={18} className="text-gray-400 shrink-0" /> : <ChevronDown size={18} className="text-gray-400 shrink-0" />}
-            </button>
+        ) : flavours.map(f => {
+          const batchCount = parseFloat(f.batches) || 0;
+          const tubsPerBatch = f.batch_yield_l ? Math.floor(f.batch_yield_l / 4) : 0;
+          const totalTubs = Math.floor(batchCount * (f.batch_yield_l || 0) / 4);
+          const totalLitres = batchCount * (f.batch_yield_l || 0);
 
-            {f.expanded && (
-              <div className="border-t border-gray-100 px-5 pb-4 pt-3">
-                {f.recipes.length === 0 ? (
-                  <p className="text-sm text-gray-400 py-2">No recipe defined yet.</p>
-                ) : (
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recipe per batch</p>
-                    {f.recipes.map(r => (
-                      <div key={r.rm_item_id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                        <span className="text-sm text-gray-700">{r.name}</span>
-                        <span className="text-sm font-semibold text-gray-900">{formatNumber(r.qty_per_unit)} {r.unit}</span>
-                      </div>
-                    ))}
+          return (
+            <div key={f.id} className="card p-0 overflow-hidden">
+              <button
+                onClick={() => toggleFlavour(f.id)}
+                className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left touch-manipulation hover:bg-orange-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+                    <FlaskConical size={18} className="text-brand-600" />
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+                  <div>
+                    <p className="font-bold text-gray-900">{f.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {f.batch_yield_l ? `${formatNumber(f.batch_yield_l)}L per batch · ${tubsPerBatch} × 4L tubs` : 'No yield set'}
+                      {' · '}{f.recipes.length} RM item{f.recipes.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                {f.expanded ? <ChevronUp size={18} className="text-gray-400 shrink-0" /> : <ChevronDown size={18} className="text-gray-400 shrink-0" />}
+              </button>
+
+              {f.expanded && (
+                <div className="border-t border-gray-100 px-5 pb-5 pt-4 space-y-4">
+
+                  {/* Recipe per batch */}
+                  {f.recipes.length === 0 ? (
+                    <p className="text-sm text-gray-400">No recipe defined yet.</p>
+                  ) : (
+                    <div>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Recipe per batch</p>
+                      <div className="space-y-1">
+                        {f.recipes.map(r => (
+                          <div key={r.rm_item_id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                            <span className="text-sm text-gray-700">{r.name}</span>
+                            <span className="text-sm font-semibold text-gray-900">{formatNumber(r.qty_per_unit)} {r.unit}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Batch Calculator */}
+                  {f.recipes.length > 0 && f.batch_yield_l && (
+                    <div className="bg-orange-50 rounded-2xl p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Calculator size={15} className="text-brand-600" />
+                        <p className="text-xs font-bold text-brand-600 uppercase tracking-wide">Batch Calculator</p>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-600 block mb-1">How many batches to make?</label>
+                        <input
+                          type="number" min="1" step="1"
+                          value={f.batches}
+                          onChange={e => setBatches(f.id, e.target.value)}
+                          className="input-field text-sm py-2 bg-white"
+                          placeholder="e.g. 5"
+                        />
+                      </div>
+
+                      {batchCount > 0 && (
+                        <>
+                          {/* Output */}
+                          <div className="bg-white rounded-xl px-4 py-3 space-y-1">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Output</p>
+                            <p className="text-sm text-gray-700">
+                              {formatNumber(batchCount)} batch{batchCount !== 1 ? 'es' : ''} × {f.batch_yield_l}L = <strong>{formatNumber(totalLitres)}L</strong>
+                            </p>
+                            <p className="text-base font-bold text-brand-700">
+                              → {totalTubs} × 4L bulk tubs
+                            </p>
+                          </div>
+
+                          {/* RM needed */}
+                          <div className="bg-white rounded-xl px-4 py-3 space-y-1">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">RM Required</p>
+                            {f.recipes.map(r => (
+                              <div key={r.rm_item_id} className="flex items-center justify-between py-1 border-b border-gray-50 last:border-0">
+                                <span className="text-sm text-gray-700">{r.name}</span>
+                                <span className="text-sm font-bold text-gray-900">
+                                  {formatNumber(r.qty_per_unit * batchCount)} {r.unit}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
