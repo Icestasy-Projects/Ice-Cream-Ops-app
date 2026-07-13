@@ -89,8 +89,13 @@ function FormatCard({ packFormat, items }: { packFormat: string; items: FgStock[
             <div className="min-w-0 flex-1">
               <p className="font-medium text-gray-900 text-xs leading-tight">{item.product_name}</p>
               <p className="text-xs text-gray-400">
-                Par: {item.par_qty ? `${formatNumber(item.par_qty)} ${item.unit}` : '—'}
+                Reorder: {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
               </p>
+              {item.reorder_point ? (
+                <p className="text-xs text-indigo-500 font-medium">
+                  Threshold: {formatNumber(item.reorder_point * 2.5)} {item.unit}
+                </p>
+              ) : null}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <div className="text-right">
