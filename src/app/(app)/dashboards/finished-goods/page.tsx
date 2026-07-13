@@ -32,7 +32,9 @@ function statusLabel(status: string | null) {
   return 'OK';
 }
 
-function FormatCard({ packFormat, items }: { packFormat: string; items: FgStock[] }) {
+type WeeklyReqMap = Record<number, number>;
+
+function FormatCard({ packFormat, items, weeklyReq }: { packFormat: string; items: FgStock[]; weeklyReq: WeeklyReqMap }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
 
@@ -91,9 +93,9 @@ function FormatCard({ packFormat, items }: { packFormat: string; items: FgStock[
               <p className="text-xs text-gray-400">
                 Reorder: {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
               </p>
-              {item.reorder_point ? (
+              {weeklyReq[item.fg_sku_id] ? (
                 <p className="text-xs text-indigo-500 font-medium">
-                  Threshold: {formatNumber(item.reorder_point * 2.5)} {item.unit}
+                  Wkly req: {formatNumber(weeklyReq[item.fg_sku_id])} · Threshold: {formatNumber(weeklyReq[item.fg_sku_id] * 2.5)} {item.unit}
                 </p>
               ) : null}
             </div>
@@ -135,6 +137,14 @@ export default function FinishedGoodsDashboard() {
   const [data, setData] = useState<FgStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [alertPage, setAlertPage] = useState(0);
+  const [weeklyReq, setWeeklyReq] = useState<WeeklyReqMap>({});
+
+  useEffect(() => {
+    fetch('/api/weekly-req')
+      .then(r => r.json())
+      .then(d => { if (d.fg) setWeeklyReq(d.fg); })
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -222,7 +232,7 @@ export default function FinishedGoodsDashboard() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {grouped.map(([packFormat, items]) => (
-                  <FormatCard key={packFormat} packFormat={packFormat} items={items} />
+                  <FormatCard key={packFormat} packFormat={packFormat} items={items} weeklyReq={weeklyReq} />
                 ))}
               </div>
             )}

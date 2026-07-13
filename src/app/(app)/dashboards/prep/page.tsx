@@ -52,6 +52,14 @@ export default function PrepDashboard() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [alertPage, setAlertPage] = useState(0);
+  const [weeklyReq, setWeeklyReq] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    fetch('/api/weekly-req')
+      .then(r => r.json())
+      .then(d => { if (d.prep) setWeeklyReq(d.prep); })
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -167,9 +175,9 @@ export default function PrepDashboard() {
                       <div>
                         <p className="font-semibold text-gray-900 text-sm">{item.product_name}</p>
                         <p className="text-xs text-gray-400">Yield: {item.batch_yield_l}L per batch</p>
-                        {item.reorder_point ? (
+                        {weeklyReq[item.prep_product_id] ? (
                           <p className="text-xs text-indigo-500 font-medium">
-                            Threshold: {formatNumber(item.reorder_point * 2.5)} {item.unit}
+                            Wkly req: {formatNumber(weeklyReq[item.prep_product_id])} · Threshold: {formatNumber(weeklyReq[item.prep_product_id] * 2.5)} {item.unit}
                           </p>
                         ) : null}
                       </div>
