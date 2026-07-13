@@ -15,6 +15,7 @@ interface PrepStock {
   qty_total: number;
   status: string | null;
   batch_yield_l: number;  // litres of bulk per 1 unit of prep
+  reorder_point: number | null;
 }
 
 // FG format volumes in litres
@@ -73,6 +74,7 @@ export default function PrepDashboard() {
         qty_total: (r.qty_total as number) || 0,
         status: r.status as string | null,
         batch_yield_l: yieldMap.get(r.prep_product_id as number) || 0,
+        reorder_point: r.reorder_point as number | null,
       }))
     );
     setLoading(false);
@@ -165,6 +167,11 @@ export default function PrepDashboard() {
                       <div>
                         <p className="font-semibold text-gray-900 text-sm">{item.product_name}</p>
                         <p className="text-xs text-gray-400">Yield: {item.batch_yield_l}L per batch</p>
+                        {item.reorder_point ? (
+                          <p className="text-xs text-indigo-500 font-medium">
+                            Threshold: {formatNumber(item.reorder_point * 2.5)} {item.unit}
+                          </p>
+                        ) : null}
                       </div>
                       <span className={`shrink-0 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusColor(item.status)}`}>
                         {statusLabel(item.status)}
