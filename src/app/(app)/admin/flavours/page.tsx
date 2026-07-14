@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
-import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator, Pencil, Check, X } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator, Pencil, Check, X, Search } from 'lucide-react';
 
 interface RmItem { id: number; name: string; unit: string; }
 interface RecipeLine { rm_item_id: number; name: string; unit: string; qty_per_unit: string; purpose: 'mix' | 'topping'; }
@@ -34,6 +34,8 @@ export default function FlavoursPage() {
   const [rmItems, setRmItems] = useState<RmItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [search, setSearch] = useState('');
 
   // Add form
   const [showAdd, setShowAdd] = useState(false);
@@ -271,10 +273,22 @@ export default function FlavoursPage() {
         description="Add and edit flavours, define RM recipe per batch, and toggle active status."
       />
 
-      <button onClick={() => setShowAdd(s => !s)} className="btn-primary flex items-center gap-2">
-        <Plus size={18} />
-        {showAdd ? 'Cancel' : 'Add New Flavour'}
-      </button>
+      <div className="flex gap-3 flex-wrap">
+        <button onClick={() => setShowAdd(s => !s)} className="btn-primary flex items-center gap-2">
+          <Plus size={18} />
+          {showAdd ? 'Cancel' : 'Add New Flavour'}
+        </button>
+        <div className="relative flex-1 min-w-48">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search flavours..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
+          />
+        </div>
+      </div>
 
       {showAdd && (
         <div className="card space-y-5">
@@ -369,13 +383,23 @@ export default function FlavoursPage() {
       )}
 
       <div className="space-y-2">
-        {flavours.length === 0 ? (
-          <div className="card text-center py-10 text-gray-400">
-            <p className="text-4xl mb-2">🍨</p>
-            <p className="font-semibold text-gray-600">No flavours yet</p>
-            <p className="text-sm mt-1">Add your first flavour above.</p>
-          </div>
-        ) : flavours.map(f => {
+        {(() => {
+          const filtered = search.trim()
+            ? flavours.filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
+            : flavours;
+          if (flavours.length === 0) return (
+            <div className="card text-center py-10 text-gray-400">
+              <p className="text-4xl mb-2">🍨</p>
+              <p className="font-semibold text-gray-600">No flavours yet</p>
+              <p className="text-sm mt-1">Add your first flavour above.</p>
+            </div>
+          );
+          if (filtered.length === 0) return (
+            <div className="card text-center py-8 text-gray-400">
+              <p className="text-sm">No flavours match &ldquo;{search}&rdquo;</p>
+            </div>
+          );
+          return filtered.map(f => {
           const batchCount = parseFloat(f.batches) || 0;
           const tubsPerBatch = f.batch_yield_l ? Math.floor(f.batch_yield_l / 4) : 0;
           const totalTubs = Math.floor(batchCount * (f.batch_yield_l || 0) / 4);
@@ -588,7 +612,7 @@ export default function FlavoursPage() {
               )}
             </div>
           );
-        })}
+        })})()}
       </div>
     </div>
   );

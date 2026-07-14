@@ -17,6 +17,8 @@ interface RmStock {
   category: string;
 }
 
+type WeeklyReqMap = Record<number, number>;
+
 const CAT_PAGE_SIZE = 8;
 const ALERT_PAGE_SIZE = 8;
 const STATUS_ORDER: Record<string, number> = { critical: 2, low: 1 };
@@ -33,7 +35,7 @@ function statusLabel(status: string | null) {
   return 'OK';
 }
 
-function CategoryCard({ category, items }: { category: string; items: RmStock[] }) {
+function CategoryCard({ category, items, weeklyReq }: { category: string; items: RmStock[]; weeklyReq: WeeklyReqMap }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
 
@@ -93,9 +95,9 @@ function CategoryCard({ category, items }: { category: string; items: RmStock[] 
               <p className="text-xs text-gray-400">
                 Reorder: {item.reorder_point ? `${formatNumber(item.reorder_point)} ${item.unit}` : '—'}
               </p>
-              {item.reorder_point ? (
+              {weeklyReq[item.rm_item_id] ? (
                 <p className="text-xs text-indigo-500 font-medium">
-                  Threshold: {formatNumber(item.reorder_point * 2.5)} {item.unit}
+                  Wkly req: {formatNumber(weeklyReq[item.rm_item_id])} · Threshold: {formatNumber(weeklyReq[item.rm_item_id] * 2.5)} {item.unit}
                 </p>
               ) : null}
             </div>
@@ -137,6 +139,7 @@ export default function RawMaterialsDashboard() {
   const [data, setData] = useState<RmStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [alertPage, setAlertPage] = useState(0);
+  const [weeklyReq, setWeeklyReq] = useState<WeeklyReqMap>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -170,6 +173,13 @@ export default function RawMaterialsDashboard() {
     );
     setLoading(false);
   }, [supabase]);
+
+  useEffect(() => {
+    fetch('/api/weekly-req')
+      .then(r => r.json())
+      .then(d => { if (d.rm) setWeeklyReq(d.rm); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     load();
@@ -241,7 +251,7 @@ export default function RawMaterialsDashboard() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {grouped.map(([category, items]) => (
-                  <CategoryCard key={category} category={category} items={items} />
+                  <CategoryCard key={category} category={category} items={items} weeklyReq={weeklyReq} />
                 ))}
               </div>
             )}
