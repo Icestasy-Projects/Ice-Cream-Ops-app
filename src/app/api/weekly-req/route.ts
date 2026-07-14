@@ -11,6 +11,7 @@ export interface WeeklyReqResponse {
   fg: Record<number, number>;    // fg_sku_id → weekly qty
   prep: Record<number, number>;  // prep_product_id → weekly batches
   rm: Record<number, number>;    // rm_item_id → weekly raw material qty
+  source: 'orders' | 'dispatches';
 }
 
 export async function GET() {
@@ -22,31 +23,53 @@ export async function GET() {
 
     const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // --- Step 1: weekly FG demand from last 28 days of dispatches ---
+    // ── Step 1: weekly FG demand from sales.orders (last 28 days) ─────────
     const since = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { data: dispatchRows } = await admin
-      .schema('production')
-      .from('fg_dispatches')
-      .select('fg_sku_id, qty')
-      .gte('dispatched_at', since);
+    // Try sales.orders first; fall back to fg_dispatches if no data
+    const { data: orderLines } = await admin
+      .schema('sales')
+      .from('order_lines')
+      .select('fg_sku_id, qty, orders!inner(ordered_at, status)')
+      .gte('orders.ordered_at', since)
+      .in('orders.status', ['confirmed', 'dispatched']);
 
-    // Sum qty per sku over 4 weeks → weekly average
-    const fgWeekly: Record<number, number> = {};
-    for (const row of dispatchRows || []) {
-      const id = row.fg_sku_id as number;
-      fgWeekly[id] = (fgWeekly[id] || 0) + ((row.qty as number) || 0);
-    }
-    for (const id in fgWeekly) {
-      fgWeekly[id] = fgWeekly[id] / 4; // 4-week average
+    let fgWeekly: Record<number, number> = {};
+    let source: 'orders' | 'dispatches' = 'orders';
+
+    if (orderLines && orderLines.length > 0) {
+      // Aggregate from sales orders
+      for (const line of orderLines) {
+        const id = line.fg_sku_id as number;
+        fgWeekly[id] = (fgWeekly[id] || 0) + ((line.qty as number) || 0);
+      }
+      for (const id in fgWeekly) {
+        fgWeekly[id] = fgWeekly[id] / 4; // 4-week average → weekly
+      }
+    } else {
+      // Fallback: use actual dispatch history
+      source = 'dispatches';
+      const { data: dispatchRows } = await admin
+        .schema('production')
+        .from('fg_dispatches')
+        .select('fg_sku_id, qty')
+        .gte('dispatched_at', since);
+
+      for (const row of dispatchRows || []) {
+        const id = row.fg_sku_id as number;
+        fgWeekly[id] = (fgWeekly[id] || 0) + ((row.qty as number) || 0);
+      }
+      for (const id in fgWeekly) {
+        fgWeekly[id] = fgWeekly[id] / 4;
+      }
     }
 
-    // --- Step 2: map FG SKUs → prep products via sales.skus → prep_products ---
     const skuIds = Object.keys(fgWeekly).map(Number);
     if (skuIds.length === 0) {
-      return NextResponse.json({ fg: {}, prep: {}, rm: {} } satisfies WeeklyReqResponse);
+      return NextResponse.json({ fg: {}, prep: {}, rm: {}, source } satisfies WeeklyReqResponse);
     }
 
+    // ── Step 2: map FG SKUs → prep products via flavour_id ────────────────
     const [skusRes, prepProdsRes, recipesRes] = await Promise.all([
       admin.schema('sales').from('skus')
         .select('id, flavour_id, pack_format_id')
@@ -57,14 +80,13 @@ export async function GET() {
         .select('prep_product_id, rm_item_id, qty_per_unit'),
     ]);
 
-    // Get pack format volumes (litres per FG unit)
+    // Pack format volumes (litres per FG unit)
     const packFormatIds = Array.from(new Set((skusRes.data || []).map((s: Record<string, unknown>) => s.pack_format_id as number)));
     const { data: packFormats } = await admin.schema('sales').from('pack_formats')
       .select('id, unit_volume_ml, units_per_pack')
       .in('id', packFormatIds);
 
-    // Build lookup maps
-    const packVolMap = new Map<number, number>( // pack_format_id → litres per FG unit
+    const packVolMap = new Map<number, number>(
       (packFormats || []).map((p: Record<string, unknown>) => [
         p.id as number,
         ((p.unit_volume_ml as number) * (p.units_per_pack as number)) / 1000,
@@ -80,8 +102,8 @@ export async function GET() {
       });
     }
 
-    // --- Step 3: compute prep weekly batches from FG demand ---
-    const prepWeekly: Record<number, number> = {}; // prep_product_id → weekly batches
+    // ── Step 3: compute prep weekly batches from FG demand ────────────────
+    const prepWeekly: Record<number, number> = {};
 
     for (const sku of skusRes.data || []) {
       const s = sku as Record<string, unknown>;
@@ -99,8 +121,8 @@ export async function GET() {
       prepWeekly[prep.id] = (prepWeekly[prep.id] || 0) + weeklyBatches;
     }
 
-    // --- Step 4: compute RM weekly requirement from prep batches × recipe qty ---
-    const rmWeekly: Record<number, number> = {}; // rm_item_id → weekly qty
+    // ── Step 4: compute RM weekly requirement from prep batches × recipe ──
+    const rmWeekly: Record<number, number> = {};
 
     for (const recipe of recipesRes.data || []) {
       const r = recipe as Record<string, unknown>;
@@ -114,7 +136,7 @@ export async function GET() {
       rmWeekly[rmId] = (rmWeekly[rmId] || 0) + weeklyBatches * qtyPerUnit;
     }
 
-    return NextResponse.json({ fg: fgWeekly, prep: prepWeekly, rm: rmWeekly } satisfies WeeklyReqResponse);
+    return NextResponse.json({ fg: fgWeekly, prep: prepWeekly, rm: rmWeekly, source } satisfies WeeklyReqResponse);
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
