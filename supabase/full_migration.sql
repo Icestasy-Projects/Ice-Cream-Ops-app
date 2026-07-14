@@ -538,853 +538,853 @@ BEGIN
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Aale Paak' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Aale Paak', 20.0, 'batch', 'active');
+      VALUES (fid, 'Aale Paak', 20.0, 'l', 'active');
   END IF;
   -- Aam Kasundi (Mustard)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Aam Kasundi (Mustard)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Aam Kasundi (Mustard)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Aam Kasundi (Mustard)', 20.0, 'l', 'active');
   END IF;
   -- Aam Panha Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Aam Panha Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Aam Panha Sorbet', 16.0, 'batch', 'active');
+      VALUES (fid, 'Aam Panha Sorbet', 16.0, 'l', 'active');
   END IF;
   -- After Hours (Dark Chocolate Mint)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'After Hours (Dark Chocolate Mint)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'After Hours (Dark Chocolate Mint)', 20.0, 'batch', 'active');
+      VALUES (fid, 'After Hours (Dark Chocolate Mint)', 20.0, 'l', 'active');
   END IF;
   -- Amrood (Guava/Peru)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Amrood (Guava/Peru)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Amrood (Guava/Peru)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Amrood (Guava/Peru)', 20.0, 'l', 'active');
   END IF;
   -- Pineapple
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pineapple' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Pineapple', 20.0, 'batch', 'active');
+      VALUES (fid, 'Pineapple', 20.0, 'l', 'active');
   END IF;
   -- Anjeer (Sun-Dried Figs)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Anjeer (Sun-Dried Figs)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Anjeer (Sun-Dried Figs)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Anjeer (Sun-Dried Figs)', 20.0, 'l', 'active');
   END IF;
   -- Apple Pie
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Apple Pie' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Apple Pie', 20.0, 'batch', 'active');
+      VALUES (fid, 'Apple Pie', 20.0, 'l', 'active');
   END IF;
   -- Arabica Cinnamon (Di Bella Coffee Cinnamon)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Arabica Cinnamon (Di Bella Coffee Cinnamon)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Arabica Cinnamon (Di Bella Coffee Cinnamon)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Arabica Cinnamon (Di Bella Coffee Cinnamon)', 20.0, 'l', 'active');
   END IF;
   -- Arabica Nutmeg (Di Bella Coffee Nutmeg)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Arabica Nutmeg (Di Bella Coffee Nutmeg)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Arabica Nutmeg (Di Bella Coffee Nutmeg)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Arabica Nutmeg (Di Bella Coffee Nutmeg)', 20.0, 'l', 'active');
   END IF;
   -- Avocado Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Avocado Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Avocado Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Avocado Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Banana Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Banana Caramel' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Banana Caramel', 20.0, 'batch', 'active');
+      VALUES (fid, 'Banana Caramel', 20.0, 'l', 'active');
   END IF;
   -- Banarasi Meetha Paan
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Banarasi Meetha Paan' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Banarasi Meetha Paan', 20.0, 'batch', 'active');
+      VALUES (fid, 'Banarasi Meetha Paan', 20.0, 'l', 'active');
   END IF;
   -- Belgian Speculoos
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Belgian Speculoos' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Belgian Speculoos', 18.5, 'batch', 'active');
+      VALUES (fid, 'Belgian Speculoos', 18.5, 'l', 'active');
   END IF;
   -- Dakshin Laddoo
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Dakshin Laddoo' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Dakshin Laddoo', 20.0, 'batch', 'active');
+      VALUES (fid, 'Dakshin Laddoo', 20.0, 'l', 'active');
   END IF;
   -- Bhuna Badaam (Roasted Nutty Almonds)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Bhuna Badaam (Roasted Nutty Almonds)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Bhuna Badaam (Roasted Nutty Almonds)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Bhuna Badaam (Roasted Nutty Almonds)', 20.0, 'l', 'active');
   END IF;
   -- Blueberry Blush (FD)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Blueberry Blush (FD)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Blueberry Blush (FD)', 40.0, 'batch', 'active');
+      VALUES (fid, 'Blueberry Blush (FD)', 40.0, 'l', 'active');
   END IF;
   -- Blueberry Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Blueberry Cheesecake' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Blueberry Cheesecake', 20.0, 'batch', 'active');
+      VALUES (fid, 'Blueberry Cheesecake', 20.0, 'l', 'active');
   END IF;
   -- Boondi Laddoo
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Boondi Laddoo' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Boondi Laddoo', 20.0, 'batch', 'active');
+      VALUES (fid, 'Boondi Laddoo', 20.0, 'l', 'active');
   END IF;
   -- Caramel Cheese Popcorn
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Caramel Cheese Popcorn' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Caramel Cheese Popcorn', 20.0, 'batch', 'active');
+      VALUES (fid, 'Caramel Cheese Popcorn', 20.0, 'l', 'active');
   END IF;
   -- Caramel Galangal
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Caramel Galangal' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Caramel Galangal', 20.0, 'batch', 'active');
+      VALUES (fid, 'Caramel Galangal', 20.0, 'l', 'active');
   END IF;
   -- Caramel Latte (Di Bella Coffee Caramel)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Caramel Latte (Di Bella Coffee Caramel)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Caramel Latte (Di Bella Coffee Caramel)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Caramel Latte (Di Bella Coffee Caramel)', 20.0, 'l', 'active');
   END IF;
   -- Cashew Scotch Arabica (Di Bella Coffee Cashew)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cashew Scotch Arabica (Di Bella Coffee Cashew)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Cashew Scotch Arabica (Di Bella Coffee Cashew)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Cashew Scotch Arabica (Di Bella Coffee Cashew)', 20.0, 'l', 'active');
   END IF;
   -- Cashewnut Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cashewnut Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Cashewnut Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Cashewnut Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Cheese Melt
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cheese Melt' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Cheese Melt', 20.0, 'batch', 'active');
+      VALUES (fid, 'Cheese Melt', 20.0, 'l', 'active');
   END IF;
   -- Chikkamagaluru Kaaphi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chikkamagaluru Kaaphi' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Chikkamagaluru Kaaphi', 20.0, 'batch', 'active');
+      VALUES (fid, 'Chikkamagaluru Kaaphi', 20.0, 'l', 'active');
   END IF;
   -- Chikoo
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chikoo' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Chikoo', 20.0, 'batch', 'active');
+      VALUES (fid, 'Chikoo', 20.0, 'l', 'active');
   END IF;
   -- Chocolate Choice (FD)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chocolate Choice (FD)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Chocolate Choice (FD)', 40.0, 'batch', 'active');
+      VALUES (fid, 'Chocolate Choice (FD)', 40.0, 'l', 'active');
   END IF;
   -- Chocolate Ginger
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chocolate Ginger' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Chocolate Ginger', 20.0, 'batch', 'active');
+      VALUES (fid, 'Chocolate Ginger', 20.0, 'l', 'active');
   END IF;
   -- Chocolate Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chocolate Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Chocolate Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Chocolate Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Coffee Berry (Di Bella Coffee Strawberry)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Coffee Berry (Di Bella Coffee Strawberry)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Coffee Berry (Di Bella Coffee Strawberry)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Coffee Berry (Di Bella Coffee Strawberry)', 20.0, 'l', 'active');
   END IF;
   -- Cookie Dusk
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cookie Dusk' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Cookie Dusk', 20.0, 'batch', 'active');
+      VALUES (fid, 'Cookie Dusk', 20.0, 'l', 'active');
   END IF;
   -- Crumble & Dough
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Crumble & Dough' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Crumble & Dough', 20.0, 'batch', 'active');
+      VALUES (fid, 'Crumble & Dough', 20.0, 'l', 'active');
   END IF;
   -- Cutting Chai Biskoot
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cutting Chai Biskoot' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Cutting Chai Biskoot', 20.0, 'batch', 'active');
+      VALUES (fid, 'Cutting Chai Biskoot', 20.0, 'l', 'active');
   END IF;
   -- Dakkhan Sitaphal (Custard Apple)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Dakkhan Sitaphal (Custard Apple)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Dakkhan Sitaphal (Custard Apple)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Dakkhan Sitaphal (Custard Apple)', 20.0, 'l', 'active');
   END IF;
   -- Dates and Almonds
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Dates and Almonds' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Dates and Almonds', 20.0, 'batch', 'active');
+      VALUES (fid, 'Dates and Almonds', 20.0, 'l', 'active');
   END IF;
   -- Durian Banana
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Durian Banana' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Durian Banana', 19.0, 'batch', 'active');
+      VALUES (fid, 'Durian Banana', 19.0, 'l', 'active');
   END IF;
   -- French Vanilla
   SELECT id INTO fid FROM sales.flavours WHERE name = 'French Vanilla' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'French Vanilla', 20.0, 'batch', 'active');
+      VALUES (fid, 'French Vanilla', 20.0, 'l', 'active');
   END IF;
   -- French Vanilla (2025)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'French Vanilla (2025)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'French Vanilla (2025)', 20.0, 'batch', 'active');
+      VALUES (fid, 'French Vanilla (2025)', 20.0, 'l', 'active');
   END IF;
   -- Fruit Custard
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Fruit Custard' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Fruit Custard', 20.0, 'batch', 'active');
+      VALUES (fid, 'Fruit Custard', 20.0, 'l', 'active');
   END IF;
   -- Gajar Halwa
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gajar Halwa' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Gajar Halwa', 20.0, 'batch', 'active');
+      VALUES (fid, 'Gajar Halwa', 20.0, 'l', 'active');
   END IF;
   -- Gingerbread
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gingerbread' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Gingerbread', 20.0, 'batch', 'active');
+      VALUES (fid, 'Gingerbread', 20.0, 'l', 'active');
   END IF;
   -- Golden Sitaphal
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Golden Sitaphal' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Golden Sitaphal', 20.0, 'batch', 'active');
+      VALUES (fid, 'Golden Sitaphal', 20.0, 'l', 'active');
   END IF;
   -- Gondhoraj Malai
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gondhoraj Malai' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Gondhoraj Malai', 20.0, 'batch', 'active');
+      VALUES (fid, 'Gondhoraj Malai', 20.0, 'l', 'active');
   END IF;
   -- Gud and Saunf
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gud and Saunf' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Gud and Saunf', 20.0, 'batch', 'active');
+      VALUES (fid, 'Gud and Saunf', 20.0, 'l', 'active');
   END IF;
   -- Gulab Jamun
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gulab Jamun' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Gulab Jamun', 20.0, 'batch', 'active');
+      VALUES (fid, 'Gulab Jamun', 20.0, 'l', 'active');
   END IF;
   -- Gulqand
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gulqand' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Gulqand', 20.0, 'batch', 'active');
+      VALUES (fid, 'Gulqand', 20.0, 'l', 'active');
   END IF;
   -- Hara Pista
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Hara Pista' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Hara Pista', 16.0, 'batch', 'active');
+      VALUES (fid, 'Hara Pista', 16.0, 'l', 'active');
   END IF;
   -- Hass Avocado
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Hass Avocado' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Hass Avocado', 18.78, 'batch', 'active');
+      VALUES (fid, 'Hass Avocado', 18.78, 'l', 'active');
   END IF;
   -- Hazelnut Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Hazelnut Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Hazelnut Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Hazelnut Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Jambhul
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Jambhul' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Jambhul', 20.0, 'batch', 'active');
+      VALUES (fid, 'Jambhul', 20.0, 'l', 'active');
   END IF;
   -- Japanese Matcha
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Japanese Matcha' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Japanese Matcha', 20.0, 'batch', 'active');
+      VALUES (fid, 'Japanese Matcha', 20.0, 'l', 'active');
   END IF;
   -- Java Peppermint (Di Bella Coffee Mint)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Java Peppermint (Di Bella Coffee Mint)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Java Peppermint (Di Bella Coffee Mint)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Java Peppermint (Di Bella Coffee Mint)', 20.0, 'l', 'active');
   END IF;
   -- Kaffir Lime Coconut
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kaffir Lime Coconut' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kaffir Lime Coconut', 20.0, 'batch', 'active');
+      VALUES (fid, 'Kaffir Lime Coconut', 20.0, 'l', 'active');
   END IF;
   -- Kaju Katli
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kaju Katli' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kaju Katli', 19.0, 'batch', 'active');
+      VALUES (fid, 'Kaju Katli', 19.0, 'l', 'active');
   END IF;
   -- Karikku (Tender Coconut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Karikku (Tender Coconut)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Karikku (Tender Coconut)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Karikku (Tender Coconut)', 20.0, 'l', 'active');
   END IF;
   -- Kashmiri Kesar
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kashmiri Kesar' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kashmiri Kesar', 20.0, 'batch', 'active');
+      VALUES (fid, 'Kashmiri Kesar', 20.0, 'l', 'active');
   END IF;
   -- Kesar Thandai
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kesar Thandai' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kesar Thandai', 20.0, 'batch', 'active');
+      VALUES (fid, 'Kesar Thandai', 20.0, 'l', 'active');
   END IF;
   -- Khajoor
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Khajoor' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Khajoor', 20.0, 'batch', 'active');
+      VALUES (fid, 'Khajoor', 20.0, 'l', 'active');
   END IF;
   -- Kokum Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kokum Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kokum Sorbet', 11.0, 'batch', 'active');
+      VALUES (fid, 'Kokum Sorbet', 11.0, 'l', 'active');
   END IF;
   -- Kuro Goma
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kuro Goma' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kuro Goma', 20.0, 'batch', 'active');
+      VALUES (fid, 'Kuro Goma', 20.0, 'l', 'active');
   END IF;
   -- Kyoka Kuro Goma
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kyoka Kuro Goma' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kyoka Kuro Goma', 20.0, 'batch', 'active');
+      VALUES (fid, 'Kyoka Kuro Goma', 20.0, 'l', 'active');
   END IF;
   -- Legal Overdose
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Legal Overdose' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Legal Overdose', 20.0, 'batch', 'active');
+      VALUES (fid, 'Legal Overdose', 20.0, 'l', 'active');
   END IF;
   -- Lemongrass Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Lemongrass Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Lemongrass Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Lemongrass Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Madagascar Vanilla
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Madagascar Vanilla' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Madagascar Vanilla', 20.0, 'batch', 'active');
+      VALUES (fid, 'Madagascar Vanilla', 20.0, 'l', 'active');
   END IF;
   -- Made in Heaven (Choco Hazel Crunch)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Made in Heaven (Choco Hazel Crunch)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Made in Heaven (Choco Hazel Crunch)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Made in Heaven (Choco Hazel Crunch)', 20.0, 'l', 'active');
   END IF;
   -- Mango Basil
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Basil' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mango Basil', 20.0, 'batch', 'active');
+      VALUES (fid, 'Mango Basil', 20.0, 'l', 'active');
   END IF;
   -- Mango Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Cheesecake' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mango Cheesecake', 20.0, 'batch', 'active');
+      VALUES (fid, 'Mango Cheesecake', 20.0, 'l', 'active');
   END IF;
   -- Mango Mania (FD)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Mania (FD)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mango Mania (FD)', 40.0, 'batch', 'active');
+      VALUES (fid, 'Mango Mania (FD)', 40.0, 'l', 'active');
   END IF;
   -- Mango Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mango Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Mango Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Maple Cinnamon Roll
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Maple Cinnamon Roll' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Maple Cinnamon Roll', 20.0, 'batch', 'active');
+      VALUES (fid, 'Maple Cinnamon Roll', 20.0, 'l', 'active');
   END IF;
   -- Mauritian Vanilla Bean
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mauritian Vanilla Bean' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mauritian Vanilla Bean', 20.0, 'batch', 'active');
+      VALUES (fid, 'Mauritian Vanilla Bean', 20.0, 'l', 'active');
   END IF;
   -- Midnight Mania
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Midnight Mania' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Midnight Mania', 20.0, 'batch', 'active');
+      VALUES (fid, 'Midnight Mania', 20.0, 'l', 'active');
   END IF;
   -- Mishti Doi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mishti Doi' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mishti Doi', 18.0, 'batch', 'active');
+      VALUES (fid, 'Mishti Doi', 18.0, 'l', 'active');
   END IF;
   -- Miso Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Miso Caramel' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Miso Caramel', 20.0, 'batch', 'active');
+      VALUES (fid, 'Miso Caramel', 20.0, 'l', 'active');
   END IF;
   -- Mocha Choco-chip (Di Bella Coffee DCC)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mocha Choco-chip (Di Bella Coffee DCC)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mocha Choco-chip (Di Bella Coffee DCC)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Mocha Choco-chip (Di Bella Coffee DCC)', 20.0, 'l', 'active');
   END IF;
   -- Mocha Hazelnut (Di Bella Coffee Hazelnut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mocha Hazelnut (Di Bella Coffee Hazelnut)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mocha Hazelnut (Di Bella Coffee Hazelnut)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Mocha Hazelnut (Di Bella Coffee Hazelnut)', 20.0, 'l', 'active');
   END IF;
   -- MotiChoor
   SELECT id INTO fid FROM sales.flavours WHERE name = 'MotiChoor' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'MotiChoor', 20.0, 'batch', 'active');
+      VALUES (fid, 'MotiChoor', 20.0, 'l', 'active');
   END IF;
   -- Mysore Paak
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mysore Paak' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mysore Paak', 20.0, 'batch', 'active');
+      VALUES (fid, 'Mysore Paak', 20.0, 'l', 'active');
   END IF;
   -- Narali Bhaat
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Narali Bhaat' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Narali Bhaat', 20.0, 'batch', 'active');
+      VALUES (fid, 'Narali Bhaat', 20.0, 'l', 'active');
   END IF;
   -- New York Style Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'New York Style Cheesecake' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'New York Style Cheesecake', 20.0, 'batch', 'active');
+      VALUES (fid, 'New York Style Cheesecake', 20.0, 'l', 'active');
   END IF;
   -- Nutty Arabica (Di Bella Coffee Almond)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Nutty Arabica (Di Bella Coffee Almond)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Nutty Arabica (Di Bella Coffee Almond)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Nutty Arabica (Di Bella Coffee Almond)', 20.0, 'l', 'active');
   END IF;
   -- Nutty Naughty (Milk Chocolate Almond)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Nutty Naughty (Milk Chocolate Almond)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Nutty Naughty (Milk Chocolate Almond)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Nutty Naughty (Milk Chocolate Almond)', 20.0, 'l', 'active');
   END IF;
   -- Off Season Sitaphal
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Off Season Sitaphal' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Off Season Sitaphal', 20.0, 'batch', 'active');
+      VALUES (fid, 'Off Season Sitaphal', 20.0, 'l', 'active');
   END IF;
   -- Orange Apricot
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Orange Apricot' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Orange Apricot', 20.0, 'batch', 'active');
+      VALUES (fid, 'Orange Apricot', 20.0, 'l', 'active');
   END IF;
   -- Orange Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Orange Cheesecake' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Orange Cheesecake', 20.0, 'batch', 'active');
+      VALUES (fid, 'Orange Cheesecake', 20.0, 'l', 'active');
   END IF;
   -- Reshmi Paan
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Reshmi Paan' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Reshmi Paan', 20.0, 'batch', 'active');
+      VALUES (fid, 'Reshmi Paan', 20.0, 'l', 'active');
   END IF;
   -- Palaapazham (Jackfruit)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Palaapazham (Jackfruit)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Palaapazham (Jackfruit)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Palaapazham (Jackfruit)', 20.0, 'l', 'active');
   END IF;
   -- Pecan Caramel Crumble
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pecan Caramel Crumble' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Pecan Caramel Crumble', 20.0, 'batch', 'active');
+      VALUES (fid, 'Pecan Caramel Crumble', 20.0, 'l', 'active');
   END IF;
   -- Pineapple Chili
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pineapple Chili' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Pineapple Chili', 20.0, 'batch', 'active');
+      VALUES (fid, 'Pineapple Chili', 20.0, 'l', 'active');
   END IF;
   -- Pistachio Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pistachio Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Pistachio Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Pistachio Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Prasadam Laddoo
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Prasadam Laddoo' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Prasadam Laddoo', 20.0, 'batch', 'active');
+      VALUES (fid, 'Prasadam Laddoo', 20.0, 'l', 'active');
   END IF;
   -- Princess Blonde (White Chocolate Cake)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Princess Blonde (White Chocolate Cake)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Princess Blonde (White Chocolate Cake)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Princess Blonde (White Chocolate Cake)', 20.0, 'l', 'active');
   END IF;
   -- Pumpkin Pie
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pumpkin Pie' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Pumpkin Pie', 20.0, 'batch', 'active');
+      VALUES (fid, 'Pumpkin Pie', 20.0, 'l', 'active');
   END IF;
   -- Puranpoli
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Puranpoli' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Puranpoli', 20.0, 'batch', 'active');
+      VALUES (fid, 'Puranpoli', 20.0, 'l', 'active');
   END IF;
   -- Pure Arabica Coffee (Di Bella Coffee)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pure Arabica Coffee (Di Bella Coffee)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Pure Arabica Coffee (Di Bella Coffee)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Pure Arabica Coffee (Di Bella Coffee)', 20.0, 'l', 'active');
   END IF;
   -- Purple Pandan
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Purple Pandan' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Purple Pandan', 20.0, 'batch', 'active');
+      VALUES (fid, 'Purple Pandan', 20.0, 'l', 'active');
   END IF;
   -- Qubaani (Apricots)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Qubaani (Apricots)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Qubaani (Apricots)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Qubaani (Apricots)', 20.0, 'l', 'active');
   END IF;
   -- Ramphal
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ramphal' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Ramphal', 20.0, 'batch', 'active');
+      VALUES (fid, 'Ramphal', 20.0, 'l', 'active');
   END IF;
   -- Raspberry Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Raspberry Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Raspberry Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Raspberry Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Ratnagiri Hapoos (Mango)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ratnagiri Hapoos (Mango)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Ratnagiri Hapoos (Mango)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Ratnagiri Hapoos (Mango)', 20.0, 'l', 'active');
   END IF;
   -- Red Chilli Bite
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Red Chilli Bite' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Red Chilli Bite', 20.0, 'batch', 'active');
+      VALUES (fid, 'Red Chilli Bite', 20.0, 'l', 'active');
   END IF;
   -- Salted Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Salted Caramel' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Salted Caramel', 20.0, 'batch', 'active');
+      VALUES (fid, 'Salted Caramel', 20.0, 'l', 'active');
   END IF;
   -- Salted Caramel Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Salted Caramel Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Salted Caramel Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Salted Caramel Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Sheer Qhurma
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sheer Qhurma' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Sheer Qhurma', 20.0, 'batch', 'active');
+      VALUES (fid, 'Sheer Qhurma', 20.0, 'l', 'active');
   END IF;
   -- Shahi Sevaiya
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Shahi Sevaiya' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Shahi Sevaiya', 20.0, 'batch', 'active');
+      VALUES (fid, 'Shahi Sevaiya', 20.0, 'l', 'active');
   END IF;
   -- Signature Chocolate (Cacaoir)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Signature Chocolate (Cacaoir)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Signature Chocolate (Cacaoir)', 11.0, 'batch', 'active');
+      VALUES (fid, 'Signature Chocolate (Cacaoir)', 11.0, 'l', 'active');
   END IF;
   -- Signature Mango (Aurum)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Signature Mango (Aurum)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Signature Mango (Aurum)', 11.0, 'batch', 'active');
+      VALUES (fid, 'Signature Mango (Aurum)', 11.0, 'l', 'active');
   END IF;
   -- Signature Strawberry (Rosaea)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Signature Strawberry (Rosaea)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Signature Strawberry (Rosaea)', 11.0, 'batch', 'active');
+      VALUES (fid, 'Signature Strawberry (Rosaea)', 11.0, 'l', 'active');
   END IF;
   -- Sol Kadhi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sol Kadhi' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Sol Kadhi', 16.0, 'batch', 'active');
+      VALUES (fid, 'Sol Kadhi', 16.0, 'l', 'active');
   END IF;
   -- Strawberry Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Cheesecake' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Strawberry Cheesecake', 20.0, 'batch', 'active');
+      VALUES (fid, 'Strawberry Cheesecake', 20.0, 'l', 'active');
   END IF;
   -- Strawberry Cream
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Cream' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Strawberry Cream', 20.0, 'batch', 'active');
+      VALUES (fid, 'Strawberry Cream', 20.0, 'l', 'active');
   END IF;
   -- Strawberry Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Strawberry Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Strawberry Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Strawberry Strength (FD)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Strength (FD)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Strawberry Strength (FD)', 40.0, 'batch', 'active');
+      VALUES (fid, 'Strawberry Strength (FD)', 40.0, 'l', 'active');
   END IF;
   -- Sunkissed Arabica (Di Bella Coffee Orange)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sunkissed Arabica (Di Bella Coffee Orange)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Sunkissed Arabica (Di Bella Coffee Orange)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Sunkissed Arabica (Di Bella Coffee Orange)', 20.0, 'l', 'active');
   END IF;
   -- Sunkissed Twilight
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sunkissed Twilight' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Sunkissed Twilight', 20.0, 'batch', 'active');
+      VALUES (fid, 'Sunkissed Twilight', 20.0, 'l', 'active');
   END IF;
   -- Sweet Soy
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sweet Soy' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Sweet Soy', 20.0, 'batch', 'active');
+      VALUES (fid, 'Sweet Soy', 20.0, 'l', 'active');
   END IF;
   -- Tamarind Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tamarind Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Tamarind Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Tamarind Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Tamarind and Curry Leaf
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tamarind and Curry Leaf' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Tamarind and Curry Leaf', 20.0, 'batch', 'active');
+      VALUES (fid, 'Tamarind and Curry Leaf', 20.0, 'l', 'active');
   END IF;
   -- Tender Coconut Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tender Coconut Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Tender Coconut Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Tender Coconut Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Thengai Barfi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Thengai Barfi' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Thengai Barfi', 20.0, 'batch', 'active');
+      VALUES (fid, 'Thengai Barfi', 20.0, 'l', 'active');
   END IF;
   -- Tilgul
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tilgul' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Tilgul', 20.0, 'batch', 'active');
+      VALUES (fid, 'Tilgul', 20.0, 'l', 'active');
   END IF;
   -- Tropical Brew (Di Bella Coffee Coconut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tropical Brew (Di Bella Coffee Coconut)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Tropical Brew (Di Bella Coffee Coconut)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Tropical Brew (Di Bella Coffee Coconut)', 20.0, 'l', 'active');
   END IF;
   -- Turkish Hazelnut
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Turkish Hazelnut' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Turkish Hazelnut', 16.0, 'batch', 'active');
+      VALUES (fid, 'Turkish Hazelnut', 16.0, 'l', 'active');
   END IF;
   -- Ukadiche Modak
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ukadiche Modak' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Ukadiche Modak', 20.0, 'batch', 'active');
+      VALUES (fid, 'Ukadiche Modak', 20.0, 'l', 'active');
   END IF;
   -- Ultimate Luxe (Michelle & Barry Callebaut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ultimate Luxe (Michelle & Barry Callebaut)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Ultimate Luxe (Michelle & Barry Callebaut)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Ultimate Luxe (Michelle & Barry Callebaut)', 20.0, 'l', 'active');
   END IF;
   -- Vanilla Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vanilla Sorbet' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vanilla Sorbet', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vanilla Sorbet', 20.0, 'l', 'active');
   END IF;
   -- Vanilla Vantage (FD)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vanilla Vantage (FD)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vanilla Vantage (FD)', 40.0, 'batch', 'active');
+      VALUES (fid, 'Vanilla Vantage (FD)', 40.0, 'l', 'active');
   END IF;
   -- Vegan Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Caramel' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Caramel', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Caramel', 20.0, 'l', 'active');
   END IF;
   -- Vegan Cashew
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Cashew' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Cashew', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Cashew', 20.0, 'l', 'active');
   END IF;
   -- Vegan Chocolate
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Chocolate' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Chocolate', 9.9, 'batch', 'active');
+      VALUES (fid, 'Vegan Chocolate', 9.9, 'l', 'active');
   END IF;
   -- Vegan Coffee
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Coffee' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Coffee', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Coffee', 20.0, 'l', 'active');
   END IF;
   -- Vegan Coffee Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Coffee Caramel' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Coffee Caramel', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Coffee Caramel', 20.0, 'l', 'active');
   END IF;
   -- Vegan Kaju Katli
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Kaju Katli' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Kaju Katli', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Kaju Katli', 20.0, 'l', 'active');
   END IF;
   -- Vegan Mango
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Mango' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Mango', 9.9, 'batch', 'active');
+      VALUES (fid, 'Vegan Mango', 9.9, 'l', 'active');
   END IF;
   -- Vegan Matcha
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Matcha' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Matcha', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Matcha', 20.0, 'l', 'active');
   END IF;
   -- Vegan Pistachio
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Pistachio' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Pistachio', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Pistachio', 20.0, 'l', 'active');
   END IF;
   -- Vegan Raspberry
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Raspberry' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Raspberry', 20.0, 'batch', 'active');
+      VALUES (fid, 'Vegan Raspberry', 20.0, 'l', 'active');
   END IF;
   -- Vegan Strawberry
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Strawberry' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vegan Strawberry', 9.9, 'batch', 'active');
+      VALUES (fid, 'Vegan Strawberry', 9.9, 'l', 'active');
   END IF;
   -- Wasabi Punch
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Wasabi Punch' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Wasabi Punch', 20.0, 'batch', 'active');
+      VALUES (fid, 'Wasabi Punch', 20.0, 'l', 'active');
   END IF;
   -- White Knight (White Chocolate Almond)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'White Knight (White Chocolate Almond)' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'White Knight (White Chocolate Almond)', 20.0, 'batch', 'active');
+      VALUES (fid, 'White Knight (White Chocolate Almond)', 20.0, 'l', 'active');
   END IF;
   -- Yorkshire Butterscotch
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Yorkshire Butterscotch' LIMIT 1;
   IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Yorkshire Butterscotch', 20.0, 'batch', 'active');
+      VALUES (fid, 'Yorkshire Butterscotch', 20.0, 'l', 'active');
   END IF;
 END $$;
 
