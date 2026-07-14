@@ -45,7 +45,7 @@ export async function GET() {
         fgWeekly[id] = (fgWeekly[id] || 0) + ((line.quantity as number) || 0);
       }
       for (const id in fgWeekly) {
-        fgWeekly[id] = fgWeekly[id] / 6; // 6-week average → weekly
+        fgWeekly[id] = Math.ceil(fgWeekly[id] / 6); // 6-week average → weekly, rounded up
       }
     } else {
       // Fallback: use actual dispatch history
@@ -61,7 +61,7 @@ export async function GET() {
         fgWeekly[id] = (fgWeekly[id] || 0) + ((row.qty as number) || 0);
       }
       for (const id in fgWeekly) {
-        fgWeekly[id] = fgWeekly[id] / 4;
+        fgWeekly[id] = Math.ceil(fgWeekly[id] / 4); // 4-week avg for dispatches, rounded up
       }
     }
 
@@ -119,7 +119,7 @@ export async function GET() {
       if (!prep) continue;
 
       const weeklyBatches = weeklyLitres / (prep.batch_yield_l || 1);
-      prepWeekly[prep.id] = (prepWeekly[prep.id] || 0) + weeklyBatches;
+      prepWeekly[prep.id] = (prepWeekly[prep.id] || 0) + weeklyBatches; // ceil applied at end
     }
 
     // ── Step 4: compute RM weekly requirement from prep batches × recipe ──
@@ -134,8 +134,12 @@ export async function GET() {
       const weeklyBatches = prepWeekly[prepId] || 0;
       if (weeklyBatches === 0) continue;
 
-      rmWeekly[rmId] = (rmWeekly[rmId] || 0) + weeklyBatches * qtyPerUnit;
+      rmWeekly[rmId] = (rmWeekly[rmId] || 0) + weeklyBatches * qtyPerUnit; // ceil applied at end
     }
+
+    // Ceil all values — all weekly requirements are rounded up
+    for (const id in prepWeekly) prepWeekly[id] = Math.ceil(prepWeekly[id]);
+    for (const id in rmWeekly) rmWeekly[id] = Math.ceil(rmWeekly[id]);
 
     return NextResponse.json({ fg: fgWeekly, prep: prepWeekly, rm: rmWeekly, source } satisfies WeeklyReqResponse);
   } catch (e: unknown) {
