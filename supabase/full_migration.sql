@@ -359,176 +359,176 @@ BEGIN
 END $$;
 
 -- ── 3. Insert NEW flavours into sales.flavours ────────────────────
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Aam Kasundi (Mustard)', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Aam Panha Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('After Hours (Dark Chocolate Mint)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Anjeer (Sun-Dried Figs)', 'Nuts', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Arabica Cinnamon (Di Bella Coffee Cinnamon)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Arabica Nutmeg (Di Bella Coffee Nutmeg)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Avocado Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Bhuna Badaam (Roasted Nutty Almonds)', 'Nuts', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Blueberry Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Boondi Laddoo', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Caramel Cheese Popcorn', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Caramel Galangal', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Caramel Latte (Di Bella Coffee Caramel)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cashew Scotch Arabica (Di Bella Coffee Cashew)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cashewnut Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cheese Melt', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Chocolate Ginger', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Chocolate Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Coffee Berry (Di Bella Coffee Strawberry)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Durian Banana', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('French Vanilla (2025)', 'White Box', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Fruit Custard', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gingerbread', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Golden Sitaphal', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gondhoraj Malai', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gud and Saunf', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Hazelnut Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Java Peppermint (Di Bella Coffee Mint)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Khajoor', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kokum Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Lemongrass Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Made in Heaven (Choco Hazel Crunch)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mango Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mango Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Maple Cinnamon Roll', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mauritian Vanilla Bean', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mishti Doi', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Miso Caramel', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mocha Choco-chip (Di Bella Coffee DCC)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mocha Hazelnut (Di Bella Coffee Hazelnut)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('MotiChoor', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Nutty Arabica (Di Bella Coffee Almond)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Nutty Naughty (Milk Chocolate Almond)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Off Season Sitaphal', 'White Box', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Orange Apricot', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Orange Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pecan Caramel Crumble', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pineapple Chili', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pistachio Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Princess Blonde (White Chocolate Cake)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pumpkin Pie', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pure Arabica Coffee (Di Bella Coffee)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Purple Pandan', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Qubaani (Apricots)', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Raspberry Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Red Chilli Bite', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Salted Caramel Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Signature Mango (Aurum)', 'Signature', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Signature Strawberry (Rosaea)', 'Signature', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sol Kadhi', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Strawberry Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Strawberry Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sunkissed Arabica (Di Bella Coffee Orange)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sweet Soy', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tamarind Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tamarind and Curry Leaf', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tender Coconut Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Thengai Barfi', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tilgul', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tropical Brew (Di Bella Coffee Coconut)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Turkish Hazelnut', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Ultimate Luxe (Michelle & Barry Callebaut)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vanilla Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Caramel', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Cashew', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Chocolate', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Coffee', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Coffee Caramel', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Kaju Katli', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Mango', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Matcha', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Pistachio', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Raspberry', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Strawberry', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('White Knight (White Chocolate Almond)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Aam Kasundi (Mustard)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Aam Panha Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('After Hours (Dark Chocolate Mint)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Anjeer (Sun-Dried Figs)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Arabica Cinnamon (Di Bella Coffee Cinnamon)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Arabica Nutmeg (Di Bella Coffee Nutmeg)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Avocado Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Bhuna Badaam (Roasted Nutty Almonds)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Blueberry Cheesecake', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Boondi Laddoo', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Caramel Cheese Popcorn', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Caramel Galangal', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Caramel Latte (Di Bella Coffee Caramel)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Cashew Scotch Arabica (Di Bella Coffee Cashew)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Cashewnut Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Cheese Melt', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Chocolate Ginger', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Chocolate Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Coffee Berry (Di Bella Coffee Strawberry)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Durian Banana', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('French Vanilla (2025)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Fruit Custard', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Gingerbread', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Golden Sitaphal', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Gondhoraj Malai', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Gud and Saunf', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Hazelnut Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Java Peppermint (Di Bella Coffee Mint)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Khajoor', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Kokum Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Lemongrass Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Made in Heaven (Choco Hazel Crunch)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Mango Cheesecake', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Mango Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Maple Cinnamon Roll', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Mauritian Vanilla Bean', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Mishti Doi', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Miso Caramel', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Mocha Choco-chip (Di Bella Coffee DCC)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Mocha Hazelnut (Di Bella Coffee Hazelnut)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('MotiChoor', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Nutty Arabica (Di Bella Coffee Almond)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Nutty Naughty (Milk Chocolate Almond)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Off Season Sitaphal', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Orange Apricot', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Orange Cheesecake', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Pecan Caramel Crumble', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Pineapple Chili', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Pistachio Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Princess Blonde (White Chocolate Cake)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Pumpkin Pie', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Pure Arabica Coffee (Di Bella Coffee)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Purple Pandan', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Qubaani (Apricots)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Raspberry Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Red Chilli Bite', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Salted Caramel Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Signature Mango (Aurum)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Signature Strawberry (Rosaea)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Sol Kadhi', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Strawberry Cheesecake', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Strawberry Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Sunkissed Arabica (Di Bella Coffee Orange)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Sweet Soy', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Tamarind Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Tamarind and Curry Leaf', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Tender Coconut Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Thengai Barfi', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Tilgul', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Tropical Brew (Di Bella Coffee Coconut)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Turkish Hazelnut', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Ultimate Luxe (Michelle & Barry Callebaut)', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vanilla Sorbet', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Caramel', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Cashew', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Chocolate', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Coffee', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Coffee Caramel', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Kaju Katli', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Mango', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Matcha', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Pistachio', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Raspberry', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('Vegan Strawberry', 'active') ON CONFLICT (name) DO NOTHING;
+INSERT INTO sales.flavours (name, status)
+  VALUES ('White Knight (White Chocolate Almond)', 'active') ON CONFLICT (name) DO NOTHING;
 
 -- ── 4. Create prep_products (existing + new flavours) ─────────────
 DO $$
