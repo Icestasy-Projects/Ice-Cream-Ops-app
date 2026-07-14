@@ -27,12 +27,13 @@ export async function GET() {
     const since = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString();
 
     // Try sales.orders first; fall back to fg_dispatches if no data
+    // order_lines.sku_id, order_lines.quantity, orders.created_at, orders.status
     const { data: orderLines } = await admin
       .schema('sales')
       .from('order_lines')
-      .select('fg_sku_id, qty, orders!inner(ordered_at, status)')
-      .gte('orders.ordered_at', since)
-      .in('orders.status', ['confirmed', 'dispatched']);
+      .select('sku_id, quantity, orders!inner(created_at, status)')
+      .gte('orders.created_at', since)
+      .in('orders.status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
 
     let fgWeekly: Record<number, number> = {};
     let source: 'orders' | 'dispatches' = 'orders';
@@ -40,8 +41,8 @@ export async function GET() {
     if (orderLines && orderLines.length > 0) {
       // Aggregate from sales orders
       for (const line of orderLines) {
-        const id = line.fg_sku_id as number;
-        fgWeekly[id] = (fgWeekly[id] || 0) + ((line.qty as number) || 0);
+        const id = line.sku_id as number;
+        fgWeekly[id] = (fgWeekly[id] || 0) + ((line.quantity as number) || 0);
       }
       for (const id in fgWeekly) {
         fgWeekly[id] = fgWeekly[id] / 4; // 4-week average → weekly

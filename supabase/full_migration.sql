@@ -4224,28 +4224,6 @@ BEGIN
   END IF;
 END $$;
 
--- ── 6. sales.orders + sales.order_lines ───────────────────────────
-CREATE TABLE IF NOT EXISTS sales.orders (
-  id            SERIAL PRIMARY KEY,
-  order_ref     TEXT,
-  customer_name TEXT,
-  ordered_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  delivery_date DATE,
-  status        TEXT NOT NULL DEFAULT 'confirmed'
-    CHECK (status IN ('draft','confirmed','dispatched','cancelled')),
-  note          TEXT,
-  created_by    UUID REFERENCES auth.users(id)
-);
-CREATE TABLE IF NOT EXISTS sales.order_lines (
-  id         SERIAL PRIMARY KEY,
-  order_id   INT NOT NULL REFERENCES sales.orders(id) ON DELETE CASCADE,
-  fg_sku_id  INT NOT NULL,
-  qty        NUMERIC NOT NULL CHECK (qty > 0),
-  unit       TEXT
-);
-ALTER TABLE sales.orders      DISABLE ROW LEVEL SECURITY;
-ALTER TABLE sales.order_lines DISABLE ROW LEVEL SECURITY;
-GRANT ALL ON sales.orders, sales.order_lines TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE sales.orders_id_seq, sales.order_lines_id_seq TO authenticated;
-CREATE INDEX IF NOT EXISTS idx_orders_ordered_at ON sales.orders (ordered_at);
-CREATE INDEX IF NOT EXISTS idx_order_lines_sku   ON sales.order_lines (fg_sku_id);
+-- ── 6. Indexes on existing sales.orders / order_lines for weekly-req ─
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON sales.orders (created_at);
+CREATE INDEX IF NOT EXISTS idx_order_lines_sku   ON sales.order_lines (sku_id);
