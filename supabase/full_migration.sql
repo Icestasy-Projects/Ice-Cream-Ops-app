@@ -23,21 +23,21 @@ DECLARE cat_id INT;
 BEGIN
   SELECT id INTO cat_id FROM production.rm_categories WHERE name = 'Other' LIMIT 1;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('4% Fat Milk', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('4% Fat Milk', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Aam Panha Syrup', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Aam Panha Syrup', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Amul Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Amul Cheese Cubes', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Amul Fresh Cream', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Amul Fresh Cream', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Amul Khoa', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Anjeer Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Any Oil', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Any Oil', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Apple Halwa', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -55,11 +55,11 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Blanched Almond Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Blueberry Compote', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Blueberry Compote', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Blueberry Essence', 'ml', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Blueberry Pulp', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Blueberry Pulp', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Brown Sugar', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -139,7 +139,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Fresh Chikoo', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Cream', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Cream', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Fresh Deccan Sitaphal', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -161,7 +161,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Fresh Kokum', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Lemon', 'pcs', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Lemon', 'unit', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Fresh Pineapple', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -181,7 +181,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Galangal Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Ghee', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Ghee', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Ginger Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -201,7 +201,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Hazelnut Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('High Fat Milk', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('High Fat Milk', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Honey', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -213,7 +213,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Kaffir Lime Leaves', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Kairi Squash', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Kairi Squash', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Kasundi Sauce', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -239,7 +239,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Mango Essence', 'ml', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Maple Syrup', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Maple Syrup', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Matcha Tea Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -261,7 +261,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Off Season Sitaphal Pulp', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Omkar Kokum Syrup', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Omkar Kokum Syrup', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Orange Paste Pre Gel', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -281,7 +281,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Popcorn Kernels', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Puranpoli', 'pcs', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Puranpoli', 'unit', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Purple Yam', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
@@ -313,7 +313,7 @@ BEGIN
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Sweet Boondi', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Sweet Soy Sauce', 'L', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
+    VALUES ('Sweet Soy Sauce', 'l', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Tamarind', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
