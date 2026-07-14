@@ -1,9 +1,9 @@
 -- ================================================================
--- ICESTASY OPS — Full Data Migration from Cost Sheet 2026
+-- ICESTASY OPS — Correct Migration (mapped to existing DB flavours)
 -- Run in Supabase SQL Editor
 -- ================================================================
 
--- ── 1. Ensure RM categories exist ────────────────────────────────
+-- ── 1. RM categories ──────────────────────────────────────────────
 INSERT INTO production.rm_categories (name) VALUES ('Base & Dairy') ON CONFLICT (name) DO NOTHING;
 INSERT INTO production.rm_categories (name) VALUES ('Fruits & Pulp') ON CONFLICT (name) DO NOTHING;
 INSERT INTO production.rm_categories (name) VALUES ('Nuts & Pastes') ON CONFLICT (name) DO NOTHING;
@@ -17,1834 +17,1403 @@ INSERT INTO production.rm_categories (name) VALUES ('Stabilizers & Additives') O
 INSERT INTO production.rm_categories (name) VALUES ('Grains & Flour') ON CONFLICT (name) DO NOTHING;
 INSERT INTO production.rm_categories (name) VALUES ('Other') ON CONFLICT (name) DO NOTHING;
 
--- ── 2. Insert missing RM items ────────────────────────────────────
--- (uses 'Other' category as fallback; reassign via Manage Ingredients)
+-- ── 2. RM items (175 ingredients, skips existing by name) ─────────
 DO $$
 DECLARE cat_id INT;
 BEGIN
   SELECT id INTO cat_id FROM production.rm_categories WHERE name = 'Other' LIMIT 1;
-  IF cat_id IS NULL THEN
-    INSERT INTO production.rm_categories (name) VALUES ('Other') RETURNING id INTO cat_id;
-  END IF;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('13% IPPL Base', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('13% IPPL Base', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('13% IPPL FD Base', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('13% IPPL FD Base', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('4% Fat Milk', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('4% Fat Milk', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Aam Panha Syrup', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Aam Panha Syrup', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Amul Butter', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Amul Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Amul Cheese Cubes', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Amul Cheese Cubes', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Amul Fresh Cream', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Amul Fresh Cream', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Amul Khoa', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Amul Khoa', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Anjeer Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Anjeer Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Any Oil', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Any Oil', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Apple Halwa', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Apple Halwa', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Apricot Sauce', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Apricot Sauce', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Ash Gourd Prep', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Ash Gourd Prep', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Banarasi Betal Leaf', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Banarasi Betal Leaf', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Black Dates', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Black Dates', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Black Pepper', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Black Pepper', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Black Salt', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Black Salt', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Black Sesame', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Black Sesame', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Blanched Almond Butter', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Blanched Almond Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Blueberry Compote', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Blueberry Compote', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Blueberry Essence', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Blueberry Essence', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Blueberry Pulp', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Blueberry Pulp', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Brown Sugar', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Brown Sugar', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cacao Miscela', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cacao Miscela', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Callebaut', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Callebaut', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Candied Orange Peel', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Candied Orange Peel', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Canned Mango Pulp', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Canned Mango Pulp', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Caramel Sauce', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Caramel Sauce', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Caramelized Ginger', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Caramelized Ginger', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cardamom Powder (Elaichi)', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cardamom Powder (Elaichi)', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cashew Butter', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cashew Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cashew Chikki', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cashew Chikki', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cashew Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cashew Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Chaat Masala', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Chaat Masala', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Charoli', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Charoli', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Chironji Seeds (Charoli)', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Chironji Seeds (Charoli)', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Chocolate Chip Cookies', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Chocolate Chip Cookies', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cinnamon Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cinnamon Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cinnamon Rolls', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cinnamon Rolls', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Citric Acid', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Citric Acid', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Clove Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Clove Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Coconut Butter', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Coconut Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Coconut Crunch Biscuits', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Coconut Crunch Biscuits', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Coconut Milk Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Coconut Milk Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Coffee Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Coffee Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Corn Flour', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Corn Flour', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Cumin Seeds Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Cumin Seeds Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Curry Leaf', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Curry Leaf', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Dark Chocolate Compound', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Dark Chocolate Compound', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Dark Chocolate Slab', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Dark Chocolate Slab', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Dark Fantasy Chocolate biscuits', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Dark Fantasy Chocolate biscuits', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Date Syrup', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Date Syrup', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Dextrose G75', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Dextrose G75', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Dextrose Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Dextrose Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Digestive Biscuits', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Digestive Biscuits', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Dried Apricot', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Dried Apricot', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Dried Rose Petals', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Dried Rose Petals', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Edible Camphor', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Edible Camphor', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fennel Seeds', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fennel Seeds', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Freeze Dried Banana', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Freeze Dried Banana', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Apple', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Apple', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Ash Gourd', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Ash Gourd', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Banana', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Banana', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Chikoo', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Chikoo', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Cream', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Cream', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Deccan Sitaphal', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Deccan Sitaphal', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Durian', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Durian', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Garlic', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Garlic', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Ginger', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Ginger', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Golden Sitaphal', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Golden Sitaphal', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Guava', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Guava', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Hass Avocado', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Hass Avocado', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Jackfruit', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Jackfruit', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Jambhul', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Jambhul', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Kokum', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Kokum', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Lemon', 'pc', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Lemon', 'pc', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Pineapple', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Pineapple', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Pumpkin', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Pumpkin', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Puran', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Puran', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Ramphal', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Ramphal', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Raspberry', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Raspberry', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Fresh Tender Coconut', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Fresh Tender Coconut', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Frozen Strawberries', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Frozen Strawberries', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Gajar Halwa', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Gajar Halwa', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Galangal Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Galangal Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Ghee', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Ghee', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Ginger Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Ginger Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Gingerbread Cookies', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Gingerbread Cookies', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Gowardhan Ghee', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Gowardhan Ghee', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Gram Flour (Besan)', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Gram Flour (Besan)', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Green Chilli', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Green Chilli', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Ground Ginger (Suntha)', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Ground Ginger (Suntha)', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Gulab Jamun', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Gulab Jamun', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Gulkand', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Gulkand', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Hazelnut Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Hazelnut Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('High Fat Milk', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('High Fat Milk', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Honey', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Honey', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('JB 800 Cocoa Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('JB 800 Cocoa Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Jaggery', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Jaggery', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Jindal 301 Cocoa Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Jindal 301 Cocoa Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Kaffir Lime Leaves', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Kaffir Lime Leaves', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Kairi Squash', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Kairi Squash', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Kasundi Sauce', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Kasundi Sauce', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Kharik', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Kharik', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Khus Khus', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Khus Khus', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Lemongrass', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Lemongrass', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Liquid Glucose', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Liquid Glucose', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Loose Almonds', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Loose Almonds', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Loose Hazelnut', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Loose Hazelnut', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Loose Pista', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Loose Pista', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Loose Raisins', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Loose Raisins', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Lotus Biscoff Biscuits', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Lotus Biscoff Biscuits', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Maida', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Maida', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Mango Essence', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Mango Essence', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Maple Syrup', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Maple Syrup', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Matcha Tea Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Matcha Tea Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Milk Chocolate Slab', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Milk Chocolate Slab', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Milkmaid', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Milkmaid', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Mint Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Mint Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Miso Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Miso Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Molasses', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Molasses', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Mysore Paak', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Mysore Paak', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Nutmeg Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Nutmeg Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Oats Chikki', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Oats Chikki', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Off Season Sitaphal Pulp', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Off Season Sitaphal Pulp', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Omkar Kokum Syrup', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Omkar Kokum Syrup', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Orange Paste Pre Gel', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Orange Paste Pre Gel', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Pandan Leaves', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Pandan Leaves', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Parle G Biscuit', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Parle G Biscuit', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Parle Gold', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Parle Gold', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Pecans', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Pecans', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Pineapple Halwa', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Pineapple Halwa', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Pistachio Butter', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Pistachio Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Pistachio Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Pistachio Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Popcorn Kernels', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Popcorn Kernels', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Puranpoli', 'pc', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Puranpoli', 'pc', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Purple Yam', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Purple Yam', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Red Chilli Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Red Chilli Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Red Chillies', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Red Chillies', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Red Dates', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Red Dates', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Refined Wheat Flour', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Refined Wheat Flour', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Roasted Almond Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Roasted Almond Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Rolled Oats', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Rolled Oats', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Rose Water', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Rose Water', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Saffron Spice', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Saffron Spice', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Samrat Gram Flour (Besan)', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Samrat Gram Flour (Besan)', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Sevaiya', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Sevaiya', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Shredded Coconut', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Shredded Coconut', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Stabilizer', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Stabilizer', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Strawberry Essence', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Strawberry Essence', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Sugar', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Sugar', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Sweet Boondi', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Sweet Boondi', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Sweet Soy Sauce', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Sweet Soy Sauce', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Table Salt', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Table Salt', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Tamarind', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Tamarind', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Tamarind Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Tamarind Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Taste for Life Besan', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Taste for Life Besan', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Tea Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Tea Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Thai Basil', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Thai Basil', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Tukda Kaju', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Tukda Kaju', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Tutti Frutti', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Tutti Frutti', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Urad Dal', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Urad Dal', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Essence', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Essence', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Extract 301P', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Extract 301P', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Flavour (CEC)', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Flavour (CEC)', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Flavour (P)', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Flavour (P)', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Oleoresin', 'ltr', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Oleoresin', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Oreo Cookies', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Oreo Cookies', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Paste', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Paste', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Paste (MD)', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Paste (MD)', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Vanilla Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Vanilla Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('Wasabi Powder', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('Wasabi Powder', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('White Butter', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('White Butter', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('White Chocolate Slab', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('White Chocolate Slab', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('White Sesame', 'kg', cat_id, true, 'active')
-    ON CONFLICT (name) DO NOTHING;
+    VALUES ('White Sesame', 'kg', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
 END $$;
 
--- ── 3. Insert missing flavours into sales.flavours ────────────────
+-- ── 3. Insert NEW flavours into sales.flavours ────────────────────
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Aale Paak (Ginger Candy)', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Aam Kasundi (Mustard)', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Aam Kasundi (Mustard)', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Aam Panha Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Aam Panha Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('After Hours (Dark Chocolate Mint)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('After Hours (Dark Chocolate Mint)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Anjeer (Sun-Dried Figs)', 'Nuts', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Amrood (Guava/Peru)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Arabica Cinnamon (Di Bella Coffee Cinnamon)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Ananas Raj (Pineapple)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Arabica Nutmeg (Di Bella Coffee Nutmeg)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Anjeer (Sun-Dried Figs)', 'Nuts', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Avocado Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Apple Pie', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Bhuna Badaam (Roasted Nutty Almonds)', 'Nuts', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Arabica Cinnamon (Di Bella Coffee Cinnamon)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Blueberry Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Arabica Nutmeg (Di Bella Coffee Nutmeg)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Boondi Laddoo', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Avocado Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Caramel Cheese Popcorn', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Banana Caramel', 'Western', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Caramel Galangal', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Banarasi Meetha Paan', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Caramel Latte (Di Bella Coffee Caramel)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Belgian Speculoos', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Cashew Scotch Arabica (Di Bella Coffee Cashew)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Besan Laddoo', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Cashewnut Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Bhuna Badaam (Roasted Nutty Almonds)', 'Nuts', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Cheese Melt', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Blueberry Blush', 'Frozen Dessert', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Chocolate Ginger', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Blueberry Cheesecake', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Chocolate Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Boondi Laddoo', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Coffee Berry (Di Bella Coffee Strawberry)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Caramel Cheese Popcorn', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Dates & Almonds', 'Nuts', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Caramel Galangal', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Durian Banana', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Caramel Latte (Di Bella Coffee Caramel)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('French Vanilla (2025)', 'White Box', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cashew Scotch Arabica (Di Bella Coffee Cashew)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Fruit Custard', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cashewnut Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Gingerbread', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cheese Melt', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Golden Sitaphal', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Chikkamagaluru Kaaphi', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Gondhoraj Malai', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Chikoo (Sapota)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Gud and Saunf', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Chocolate Choice', 'Frozen Dessert', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Hazelnut Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Chocolate Ginger', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Java Peppermint (Di Bella Coffee Mint)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Chocolate Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Khajoor', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Coffee Berry (Di Bella Coffee Strawberry)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Kokum Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cookie Dusk (Dark Chocolate Cookie)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Lemongrass Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Crumble and Dough', 'White Box', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Made in Heaven (Choco Hazel Crunch)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Cutting Chai Biskoot', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Mango Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Dakkhan Sitaphal (Custard Apple)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Mango Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Dates & Almonds', 'Nuts', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Maple Cinnamon Roll', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Durian Banana', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Mauritian Vanilla Bean', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('French Vanilla (2022)', 'White Box', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Mishti Doi', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('French Vanilla (2025)', 'White Box', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Miso Caramel', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Fruit Custard', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Mocha Choco-chip (Di Bella Coffee DCC)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gajar Halwa', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Mocha Hazelnut (Di Bella Coffee Hazelnut)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gingerbread', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('MotiChoor', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Golden Sitaphal', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Nutty Arabica (Di Bella Coffee Almond)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gondhoraj Malai', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Nutty Naughty (Milk Chocolate Almond)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gud and Saunf', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Off Season Sitaphal', 'White Box', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gulab Jamun', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Orange Apricot', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Gulqand (Candied Rose Petals)', 'Nuts', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Orange Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Hara Pista (Pistacia Vera)', 'Nuts', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Pecan Caramel Crumble', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Hass Avocado', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Pineapple Chili', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Hazelnut Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Pistachio Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Jambhul (Jamun)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Princess Blonde (White Chocolate Cake)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Japanese Matcha', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Pumpkin Pie', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Java Peppermint (Di Bella Coffee Mint)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Pure Arabica Coffee (Di Bella Coffee)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kaffir Lime Coconut', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Purple Pandan', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kaju Katli (Creamy Cashewnut)', 'Nuts', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Qubaani (Apricots)', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Karikku (Tender Coconut)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Ramphal (Bullock’s Heart)', 'Fruits', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kashmiri Kesar (Pure Saffron)', 'Nuts', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Raspberry Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kesar Thandai', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Red Chilli Bite', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Khajoor', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Salted Caramel Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kokum Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Signature Mango (Aurum)', 'Signature', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kuro Goma (Black Sesame)', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Signature Strawberry (Rosaea)', 'Signature', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Kyoka Kuro Goma', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Sol Kadhi', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Legal Overdose (Double Dose Milk Chocolate)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Strawberry Cheesecake', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Lemongrass Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Strawberry Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Madagascar Vanilla', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Sunkissed Arabica (Di Bella Coffee Orange)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Made in Heaven (Choco Hazel Crunch)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Sweet Soy', 'Eastern', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mango Basil', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Tamarind Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mango Cheesecake', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Tamarind and Curry Leaf', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mango Mania', 'Frozen Dessert', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Tender Coconut Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mango Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Thengai Barfi', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Maple Cinnamon Roll', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Tilgul', 'Traditional', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mauritian Vanilla Bean', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Tropical Brew (Di Bella Coffee Coconut)', 'Coffee', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Midnight Mania (Ultra Dark Chocolate)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Turkish Hazelnut', 'Occidental', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mishti Doi', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Ultimate Luxe (Michelle & Barry Callebaut)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Miso Caramel', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vanilla Sorbet', 'Sorbets', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mocha Choco-chip (Di Bella Coffee DCC)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Caramel', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mocha Hazelnut (Di Bella Coffee Hazelnut)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Cashew', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('MotiChoor', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Chocolate', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Mysore Paak', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Coffee', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Naarali Bhaat', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Coffee Caramel', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('New York Style Cheesecake', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Kaju Katli', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Nutty Arabica (Di Bella Coffee Almond)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Mango', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Nutty Naughty (Milk Chocolate Almond)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Matcha', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Off Season Sitaphal', 'White Box', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Pistachio', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Orange Apricot', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Raspberry', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Orange Cheesecake', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('Vegan Strawberry', 'Vegan', 'active') ON CONFLICT (name) DO NOTHING;
 INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Paan (Revised)', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Palapazham (Jackfruit)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pecan Caramel Crumble', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pineapple Chili', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pistachio Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Prasadam Laddoo', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Princess Blonde (White Chocolate Cake)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pumpkin Pie', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Puranpoli', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Pure Arabica Coffee (Di Bella Coffee)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Purple Pandan', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Qubaani (Apricots)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Ramphal (Bullock’s Heart)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Raspberry Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Ratnagiri Hapoos (Mango)', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Red Chilli Bite', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Salted Caramel', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Salted Caramel Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sheer Qhurma', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sheer Qhurma (Revised)', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Signature Chocolate (Cacaoir)', 'Signature', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Signature Mango (Aurum)', 'Signature', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Signature Strawberry (Rosaea)', 'Signature', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sol Kadhi', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Strawberry Cheesecake', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Strawberry Cream', 'Fruits', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Strawberry Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Strawberry Strength', 'Frozen Dessert', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sunkissed Arabica (Di Bella Coffee Orange)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sunkissed Twilight (Dark Chocolate Orange)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Sweet Soy', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tamarind Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tamarind and Curry Leaf', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tender Coconut Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Thengai Barfi', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tilgul', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Tropical Brew (Di Bella Coffee Coconut)', 'Coffee', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Turkish Hazelnut', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Ukadiche Modak', 'Traditional', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Ultimate Luxe (Michelle & Barry Callebaut)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vanilla Sorbet', 'Sorbets', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vanilla Vantage', 'Frozen Dessert', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Caramel', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Cashew', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Chocolate', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Coffee', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Coffee Caramel', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Kaju Katli', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Mango', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Matcha', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Pistachio', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Raspberry', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Vegan Strawberry', 'Vegan', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Wasabi Punch', 'Eastern', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('White Knight (White Chocolate Almond)', 'Couverture', 'active')
-  ON CONFLICT (name) DO NOTHING;
-INSERT INTO sales.flavours (name, category, status)
-  VALUES ('Yorkshire Butterscotch', 'Occidental', 'active')
-  ON CONFLICT (name) DO NOTHING;
+  VALUES ('White Knight (White Chocolate Almond)', 'Couverture', 'active') ON CONFLICT (name) DO NOTHING;
 
--- ── 4. Insert prep products (linked to sales.flavours) ────────────
+-- ── 4. Create prep_products (existing + new flavours) ─────────────
 DO $$
 DECLARE fid INT;
 BEGIN
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Aale Paak (Ginger Candy)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Aale Paak
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Aale Paak' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Aale Paak (Ginger Candy)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Aale Paak', 20.0, 'batch', 'active');
   END IF;
+  -- Aam Kasundi (Mustard)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Aam Kasundi (Mustard)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Aam Kasundi (Mustard)', 20.0, 'batch', 'active');
   END IF;
+  -- Aam Panha Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Aam Panha Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Aam Panha Sorbet', 16.0, 'batch', 'active');
   END IF;
+  -- After Hours (Dark Chocolate Mint)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'After Hours (Dark Chocolate Mint)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'After Hours (Dark Chocolate Mint)', 20.0, 'batch', 'active');
   END IF;
+  -- Amrood (Guava/Peru)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Amrood (Guava/Peru)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Amrood (Guava/Peru)', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Ananas Raj (Pineapple)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Pineapple
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Pineapple' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Ananas Raj (Pineapple)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Pineapple', 20.0, 'batch', 'active');
   END IF;
+  -- Anjeer (Sun-Dried Figs)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Anjeer (Sun-Dried Figs)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Anjeer (Sun-Dried Figs)', 20.0, 'batch', 'active');
   END IF;
+  -- Apple Pie
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Apple Pie' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Apple Pie', 20.0, 'batch', 'active');
   END IF;
+  -- Arabica Cinnamon (Di Bella Coffee Cinnamon)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Arabica Cinnamon (Di Bella Coffee Cinnamon)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Arabica Cinnamon (Di Bella Coffee Cinnamon)', 20.0, 'batch', 'active');
   END IF;
+  -- Arabica Nutmeg (Di Bella Coffee Nutmeg)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Arabica Nutmeg (Di Bella Coffee Nutmeg)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Arabica Nutmeg (Di Bella Coffee Nutmeg)', 20.0, 'batch', 'active');
   END IF;
+  -- Avocado Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Avocado Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Avocado Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Banana Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Banana Caramel' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Banana Caramel', 20.0, 'batch', 'active');
   END IF;
+  -- Banarasi Meetha Paan
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Banarasi Meetha Paan' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Banarasi Meetha Paan', 20.0, 'batch', 'active');
   END IF;
+  -- Belgian Speculoos
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Belgian Speculoos' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Belgian Speculoos', 18.5, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Besan Laddoo' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Dakshin Laddoo
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Dakshin Laddoo' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Besan Laddoo', 20.0, 'batch', 'active');
+      VALUES (fid, 'Dakshin Laddoo', 20.0, 'batch', 'active');
   END IF;
+  -- Bhuna Badaam (Roasted Nutty Almonds)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Bhuna Badaam (Roasted Nutty Almonds)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Bhuna Badaam (Roasted Nutty Almonds)', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Blueberry Blush' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Blueberry Blush (FD)
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Blueberry Blush (FD)' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Blueberry Blush', 40.0, 'batch', 'active');
+      VALUES (fid, 'Blueberry Blush (FD)', 40.0, 'batch', 'active');
   END IF;
+  -- Blueberry Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Blueberry Cheesecake' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Blueberry Cheesecake', 20.0, 'batch', 'active');
   END IF;
+  -- Boondi Laddoo
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Boondi Laddoo' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Boondi Laddoo', 20.0, 'batch', 'active');
   END IF;
+  -- Caramel Cheese Popcorn
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Caramel Cheese Popcorn' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Caramel Cheese Popcorn', 20.0, 'batch', 'active');
   END IF;
+  -- Caramel Galangal
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Caramel Galangal' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Caramel Galangal', 20.0, 'batch', 'active');
   END IF;
+  -- Caramel Latte (Di Bella Coffee Caramel)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Caramel Latte (Di Bella Coffee Caramel)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Caramel Latte (Di Bella Coffee Caramel)', 20.0, 'batch', 'active');
   END IF;
+  -- Cashew Scotch Arabica (Di Bella Coffee Cashew)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cashew Scotch Arabica (Di Bella Coffee Cashew)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Cashew Scotch Arabica (Di Bella Coffee Cashew)', 20.0, 'batch', 'active');
   END IF;
+  -- Cashewnut Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cashewnut Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Cashewnut Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Cheese Melt
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cheese Melt' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Cheese Melt', 20.0, 'batch', 'active');
   END IF;
+  -- Chikkamagaluru Kaaphi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chikkamagaluru Kaaphi' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Chikkamagaluru Kaaphi', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Chikoo (Sapota)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Chikoo
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Chikoo' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Chikoo (Sapota)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Chikoo', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Chocolate Choice' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Chocolate Choice (FD)
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Chocolate Choice (FD)' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Chocolate Choice', 40.0, 'batch', 'active');
+      VALUES (fid, 'Chocolate Choice (FD)', 40.0, 'batch', 'active');
   END IF;
+  -- Chocolate Ginger
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chocolate Ginger' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Chocolate Ginger', 20.0, 'batch', 'active');
   END IF;
+  -- Chocolate Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Chocolate Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Chocolate Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Coffee Berry (Di Bella Coffee Strawberry)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Coffee Berry (Di Bella Coffee Strawberry)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Coffee Berry (Di Bella Coffee Strawberry)', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Cookie Dusk (Dark Chocolate Cookie)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Cookie Dusk
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Cookie Dusk' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Cookie Dusk (Dark Chocolate Cookie)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Cookie Dusk', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Crumble and Dough' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Crumble & Dough
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Crumble & Dough' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Crumble and Dough', 20.0, 'batch', 'active');
+      VALUES (fid, 'Crumble & Dough', 20.0, 'batch', 'active');
   END IF;
+  -- Cutting Chai Biskoot
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Cutting Chai Biskoot' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Cutting Chai Biskoot', 20.0, 'batch', 'active');
   END IF;
+  -- Dakkhan Sitaphal (Custard Apple)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Dakkhan Sitaphal (Custard Apple)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Dakkhan Sitaphal (Custard Apple)', 20.0, 'batch', 'active');
   END IF;
+  -- Dates & Almonds
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Dates & Almonds' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Dates & Almonds', 20.0, 'batch', 'active');
   END IF;
+  -- Durian Banana
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Durian Banana' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Durian Banana', 19.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'French Vanilla (2022)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- French Vanilla
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'French Vanilla' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'French Vanilla (2022)', 20.0, 'batch', 'active');
+      VALUES (fid, 'French Vanilla', 20.0, 'batch', 'active');
   END IF;
+  -- French Vanilla (2025)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'French Vanilla (2025)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'French Vanilla (2025)', 20.0, 'batch', 'active');
   END IF;
+  -- Fruit Custard
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Fruit Custard' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Fruit Custard', 20.0, 'batch', 'active');
   END IF;
+  -- Gajar Halwa
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gajar Halwa' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Gajar Halwa', 20.0, 'batch', 'active');
   END IF;
+  -- Gingerbread
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gingerbread' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Gingerbread', 20.0, 'batch', 'active');
   END IF;
+  -- Golden Sitaphal
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Golden Sitaphal' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Golden Sitaphal', 20.0, 'batch', 'active');
   END IF;
+  -- Gondhoraj Malai
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gondhoraj Malai' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Gondhoraj Malai', 20.0, 'batch', 'active');
   END IF;
+  -- Gud and Saunf
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gud and Saunf' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Gud and Saunf', 20.0, 'batch', 'active');
   END IF;
+  -- Gulab Jamun
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Gulab Jamun' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Gulab Jamun', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Gulqand (Candied Rose Petals)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Gulqand
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Gulqand' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Gulqand (Candied Rose Petals)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Gulqand', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Hara Pista (Pistacia Vera)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Hara Pista
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Hara Pista' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Hara Pista (Pistacia Vera)', 16.0, 'batch', 'active');
+      VALUES (fid, 'Hara Pista', 16.0, 'batch', 'active');
   END IF;
+  -- Hass Avocado
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Hass Avocado' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Hass Avocado', 18.78, 'batch', 'active');
   END IF;
+  -- Hazelnut Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Hazelnut Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Hazelnut Sorbet', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Jambhul (Jamun)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Jambhul
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Jambhul' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Jambhul (Jamun)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Jambhul', 20.0, 'batch', 'active');
   END IF;
+  -- Japanese Matcha
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Japanese Matcha' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Japanese Matcha', 20.0, 'batch', 'active');
   END IF;
+  -- Java Peppermint (Di Bella Coffee Mint)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Java Peppermint (Di Bella Coffee Mint)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Java Peppermint (Di Bella Coffee Mint)', 20.0, 'batch', 'active');
   END IF;
+  -- Kaffir Lime Coconut
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kaffir Lime Coconut' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Kaffir Lime Coconut', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Kaju Katli (Creamy Cashewnut)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Kaju Katli
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Kaju Katli' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kaju Katli (Creamy Cashewnut)', 19.0, 'batch', 'active');
+      VALUES (fid, 'Kaju Katli', 19.0, 'batch', 'active');
   END IF;
+  -- Karikku (Tender Coconut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Karikku (Tender Coconut)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Karikku (Tender Coconut)', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Kashmiri Kesar (Pure Saffron)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Kashmiri Kesar
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Kashmiri Kesar' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kashmiri Kesar (Pure Saffron)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Kashmiri Kesar', 20.0, 'batch', 'active');
   END IF;
+  -- Kesar Thandai
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kesar Thandai' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Kesar Thandai', 20.0, 'batch', 'active');
   END IF;
+  -- Khajoor
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Khajoor' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Khajoor', 20.0, 'batch', 'active');
   END IF;
+  -- Kokum Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kokum Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Kokum Sorbet', 11.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Kuro Goma (Black Sesame)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Kuro Goma
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Kuro Goma' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Kuro Goma (Black Sesame)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Kuro Goma', 20.0, 'batch', 'active');
   END IF;
+  -- Kyoka Kuro Goma
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Kyoka Kuro Goma' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Kyoka Kuro Goma', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Legal Overdose (Double Dose Milk Chocolate)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Legal Overdose
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Legal Overdose' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Legal Overdose (Double Dose Milk Chocolate)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Legal Overdose', 20.0, 'batch', 'active');
   END IF;
+  -- Lemongrass Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Lemongrass Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Lemongrass Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Madagascar Vanilla
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Madagascar Vanilla' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Madagascar Vanilla', 20.0, 'batch', 'active');
   END IF;
+  -- Made in Heaven (Choco Hazel Crunch)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Made in Heaven (Choco Hazel Crunch)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Made in Heaven (Choco Hazel Crunch)', 20.0, 'batch', 'active');
   END IF;
+  -- Mango Basil
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Basil' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mango Basil', 20.0, 'batch', 'active');
   END IF;
+  -- Mango Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Cheesecake' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mango Cheesecake', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Mania' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Mango Mania (FD)
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Mania (FD)' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Mango Mania', 40.0, 'batch', 'active');
+      VALUES (fid, 'Mango Mania (FD)', 40.0, 'batch', 'active');
   END IF;
+  -- Mango Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mango Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mango Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Maple Cinnamon Roll
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Maple Cinnamon Roll' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Maple Cinnamon Roll', 20.0, 'batch', 'active');
   END IF;
+  -- Mauritian Vanilla Bean
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mauritian Vanilla Bean' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mauritian Vanilla Bean', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Midnight Mania (Ultra Dark Chocolate)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Midnight Mania
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Midnight Mania' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Midnight Mania (Ultra Dark Chocolate)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Midnight Mania', 20.0, 'batch', 'active');
   END IF;
+  -- Mishti Doi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mishti Doi' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mishti Doi', 18.0, 'batch', 'active');
   END IF;
+  -- Miso Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Miso Caramel' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Miso Caramel', 20.0, 'batch', 'active');
   END IF;
+  -- Mocha Choco-chip (Di Bella Coffee DCC)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mocha Choco-chip (Di Bella Coffee DCC)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mocha Choco-chip (Di Bella Coffee DCC)', 20.0, 'batch', 'active');
   END IF;
+  -- Mocha Hazelnut (Di Bella Coffee Hazelnut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mocha Hazelnut (Di Bella Coffee Hazelnut)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mocha Hazelnut (Di Bella Coffee Hazelnut)', 20.0, 'batch', 'active');
   END IF;
+  -- MotiChoor
   SELECT id INTO fid FROM sales.flavours WHERE name = 'MotiChoor' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'MotiChoor', 20.0, 'batch', 'active');
   END IF;
+  -- Mysore Paak
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Mysore Paak' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Mysore Paak', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Naarali Bhaat' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Narali Bhaat
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Narali Bhaat' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Naarali Bhaat', 20.0, 'batch', 'active');
+      VALUES (fid, 'Narali Bhaat', 20.0, 'batch', 'active');
   END IF;
+  -- New York Style Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'New York Style Cheesecake' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'New York Style Cheesecake', 20.0, 'batch', 'active');
   END IF;
+  -- Nutty Arabica (Di Bella Coffee Almond)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Nutty Arabica (Di Bella Coffee Almond)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Nutty Arabica (Di Bella Coffee Almond)', 20.0, 'batch', 'active');
   END IF;
+  -- Nutty Naughty (Milk Chocolate Almond)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Nutty Naughty (Milk Chocolate Almond)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Nutty Naughty (Milk Chocolate Almond)', 20.0, 'batch', 'active');
   END IF;
+  -- Off Season Sitaphal
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Off Season Sitaphal' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Off Season Sitaphal', 20.0, 'batch', 'active');
   END IF;
+  -- Orange Apricot
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Orange Apricot' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Orange Apricot', 20.0, 'batch', 'active');
   END IF;
+  -- Orange Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Orange Cheesecake' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Orange Cheesecake', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Paan (Revised)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Reshmi Paan
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Reshmi Paan' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Paan (Revised)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Reshmi Paan', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Palapazham (Jackfruit)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Palaapazham (Jackfruit)
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Palaapazham (Jackfruit)' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Palapazham (Jackfruit)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Palaapazham (Jackfruit)', 20.0, 'batch', 'active');
   END IF;
+  -- Pecan Caramel Crumble
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pecan Caramel Crumble' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Pecan Caramel Crumble', 20.0, 'batch', 'active');
   END IF;
+  -- Pineapple Chili
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pineapple Chili' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Pineapple Chili', 20.0, 'batch', 'active');
   END IF;
+  -- Pistachio Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pistachio Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Pistachio Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Prasadam Laddoo
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Prasadam Laddoo' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Prasadam Laddoo', 20.0, 'batch', 'active');
   END IF;
+  -- Princess Blonde (White Chocolate Cake)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Princess Blonde (White Chocolate Cake)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Princess Blonde (White Chocolate Cake)', 20.0, 'batch', 'active');
   END IF;
+  -- Pumpkin Pie
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pumpkin Pie' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Pumpkin Pie', 20.0, 'batch', 'active');
   END IF;
+  -- Puranpoli
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Puranpoli' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Puranpoli', 20.0, 'batch', 'active');
   END IF;
+  -- Pure Arabica Coffee (Di Bella Coffee)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Pure Arabica Coffee (Di Bella Coffee)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Pure Arabica Coffee (Di Bella Coffee)', 20.0, 'batch', 'active');
   END IF;
+  -- Purple Pandan
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Purple Pandan' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Purple Pandan', 20.0, 'batch', 'active');
   END IF;
+  -- Qubaani (Apricots)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Qubaani (Apricots)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Qubaani (Apricots)', 20.0, 'batch', 'active');
   END IF;
+  -- Ramphal (Bullock’s Heart)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ramphal (Bullock’s Heart)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Ramphal (Bullock’s Heart)', 20.0, 'batch', 'active');
   END IF;
+  -- Raspberry Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Raspberry Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Raspberry Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Ratnagiri Hapoos (Mango)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ratnagiri Hapoos (Mango)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Ratnagiri Hapoos (Mango)', 20.0, 'batch', 'active');
   END IF;
+  -- Red Chilli Bite
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Red Chilli Bite' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Red Chilli Bite', 20.0, 'batch', 'active');
   END IF;
+  -- Salted Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Salted Caramel' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Salted Caramel', 20.0, 'batch', 'active');
   END IF;
+  -- Salted Caramel Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Salted Caramel Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Salted Caramel Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Sheer Qhurma
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sheer Qhurma' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Sheer Qhurma', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Sheer Qhurma (Revised)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Shahi Sevaiya
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Shahi Sevaiya' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Sheer Qhurma (Revised)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Shahi Sevaiya', 20.0, 'batch', 'active');
   END IF;
+  -- Signature Chocolate (Cacaoir)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Signature Chocolate (Cacaoir)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Signature Chocolate (Cacaoir)', 11.0, 'batch', 'active');
   END IF;
+  -- Signature Mango (Aurum)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Signature Mango (Aurum)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Signature Mango (Aurum)', 11.0, 'batch', 'active');
   END IF;
+  -- Signature Strawberry (Rosaea)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Signature Strawberry (Rosaea)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Signature Strawberry (Rosaea)', 11.0, 'batch', 'active');
   END IF;
+  -- Sol Kadhi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sol Kadhi' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Sol Kadhi', 16.0, 'batch', 'active');
   END IF;
+  -- Strawberry Cheesecake
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Cheesecake' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Strawberry Cheesecake', 20.0, 'batch', 'active');
   END IF;
+  -- Strawberry Cream
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Cream' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Strawberry Cream', 20.0, 'batch', 'active');
   END IF;
+  -- Strawberry Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Strawberry Sorbet', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Strength' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Strawberry Strength (FD)
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Strawberry Strength (FD)' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Strawberry Strength', 40.0, 'batch', 'active');
+      VALUES (fid, 'Strawberry Strength (FD)', 40.0, 'batch', 'active');
   END IF;
+  -- Sunkissed Arabica (Di Bella Coffee Orange)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sunkissed Arabica (Di Bella Coffee Orange)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Sunkissed Arabica (Di Bella Coffee Orange)', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Sunkissed Twilight (Dark Chocolate Orange)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Sunkissed Twilight
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Sunkissed Twilight' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Sunkissed Twilight (Dark Chocolate Orange)', 20.0, 'batch', 'active');
+      VALUES (fid, 'Sunkissed Twilight', 20.0, 'batch', 'active');
   END IF;
+  -- Sweet Soy
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Sweet Soy' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Sweet Soy', 20.0, 'batch', 'active');
   END IF;
+  -- Tamarind Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tamarind Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Tamarind Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Tamarind and Curry Leaf
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tamarind and Curry Leaf' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Tamarind and Curry Leaf', 20.0, 'batch', 'active');
   END IF;
+  -- Tender Coconut Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tender Coconut Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Tender Coconut Sorbet', 20.0, 'batch', 'active');
   END IF;
+  -- Thengai Barfi
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Thengai Barfi' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Thengai Barfi', 20.0, 'batch', 'active');
   END IF;
+  -- Tilgul
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tilgul' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Tilgul', 20.0, 'batch', 'active');
   END IF;
+  -- Tropical Brew (Di Bella Coffee Coconut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Tropical Brew (Di Bella Coffee Coconut)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Tropical Brew (Di Bella Coffee Coconut)', 20.0, 'batch', 'active');
   END IF;
+  -- Turkish Hazelnut
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Turkish Hazelnut' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Turkish Hazelnut', 16.0, 'batch', 'active');
   END IF;
+  -- Ukadiche Modak
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ukadiche Modak' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Ukadiche Modak', 20.0, 'batch', 'active');
   END IF;
+  -- Ultimate Luxe (Michelle & Barry Callebaut)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Ultimate Luxe (Michelle & Barry Callebaut)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Ultimate Luxe (Michelle & Barry Callebaut)', 20.0, 'batch', 'active');
   END IF;
+  -- Vanilla Sorbet
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vanilla Sorbet' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vanilla Sorbet', 20.0, 'batch', 'active');
   END IF;
-  SELECT id INTO fid FROM sales.flavours WHERE name = 'Vanilla Vantage' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  -- Vanilla Vantage (FD)
+  SELECT id INTO fid FROM sales.flavours WHERE name = 'Vanilla Vantage (FD)' LIMIT 1;
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
-      VALUES (fid, 'Vanilla Vantage', 40.0, 'batch', 'active');
+      VALUES (fid, 'Vanilla Vantage (FD)', 40.0, 'batch', 'active');
   END IF;
+  -- Vegan Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Caramel' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Caramel', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Cashew
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Cashew' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Cashew', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Chocolate
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Chocolate' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Chocolate', 9.9, 'batch', 'active');
   END IF;
+  -- Vegan Coffee
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Coffee' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Coffee', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Coffee Caramel
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Coffee Caramel' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Coffee Caramel', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Kaju Katli
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Kaju Katli' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Kaju Katli', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Mango
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Mango' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Mango', 9.9, 'batch', 'active');
   END IF;
+  -- Vegan Matcha
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Matcha' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Matcha', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Pistachio
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Pistachio' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Pistachio', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Raspberry
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Raspberry' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Raspberry', 20.0, 'batch', 'active');
   END IF;
+  -- Vegan Strawberry
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Vegan Strawberry' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Vegan Strawberry', 9.9, 'batch', 'active');
   END IF;
+  -- Wasabi Punch
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Wasabi Punch' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Wasabi Punch', 20.0, 'batch', 'active');
   END IF;
+  -- White Knight (White Chocolate Almond)
   SELECT id INTO fid FROM sales.flavours WHERE name = 'White Knight (White Chocolate Almond)' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'White Knight (White Chocolate Almond)', 20.0, 'batch', 'active');
   END IF;
+  -- Yorkshire Butterscotch
   SELECT id INTO fid FROM sales.flavours WHERE name = 'Yorkshire Butterscotch' LIMIT 1;
-  IF fid IS NOT NULL AND NOT EXISTS (
-    SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
+  IF fid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM production.prep_products WHERE flavour_id = fid) THEN
     INSERT INTO production.prep_products (flavour_id, name, batch_yield_l, unit, status)
       VALUES (fid, 'Yorkshire Butterscotch', 20.0, 'batch', 'active');
   END IF;
 END $$;
 
--- ── 5. Insert prep recipes (will skip existing via ON CONFLICT) ───
+-- ── 5. Prep recipes (upserts qty_per_unit from cost sheet) ────────
 DO $$
 DECLARE pp_id INT; rm_id INT;
 BEGIN
-  -- Aale Paak (Ginger Candy)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Aale Paak (Ginger Candy)' LIMIT 1;
+  -- Aale Paak
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Aale Paak' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2025,8 +1594,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Ananas Raj (Pineapple)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Ananas Raj (Pineapple)' LIMIT 1;
+  -- Pineapple
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Pineapple' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2343,8 +1912,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Besan Laddoo
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Besan Laddoo' LIMIT 1;
+  -- Dakshin Laddoo
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Dakshin Laddoo' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2411,8 +1980,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Blueberry Blush
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Blueberry Blush' LIMIT 1;
+  -- Blueberry Blush (FD)
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Blueberry Blush (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2545,28 +2114,6 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Caramel Popcorn
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Caramel Popcorn' LIMIT 1;
-  IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Popcorn Kernels' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.015, 'topping')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Amul Butter' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.015, 'topping')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Sugar' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0625, 'topping')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-  END IF;
   -- Cashew Scotch Arabica (Di Bella Coffee Cashew)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Cashew Scotch Arabica (Di Bella Coffee Cashew)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
@@ -2661,8 +2208,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Chikoo (Sapota)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chikoo (Sapota)' LIMIT 1;
+  -- Chikoo
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chikoo' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2683,8 +2230,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Chocolate Choice
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chocolate Choice' LIMIT 1;
+  -- Chocolate Choice (FD)
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chocolate Choice (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2751,28 +2298,6 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Coconut Lemongrass
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Coconut Lemongrass' LIMIT 1;
-  IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0045, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Tender Coconut' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0015, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Sugar' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-  END IF;
   -- Coffee Berry (Di Bella Coffee Strawberry)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Coffee Berry (Di Bella Coffee Strawberry)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
@@ -2789,8 +2314,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Cookie Dusk (Dark Chocolate Cookie)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Cookie Dusk (Dark Chocolate Cookie)' LIMIT 1;
+  -- Cookie Dusk
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Cookie Dusk' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2829,8 +2354,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Crumble and Dough
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Crumble and Dough' LIMIT 1;
+  -- Crumble & Dough
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Crumble & Dough' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -2900,28 +2425,6 @@ BEGIN
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
         VALUES (pp_id, rm_id, 0.02, 'topping')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-  END IF;
-  -- Dahi Wada (Urad Dal Boondi)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Dahi Wada (Urad Dal Boondi)' LIMIT 1;
-  IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Urad Dal' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Refined Wheat Flour' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Any Oil' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.005, 'mix')
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
@@ -3009,8 +2512,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- French Vanilla (2022)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'French Vanilla (2022)' LIMIT 1;
+  -- French Vanilla
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'French Vanilla' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3315,8 +2818,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Gulqand (Candied Rose Petals)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gulqand (Candied Rose Petals)' LIMIT 1;
+  -- Gulqand
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gulqand' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3349,8 +2852,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Hara Pista (Pistacia Vera)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Hara Pista (Pistacia Vera)' LIMIT 1;
+  -- Hara Pista
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Hara Pista' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3445,8 +2948,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Jambhul (Jamun)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Jambhul (Jamun)' LIMIT 1;
+  -- Jambhul
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Jambhul' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3539,8 +3042,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Kaju Katli (Creamy Cashewnut)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kaju Katli (Creamy Cashewnut)' LIMIT 1;
+  -- Kaju Katli
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kaju Katli' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3589,8 +3092,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Kashmiri Kesar (Pure Saffron)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kashmiri Kesar (Pure Saffron)' LIMIT 1;
+  -- Kashmiri Kesar
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kashmiri Kesar' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3731,8 +3234,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Kuro Goma (Black Sesame)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kuro Goma (Black Sesame)' LIMIT 1;
+  -- Kuro Goma
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kuro Goma' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3793,8 +3296,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Legal Overdose (Double Dose Milk Chocolate)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Legal Overdose (Double Dose Milk Chocolate)' LIMIT 1;
+  -- Legal Overdose
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Legal Overdose' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -3939,8 +3442,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Mango Mania
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mango Mania' LIMIT 1;
+  -- Mango Mania (FD)
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mango Mania (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -4051,8 +3554,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Midnight Mania (Ultra Dark Chocolate)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Midnight Mania (Ultra Dark Chocolate)' LIMIT 1;
+  -- Midnight Mania
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Midnight Mania' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -4179,56 +3682,6 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Modak Petals
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Modak Petals' LIMIT 1;
-  IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Refined Wheat Flour' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.01, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Sugar' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0025, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Ghee' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0035, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Table Salt' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 1e-06, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-  END IF;
-  -- Modak Sauce
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Modak Sauce' LIMIT 1;
-  IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Sugar' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.003, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Jaggery' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Coconut Milk Powder' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.001, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-  END IF;
   -- MotiChoor
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'MotiChoor' LIMIT 1;
   IF pp_id IS NOT NULL THEN
@@ -4297,8 +3750,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Naarali Bhaat
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Naarali Bhaat' LIMIT 1;
+  -- Narali Bhaat
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Narali Bhaat' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -4547,8 +4000,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Paan (Revised)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Paan (Revised)' LIMIT 1;
+  -- Reshmi Paan
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Reshmi Paan' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -4605,8 +4058,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Palapazham (Jackfruit)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Palapazham (Jackfruit)' LIMIT 1;
+  -- Palaapazham (Jackfruit)
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Palaapazham (Jackfruit)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -4624,22 +4077,6 @@ BEGIN
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
         VALUES (pp_id, rm_id, 0.045, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-  END IF;
-  -- Palm Jaggery
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Palm Jaggery' LIMIT 1;
-  IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Jaggery' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0005, 'mix')
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
@@ -5105,8 +4542,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Sheer Qhurma (Revised)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sheer Qhurma (Revised)' LIMIT 1;
+  -- Shahi Sevaiya
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Shahi Sevaiya' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -5335,40 +4772,6 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Sol Kadhi Sauce
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sol Kadhi Sauce' LIMIT 1;
-  IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Kokum' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.001, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Sugar' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0015, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Table Salt' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 1e-06, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Red Chilli Powder' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Chaat Masala' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 1e-06, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-  END IF;
   -- Strawberry Cheesecake
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Strawberry Cheesecake' LIMIT 1;
   IF pp_id IS NOT NULL THEN
@@ -5465,8 +4868,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Strawberry Strength
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Strawberry Strength' LIMIT 1;
+  -- Strawberry Strength (FD)
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Strawberry Strength (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -5509,8 +4912,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Sunkissed Twilight (Dark Chocolate Orange)
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sunkissed Twilight (Dark Chocolate Orange)' LIMIT 1;
+  -- Sunkissed Twilight
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sunkissed Twilight' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -5819,8 +5222,8 @@ BEGIN
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
   END IF;
-  -- Vanilla Vantage
-  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Vanilla Vantage' LIMIT 1;
+  -- Vanilla Vantage (FD)
+  SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Vanilla Vantage (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
     IF rm_id IS NOT NULL THEN
@@ -6197,8 +5600,7 @@ BEGIN
   END IF;
 END $$;
 
--- ── 6. Create sales.orders for weekly requirement (DIS) ───────────
-
+-- ── 6. sales.orders + sales.order_lines ───────────────────────────
 CREATE TABLE IF NOT EXISTS sales.orders (
   id            SERIAL PRIMARY KEY,
   order_ref     TEXT,
@@ -6210,7 +5612,6 @@ CREATE TABLE IF NOT EXISTS sales.orders (
   note          TEXT,
   created_by    UUID REFERENCES auth.users(id)
 );
-
 CREATE TABLE IF NOT EXISTS sales.order_lines (
   id         SERIAL PRIMARY KEY,
   order_id   INT NOT NULL REFERENCES sales.orders(id) ON DELETE CASCADE,
@@ -6218,15 +5619,9 @@ CREATE TABLE IF NOT EXISTS sales.order_lines (
   qty        NUMERIC NOT NULL CHECK (qty > 0),
   unit       TEXT
 );
-
--- Disable RLS (per project policy)
 ALTER TABLE sales.orders      DISABLE ROW LEVEL SECURITY;
 ALTER TABLE sales.order_lines DISABLE ROW LEVEL SECURITY;
-
--- Grants
 GRANT ALL ON sales.orders, sales.order_lines TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE sales.orders_id_seq, sales.order_lines_id_seq TO authenticated;
-
--- Index for weekly req calculation
 CREATE INDEX IF NOT EXISTS idx_orders_ordered_at ON sales.orders (ordered_at);
 CREATE INDEX IF NOT EXISTS idx_order_lines_sku   ON sales.order_lines (fg_sku_id);
