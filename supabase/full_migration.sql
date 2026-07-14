@@ -23,10 +23,6 @@ DECLARE cat_id INT;
 BEGIN
   SELECT id INTO cat_id FROM production.rm_categories WHERE name = 'Other' LIMIT 1;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('13% IPPL Base', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
-  INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
-    VALUES ('13% IPPL FD Base', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
-  INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('4% Fat Milk', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
   INSERT INTO production.rm_items (name, unit, category_id, is_stockable, status)
     VALUES ('Aam Panha Syrup', 'ltr', cat_id, true, 'active') ON CONFLICT (name) DO NOTHING;
@@ -1399,12 +1395,6 @@ BEGIN
   -- Aale Paak
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Aale Paak' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Ginger' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1427,12 +1417,6 @@ BEGIN
   -- Aam Kasundi (Mustard)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Aam Kasundi (Mustard)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Kasundi Sauce' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1489,12 +1473,6 @@ BEGIN
   -- After Hours (Dark Chocolate Mint)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'After Hours (Dark Chocolate Mint)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1529,12 +1507,6 @@ BEGIN
   -- Amrood (Guava/Peru)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Amrood (Guava/Peru)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Guava' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1545,12 +1517,6 @@ BEGIN
   -- Pineapple
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Pineapple' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Pineapple' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1561,12 +1527,6 @@ BEGIN
   -- Anjeer (Sun-Dried Figs)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Anjeer (Sun-Dried Figs)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Anjeer Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1579,22 +1539,10 @@ BEGIN
         VALUES (pp_id, rm_id, 0.05, 'topping')
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.02, 'topping')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
   END IF;
   -- Apple Pie
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Apple Pie' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Apple' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1629,12 +1577,6 @@ BEGIN
   -- Arabica Cinnamon (Di Bella Coffee Cinnamon)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Arabica Cinnamon (Di Bella Coffee Cinnamon)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Cinnamon Rolls' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1645,12 +1587,6 @@ BEGIN
   -- Arabica Nutmeg (Di Bella Coffee Nutmeg)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Arabica Nutmeg (Di Bella Coffee Nutmeg)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Chironji Seeds (Charoli)' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1677,12 +1613,6 @@ BEGIN
   -- Banana Caramel
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Banana Caramel' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Banana' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1705,12 +1635,6 @@ BEGIN
   -- Banarasi Meetha Paan
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Banarasi Meetha Paan' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Banarasi Betal Leaf' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1757,12 +1681,6 @@ BEGIN
   -- Belgian Speculoos
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Belgian Speculoos' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.459459, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Lotus Biscoff Biscuits' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1797,12 +1715,6 @@ BEGIN
   -- Dakshin Laddoo
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Dakshin Laddoo' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Gram Flour (Besan)' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1837,12 +1749,6 @@ BEGIN
   -- Bhuna Badaam (Roasted Nutty Almonds)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Bhuna Badaam (Roasted Nutty Almonds)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Roasted Almond Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1859,12 +1765,6 @@ BEGIN
   -- Blueberry Blush (FD)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Blueberry Blush (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.4625, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Blueberry Pulp' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1881,12 +1781,6 @@ BEGIN
   -- Blueberry Cheesecake
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Blueberry Cheesecake' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.475, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Blueberry Compote' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1909,12 +1803,6 @@ BEGIN
   -- Boondi Laddoo
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Boondi Laddoo' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Cardamom Powder (Elaichi)' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1937,12 +1825,6 @@ BEGIN
   -- Caramel Galangal
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Caramel Galangal' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Caramel Sauce' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1959,12 +1841,6 @@ BEGIN
   -- Caramel Latte (Di Bella Coffee Caramel)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Caramel Latte (Di Bella Coffee Caramel)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Caramel Sauce' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -1981,12 +1857,6 @@ BEGIN
   -- Cashew Scotch Arabica (Di Bella Coffee Cashew)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Cashew Scotch Arabica (Di Bella Coffee Cashew)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0045, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Cashew Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2025,12 +1895,6 @@ BEGIN
   -- Cheese Melt
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Cheese Melt' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Amul Cheese Cubes' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2041,12 +1905,6 @@ BEGIN
   -- Chikkamagaluru Kaaphi
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chikkamagaluru Kaaphi' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Coffee Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2057,12 +1915,6 @@ BEGIN
   -- Chikoo
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chikoo' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Chikoo' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2073,12 +1925,6 @@ BEGIN
   -- Chocolate Choice (FD)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chocolate Choice (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '4% Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2101,12 +1947,6 @@ BEGIN
   -- Chocolate Ginger
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Chocolate Ginger' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.475, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2141,12 +1981,6 @@ BEGIN
   -- Coffee Berry (Di Bella Coffee Strawberry)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Coffee Berry (Di Bella Coffee Strawberry)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0045, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Frozen Strawberries' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2157,12 +1991,6 @@ BEGIN
   -- Cookie Dusk
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Cookie Dusk' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2197,12 +2025,6 @@ BEGIN
   -- Crumble & Dough
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Crumble & Dough' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Parle Gold' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2225,12 +2047,6 @@ BEGIN
   -- Cutting Chai Biskoot
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Cutting Chai Biskoot' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Tea Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2265,12 +2081,6 @@ BEGIN
   -- Dakkhan Sitaphal (Custard Apple)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Dakkhan Sitaphal (Custard Apple)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Deccan Sitaphal' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2281,12 +2091,6 @@ BEGIN
   -- Dates and Almonds
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Dates and Almonds' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2321,12 +2125,6 @@ BEGIN
   -- Durian Banana
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Durian Banana' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.447368, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Durian' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2343,12 +2141,6 @@ BEGIN
   -- French Vanilla
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'French Vanilla' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '4% Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2377,12 +2169,6 @@ BEGIN
   -- French Vanilla (2025)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'French Vanilla (2025)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '4% Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2411,12 +2197,6 @@ BEGIN
   -- Fruit Custard
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Fruit Custard' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Digestive Biscuits' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2433,12 +2213,6 @@ BEGIN
   -- Gajar Halwa
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gajar Halwa' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Gajar Halwa' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2461,12 +2235,6 @@ BEGIN
   -- Gingerbread
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gingerbread' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Ground Ginger (Suntha)' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2495,12 +2263,6 @@ BEGIN
   -- Golden Sitaphal
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Golden Sitaphal' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Golden Sitaphal' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2511,12 +2273,6 @@ BEGIN
   -- Gondhoraj Malai
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gondhoraj Malai' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Tender Coconut' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2533,12 +2289,6 @@ BEGIN
   -- Gud and Saunf
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gud and Saunf' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.525, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Milkmaid' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2573,12 +2323,6 @@ BEGIN
   -- Gulab Jamun
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gulab Jamun' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2619,12 +2363,6 @@ BEGIN
   -- Gulqand
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Gulqand' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Gulkand' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2653,12 +2391,6 @@ BEGIN
   -- Hara Pista
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Hara Pista' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.53125, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Pistachio Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2681,12 +2413,6 @@ BEGIN
   -- Hass Avocado
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Hass Avocado' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.452609, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Hass Avocado' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2725,12 +2451,6 @@ BEGIN
   -- Jambhul
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Jambhul' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Jambhul' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2741,12 +2461,6 @@ BEGIN
   -- Japanese Matcha
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Japanese Matcha' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Matcha Tea Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2757,12 +2471,6 @@ BEGIN
   -- Java Peppermint (Di Bella Coffee Mint)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Java Peppermint (Di Bella Coffee Mint)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Vanilla Oreo Cookies' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2773,12 +2481,6 @@ BEGIN
   -- Kaffir Lime Coconut
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kaffir Lime Coconut' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Tender Coconut' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2795,12 +2497,6 @@ BEGIN
   -- Kaju Katli
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kaju Katli' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.447368, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Cashew Butter' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2817,12 +2513,6 @@ BEGIN
   -- Karikku (Tender Coconut)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Karikku (Tender Coconut)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Tender Coconut' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2833,12 +2523,6 @@ BEGIN
   -- Kashmiri Kesar
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kashmiri Kesar' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Saffron Spice' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2849,12 +2533,6 @@ BEGIN
   -- Kesar Thandai
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kesar Thandai' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Saffron Spice' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2901,12 +2579,6 @@ BEGIN
   -- Khajoor
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Khajoor' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Red Dates' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2957,12 +2629,6 @@ BEGIN
   -- Kuro Goma
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kuro Goma' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -2991,12 +2657,6 @@ BEGIN
   -- Kyoka Kuro Goma
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Kyoka Kuro Goma' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3019,12 +2679,6 @@ BEGIN
   -- Legal Overdose
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Legal Overdose' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3069,12 +2723,6 @@ BEGIN
   -- Madagascar Vanilla
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Madagascar Vanilla' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Vanilla Paste (MD)' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3085,12 +2733,6 @@ BEGIN
   -- Made in Heaven (Choco Hazel Crunch)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Made in Heaven (Choco Hazel Crunch)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Loose Hazelnut' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3125,12 +2767,6 @@ BEGIN
   -- Mango Basil
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mango Basil' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Canned Mango Pulp' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3147,12 +2783,6 @@ BEGIN
   -- Mango Mania (FD)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mango Mania (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Canned Mango Pulp' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3191,12 +2821,6 @@ BEGIN
   -- Maple Cinnamon Roll
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Maple Cinnamon Roll' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Cinnamon Rolls' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3215,22 +2839,10 @@ BEGIN
         VALUES (pp_id, rm_id, 0.03, 'mix')
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.025, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
   END IF;
   -- Mauritian Vanilla Bean
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mauritian Vanilla Bean' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Vanilla Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3241,12 +2853,6 @@ BEGIN
   -- Midnight Mania
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Midnight Mania' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3269,12 +2875,6 @@ BEGIN
   -- Mishti Doi
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mishti Doi' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.472222, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Milkmaid' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3291,12 +2891,6 @@ BEGIN
   -- Miso Caramel
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Miso Caramel' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Miso Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3313,12 +2907,6 @@ BEGIN
   -- Mocha Choco-chip (Di Bella Coffee DCC)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mocha Choco-chip (Di Bella Coffee DCC)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Coffee Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3335,12 +2923,6 @@ BEGIN
   -- Mocha Hazelnut (Di Bella Coffee Hazelnut)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mocha Hazelnut (Di Bella Coffee Hazelnut)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Hazelnut Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3351,12 +2933,6 @@ BEGIN
   -- MotiChoor
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'MotiChoor' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0045, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Sweet Boondi' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3367,12 +2943,6 @@ BEGIN
   -- Mysore Paak
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Mysore Paak' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Samrat Gram Flour (Besan)' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3413,12 +2983,6 @@ BEGIN
   -- Narali Bhaat
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Narali Bhaat' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Jaggery' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3489,12 +3053,6 @@ BEGIN
   -- New York Style Cheesecake
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'New York Style Cheesecake' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Amul Cheese Cubes' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3511,12 +3069,6 @@ BEGIN
   -- Nutty Arabica (Di Bella Coffee Almond)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Nutty Arabica (Di Bella Coffee Almond)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.045, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Blanched Almond Butter' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3533,12 +3085,6 @@ BEGIN
   -- Nutty Naughty (Milk Chocolate Almond)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Nutty Naughty (Milk Chocolate Almond)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3567,12 +3113,6 @@ BEGIN
   -- Off Season Sitaphal
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Off Season Sitaphal' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Off Season Sitaphal Pulp' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3583,12 +3123,6 @@ BEGIN
   -- Orange Apricot
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Orange Apricot' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Candied Orange Peel' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3611,22 +3145,10 @@ BEGIN
   -- Orange Cheesecake
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Orange Cheesecake' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.475, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Amul Cheese Cubes' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
         VALUES (pp_id, rm_id, 0.025, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.05, 'mix')
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Digestive Biscuits' LIMIT 1;
@@ -3645,12 +3167,6 @@ BEGIN
   -- Reshmi Paan
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Reshmi Paan' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Banarasi Betal Leaf' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3697,12 +3213,6 @@ BEGIN
   -- Palaapazham (Jackfruit)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Palaapazham (Jackfruit)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Jackfruit' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3713,12 +3223,6 @@ BEGIN
   -- Pecan Caramel Crumble
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Pecan Caramel Crumble' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Amul Butter' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3747,12 +3251,6 @@ BEGIN
   -- Pineapple Chili
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Pineapple Chili' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Pineapple Halwa' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3791,12 +3289,6 @@ BEGIN
   -- Prasadam Laddoo
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Prasadam Laddoo' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Taste for Life Besan' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3837,12 +3329,6 @@ BEGIN
   -- Pumpkin Pie
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Pumpkin Pie' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0085, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Pumpkin' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3853,12 +3339,6 @@ BEGIN
   -- Puranpoli
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Puranpoli' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Puran' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3887,12 +3367,6 @@ BEGIN
   -- Pure Arabica Coffee (Di Bella Coffee)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Pure Arabica Coffee (Di Bella Coffee)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Coffee Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3903,12 +3377,6 @@ BEGIN
   -- Purple Pandan
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Purple Pandan' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Pandan Leaves' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3925,12 +3393,6 @@ BEGIN
   -- Qubaani (Apricots)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Qubaani (Apricots)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Apricot Sauce' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3947,12 +3409,6 @@ BEGIN
   -- Ramphal
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Ramphal' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Fresh Ramphal' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3979,12 +3435,6 @@ BEGIN
   -- Ratnagiri Hapoos (Mango)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Ratnagiri Hapoos (Mango)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Canned Mango Pulp' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -3995,12 +3445,6 @@ BEGIN
   -- Red Chilli Bite
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Red Chilli Bite' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Aam Panha Syrup' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4023,12 +3467,6 @@ BEGIN
   -- Salted Caramel
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Salted Caramel' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Amul Fresh Cream' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4045,12 +3483,6 @@ BEGIN
   -- Sheer Qhurma
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sheer Qhurma' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Saffron Spice' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4085,12 +3517,6 @@ BEGIN
   -- Shahi Sevaiya
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Shahi Sevaiya' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Saffron Spice' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4161,12 +3587,6 @@ BEGIN
   -- Signature Chocolate (Cacaoir)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Signature Chocolate (Cacaoir)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.818182, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = '4% Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4189,12 +3609,6 @@ BEGIN
   -- Signature Mango (Aurum)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Signature Mango (Aurum)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.636364, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Canned Mango Pulp' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4205,12 +3619,6 @@ BEGIN
   -- Signature Strawberry (Rosaea)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Signature Strawberry (Rosaea)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.636364, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Frozen Strawberries' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4221,12 +3629,6 @@ BEGIN
   -- Sol Kadhi
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sol Kadhi' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.53125, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Coconut Milk Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4261,12 +3663,6 @@ BEGIN
   -- Strawberry Cheesecake
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Strawberry Cheesecake' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.005, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Amul Cheese Cubes' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4289,12 +3685,6 @@ BEGIN
   -- Strawberry Cream
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Strawberry Cream' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Frozen Strawberries' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4327,12 +3717,6 @@ BEGIN
   -- Strawberry Strength (FD)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Strawberry Strength (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Frozen Strawberries' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4349,12 +3733,6 @@ BEGIN
   -- Sunkissed Arabica (Di Bella Coffee Orange)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sunkissed Arabica (Di Bella Coffee Orange)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Candied Orange Peel' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4365,12 +3743,6 @@ BEGIN
   -- Sunkissed Twilight
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sunkissed Twilight' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4405,12 +3777,6 @@ BEGIN
   -- Sweet Soy
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Sweet Soy' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Sweet Soy Sauce' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4421,12 +3787,6 @@ BEGIN
   -- Tamarind and Curry Leaf
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Tamarind and Curry Leaf' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Curry Leaf' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4465,12 +3825,6 @@ BEGIN
   -- Tilgul
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Tilgul' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4505,12 +3859,6 @@ BEGIN
   -- Tropical Brew (Di Bella Coffee Coconut)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Tropical Brew (Di Bella Coffee Coconut)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.0055, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Coconut Milk Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4527,12 +3875,6 @@ BEGIN
   -- Turkish Hazelnut
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Turkish Hazelnut' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.53125, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Hazelnut Paste' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4549,12 +3891,6 @@ BEGIN
   -- Ukadiche Modak
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Ukadiche Modak' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.45, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Jaggery' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4565,12 +3901,6 @@ BEGIN
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
         VALUES (pp_id, rm_id, 0.05, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.025, 'topping')
         ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
     END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Shredded Coconut' LIMIT 1;
@@ -4601,12 +3931,6 @@ BEGIN
   -- Ultimate Luxe (Michelle & Barry Callebaut)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Ultimate Luxe (Michelle & Barry Callebaut)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Cacao Miscela' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4651,12 +3975,6 @@ BEGIN
   -- Vanilla Vantage (FD)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Vanilla Vantage (FD)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL FD Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Vanilla Essence' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4865,12 +4183,6 @@ BEGIN
   -- Wasabi Punch
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Wasabi Punch' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.55, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Wasabi Powder' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4881,12 +4193,6 @@ BEGIN
   -- White Knight (White Chocolate Almond)
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'White Knight (White Chocolate Almond)' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.5, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'High Fat Milk' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
@@ -4915,12 +4221,6 @@ BEGIN
   -- Yorkshire Butterscotch
   SELECT id INTO pp_id FROM production.prep_products WHERE name = 'Yorkshire Butterscotch' LIMIT 1;
   IF pp_id IS NOT NULL THEN
-    SELECT id INTO rm_id FROM production.rm_items WHERE name = '13% IPPL Base' LIMIT 1;
-    IF rm_id IS NOT NULL THEN
-      INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
-        VALUES (pp_id, rm_id, 0.425, 'mix')
-        ON CONFLICT (prep_product_id, rm_item_id, purpose) DO UPDATE SET qty_per_unit = EXCLUDED.qty_per_unit;
-    END IF;
     SELECT id INTO rm_id FROM production.rm_items WHERE name = 'Brown Sugar' LIMIT 1;
     IF rm_id IS NOT NULL THEN
       INSERT INTO production.prep_recipes (prep_product_id, rm_item_id, qty_per_unit, purpose)
