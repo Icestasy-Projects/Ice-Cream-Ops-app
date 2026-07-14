@@ -23,8 +23,8 @@ export async function GET() {
 
     const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // ── Step 1: weekly FG demand from sales.orders (last 28 days) ─────────
-    const since = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString();
+    // ── Step 1: weekly FG demand from sales.orders (last 42 days / 6 weeks) ─
+    const since = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
 
     // Try sales.orders first; fall back to fg_dispatches if no data
     // order_lines.sku_id, order_lines.quantity, orders.created_at, orders.status
@@ -45,7 +45,7 @@ export async function GET() {
         fgWeekly[id] = (fgWeekly[id] || 0) + ((line.quantity as number) || 0);
       }
       for (const id in fgWeekly) {
-        fgWeekly[id] = fgWeekly[id] / 4; // 4-week average → weekly
+        fgWeekly[id] = fgWeekly[id] / 6; // 6-week average → weekly
       }
     } else {
       // Fallback: use actual dispatch history
