@@ -180,7 +180,7 @@ export default function PrepDashboard() {
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Yield / Batch</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Factory</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Kitchen</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Total</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Total (units)</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Wkly Req</th>
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Threshold</th>
                   <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">Status</th>
@@ -210,7 +210,7 @@ export default function PrepDashboard() {
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       <span className="font-bold text-gray-900 text-xs">{item.qty_total}</span>
-                      <span className="text-gray-400 text-xs ml-1">{item.unit}</span>
+                      <span className="text-gray-400 text-xs ml-1">unit</span>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
                       {item.weekly ? (

@@ -85,7 +85,7 @@ function PackSection({
             <thead>
               <tr className="border-b border-gray-100 bg-white">
                 <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 min-w-[180px]">Product</th>
-                <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">On Hand</th>
+                <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">In Hand</th>
                 <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">Wkly Req</th>
                 <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">Threshold</th>
                 <th className="text-center px-4 py-2 text-xs font-semibold text-gray-500">Status</th>
