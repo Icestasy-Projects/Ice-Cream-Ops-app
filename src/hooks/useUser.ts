@@ -20,6 +20,10 @@ export function useUser() {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Staff';
+  const rawName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Staff';
+  const displayName = rawName
+    .replace(/[._]/g, ' ')
+    .replace(/\b\w/g, (c: string) => c.toUpperCase())
+    .trim();
   return { user, loading, displayName };
 }
