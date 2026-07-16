@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
 import { getNavItemsForRole, ROLE_LABELS } from '@/lib/roles';
-import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors } from 'lucide-react';
+import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors, IceCream } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ export default function NavBar() {
     <>
       <header className="sticky top-0 z-40 bg-white border-b border-orange-100 px-4 h-14 flex items-center justify-between shadow-sm">
         <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-          <span className="text-2xl">🍦</span>
+          <IceCream size={24} className="text-gray-800" strokeWidth={1.5} />
           <span className="font-bold text-gray-900 text-lg">Icestasy Ops</span>
         </Link>
         <div className="flex items-center gap-3 min-w-0">
