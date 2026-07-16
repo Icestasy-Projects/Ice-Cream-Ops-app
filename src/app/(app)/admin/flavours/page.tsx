@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
-import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator, Pencil, Check, X, Search } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, FlaskConical, Calculator, Pencil, Check, X, Search, IceCream } from 'lucide-react';
 
 interface RmItem { id: number; name: string; unit: string; }
 interface RecipeLine { rm_item_id: number; name: string; unit: string; qty_per_unit: string; purpose: 'mix' | 'topping'; }
@@ -268,7 +268,7 @@ export default function FlavoursPage() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="🍨"
+        icon={IceCream} iconColor="text-brand-500"
         title="Flavour Management"
         description="Add and edit flavours, define RM recipe per batch, and toggle active status."
       />

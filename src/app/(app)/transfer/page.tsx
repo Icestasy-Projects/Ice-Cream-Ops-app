@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, ChevronDown } from 'lucide-react';
+import { CheckCircle, ChevronDown, ArrowRight } from 'lucide-react';
 
 interface PrepStock {
   prep_product_id: number;
@@ -92,7 +92,7 @@ export default function TransferPage() {
   return (
     <div className="space-y-6">
       <ScreenHeader
-        icon="➡️"
+        icon={ArrowRight} iconColor="text-amber-500"
         title="Transfer to Factory"
         description="Move flavour mix from the kitchen to the factory floor so tubs can be filled."
       />

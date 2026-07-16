@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Box } from 'lucide-react';
 
 interface FgSku {
   fg_sku_id: number;
@@ -89,7 +89,7 @@ export default function MakeTubsPage() {
   return (
     <div className="space-y-6">
       <ScreenHeader
-        icon="🍦"
+        icon={Box} iconColor="text-pink-500"
         title="Make Finished Tubs"
         description="Fill tubs with ice cream from factory stock. This increases your finished goods count."
       />

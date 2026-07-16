@@ -121,7 +121,7 @@ export default function RmItemsPage() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="🌿"
+        icon={Package} iconColor="text-orange-500"
         title="Manage Ingredients"
         description="Add raw material ingredients used in flavour recipes and purchase orders."
       />

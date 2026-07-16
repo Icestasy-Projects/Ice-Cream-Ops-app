@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, FlaskConical } from 'lucide-react';
 
 interface PrepProduct {
   id: number;
@@ -99,7 +99,7 @@ export default function MakePrepPage() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="🧪"
+        icon={FlaskConical} iconColor="text-purple-500"
         title="Make Kitchen Mix"
         description="Record a new batch of flavour mix made in the kitchen. Adds the mix to kitchen stock."
       />

@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
-import { Package } from 'lucide-react';
+import { Package, PackageOpen } from 'lucide-react';
 
 interface FgSku {
   fg_sku_id: number;
@@ -99,7 +99,7 @@ export default function BreakBulkPage() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="📦"
+        icon={PackageOpen} iconColor="text-blue-500"
         title="Break Bulk"
         description="Open 4L bulk tubs to produce 12-square packs or 50ml samples. Deducts from bulk FG stock and adds to smaller SKU stock."
       />
