@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
-import { AlertTriangle, Package, Beaker, Box, FlaskConical, Users, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Package, Beaker, Box, TrendingDown } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
 import type { AppRole } from '@/lib/roles';
@@ -14,15 +14,15 @@ interface Action {
   icon: string;
   label: string;
   desc: string;
-  accent: string;
+  iconBg: string;
 }
 
 const ALL_ACTIONS: Action[] = [
-  { href: '/receive',   icon: '📦', label: 'Receive Ingredients',  desc: 'Log a raw material delivery',        accent: 'border-l-blue-400' },
-  { href: '/make-prep', icon: '🧪', label: 'Make Kitchen Mix',      desc: 'Batch a flavour mix in the kitchen', accent: 'border-l-purple-400' },
-  { href: '/transfer',  icon: '➡️', label: 'Transfer to Factory',   desc: 'Move mix from kitchen to factory',   accent: 'border-l-amber-400' },
-  { href: '/make-tubs', icon: '🍦', label: 'Make Tubs',             desc: 'Fill tubs from factory stock',       accent: 'border-l-pink-400' },
-  { href: '/dispatch',  icon: '🚚', label: 'Dispatch Order',        desc: 'Send finished tubs to a customer',   accent: 'border-l-emerald-400' },
+  { href: '/receive',   icon: '📦', label: 'Receive Ingredients',  desc: 'Log a raw material delivery',        iconBg: 'bg-blue-50' },
+  { href: '/make-prep', icon: '🧪', label: 'Make Kitchen Mix',      desc: 'Batch a flavour mix in the kitchen', iconBg: 'bg-purple-50' },
+  { href: '/transfer',  icon: '➡️', label: 'Transfer to Factory',   desc: 'Move mix from kitchen to factory',   iconBg: 'bg-amber-50' },
+  { href: '/make-tubs', icon: '🍦', label: 'Make Tubs',             desc: 'Fill tubs from factory stock',       iconBg: 'bg-pink-50' },
+  { href: '/dispatch',  icon: '🚚', label: 'Dispatch Order',        desc: 'Send finished tubs to a customer',   iconBg: 'bg-emerald-50' },
 ];
 
 const KITCHEN_ACTIONS = new Set(['/receive', '/make-prep', '/transfer']);
@@ -179,14 +179,16 @@ export default function DashboardPage() {
       {/* Operations */}
       <section>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Operations</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
           {actions.map(a => (
             <Link key={a.href} href={a.href}
-              className={`card border-l-4 ${a.accent} hover:shadow-md transition-all touch-manipulation flex items-center gap-3 py-3`}>
-              <span className="text-xl shrink-0">{a.icon}</span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 leading-tight">{a.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5 truncate">{a.desc}</p>
+              className="group bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:shadow-md transition-all touch-manipulation flex flex-col gap-3">
+              <div className={`w-10 h-10 ${a.iconBg} rounded-lg flex items-center justify-center text-xl shrink-0`}>
+                {a.icon}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900 leading-snug">{a.label}</p>
+                <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{a.desc}</p>
               </div>
             </Link>
           ))}
@@ -197,16 +199,21 @@ export default function DashboardPage() {
       {role === 'super_admin' && (
         <section>
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Admin</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
-              { href: '/admin/flavours', icon: <FlaskConical size={18} className="text-brand-600" />, label: 'Manage Flavours' },
-              { href: '/admin/rm-items', icon: <Package size={18} className="text-orange-500" />, label: 'Manage Ingredients' },
-              { href: '/admin/users',    icon: <Users size={18} className="text-blue-500" />, label: 'Manage Employees' },
-            ].map(({ href, icon, label }) => (
+              { href: '/admin/flavours', emoji: '🍨', bg: 'bg-brand-50', label: 'Manage Flavours',     desc: 'Add or edit flavour profiles' },
+              { href: '/admin/rm-items', emoji: '🌿', bg: 'bg-orange-50', label: 'Manage Ingredients', desc: 'Configure raw material items' },
+              { href: '/admin/users',    emoji: '👥', bg: 'bg-blue-50',   label: 'Manage Employees',   desc: 'Assign roles and access' },
+            ].map(({ href, emoji, bg, label, desc }) => (
               <Link key={href} href={href}
-                className="card hover:shadow-md transition-all touch-manipulation flex items-center gap-3 py-3">
-                {icon}
-                <p className="text-sm font-semibold text-gray-700">{label}</p>
+                className="group bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:shadow-md transition-all touch-manipulation flex flex-col gap-3">
+                <div className={`w-10 h-10 ${bg} rounded-lg flex items-center justify-center text-xl shrink-0`}>
+                  {emoji}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 leading-snug">{label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{desc}</p>
+                </div>
               </Link>
             ))}
           </div>
