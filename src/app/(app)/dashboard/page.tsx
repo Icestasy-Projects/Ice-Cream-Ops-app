@@ -4,25 +4,26 @@ import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
-import { AlertTriangle, Package, Beaker, Box, FlaskConical, Users } from 'lucide-react';
+import { AlertTriangle, Package, Beaker, Box, FlaskConical, Users, TestTube, ArrowRight, Truck } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
 import type { AppRole } from '@/lib/roles';
 
 interface Action {
   href: string;
-  icon: string;
+  icon: React.ElementType;
+  iconColor: string;
   label: string;
   desc: string;
   color: string;
 }
 
 const ALL_ACTIONS: Action[] = [
-  { href: '/receive',   icon: '📦', label: 'Receive Ingredients',  desc: 'Log a new delivery of raw materials',       color: 'bg-blue-50 border-blue-100' },
-  { href: '/make-prep', icon: '🧪', label: 'Make Kitchen Mix',      desc: 'Make a batch of flavour mix in the kitchen', color: 'bg-purple-50 border-purple-100' },
-  { href: '/transfer',  icon: '➡️', label: 'Transfer to Factory',   desc: 'Move mix from kitchen to the factory',       color: 'bg-yellow-50 border-yellow-100' },
-  { href: '/make-tubs', icon: '🍦', label: 'Make Tubs',             desc: 'Fill tubs from factory stock',               color: 'bg-pink-50 border-pink-100' },
-  { href: '/dispatch',  icon: '🚚', label: 'Dispatch Order',        desc: 'Send finished tubs to a customer',           color: 'bg-green-50 border-green-100' },
+  { href: '/receive',   icon: Package,    iconColor: 'text-blue-500',   label: 'Receive Ingredients',  desc: 'Log a new delivery of raw materials',        color: 'bg-blue-50 border-blue-100' },
+  { href: '/make-prep', icon: TestTube,   iconColor: 'text-purple-500', label: 'Make Kitchen Mix',      desc: 'Make a batch of flavour mix in the kitchen',  color: 'bg-purple-50 border-purple-100' },
+  { href: '/transfer',  icon: ArrowRight, iconColor: 'text-amber-500',  label: 'Transfer to Factory',   desc: 'Move mix from kitchen to the factory',        color: 'bg-yellow-50 border-yellow-100' },
+  { href: '/make-tubs', icon: Box,        iconColor: 'text-pink-500',   label: 'Make Tubs',             desc: 'Fill tubs from factory stock',                color: 'bg-pink-50 border-pink-100' },
+  { href: '/dispatch',  icon: Truck,      iconColor: 'text-green-600',  label: 'Dispatch Order',        desc: 'Send finished tubs to a customer',            color: 'bg-green-50 border-green-100' },
 ];
 
 const KITCHEN_ACTIONS = new Set(['/receive', '/make-prep', '/transfer']);
@@ -172,13 +173,16 @@ export default function DashboardPage() {
       <section>
         <h2 className="text-lg font-bold text-gray-700 mb-3">Operations</h2>
         <div className="grid grid-cols-3 gap-3">
-          {actions.map(a => (
-            <Link key={a.href} href={a.href}
-              className={`card border ${a.color} hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center`}>
-              <span className="text-2xl">{a.icon}</span>
-              <p className="text-xs font-bold text-gray-700 leading-tight">{a.label}</p>
-            </Link>
-          ))}
+          {actions.map(a => {
+            const Icon = a.icon;
+            return (
+              <Link key={a.href} href={a.href}
+                className={`card border ${a.color} hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center`}>
+                <Icon size={24} className={a.iconColor} strokeWidth={1.7} />
+                <p className="text-xs font-bold text-gray-700 leading-tight">{a.label}</p>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
