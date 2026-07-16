@@ -26,15 +26,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [supabase, router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex flex-col bg-orange-50">
       <NavBar />
-      {/* On desktop the sidebar is rendered inside NavBar as a sticky aside.
-          On mobile NavBar renders the top bar + drawer overlay only. */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-7xl w-full mx-auto lg:mx-0">
-          {children}
-        </main>
-      </div>
+      <main className="flex-1 px-3 sm:px-4 py-4 sm:py-6 max-w-6xl mx-auto w-full">
+        {children}
+      </main>
     </div>
   );
 }
