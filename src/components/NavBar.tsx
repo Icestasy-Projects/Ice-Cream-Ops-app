@@ -5,10 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
 import { getNavItemsForRole, ROLE_LABELS } from '@/lib/roles';
-import {
-  Home, Package, Beaker, ArrowRight, Box, Truck,
-  BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors,
-} from 'lucide-react';
+import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -27,118 +24,21 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/admin/users': Users,
 };
 
-function NavContent({
-  pathname,
-  displayName,
-  role,
-  navItems,
-  onClose,
-  onSignOut,
-}: {
-  pathname: string;
-  displayName: string;
-  role: string | null;
-  navItems: { href: string; label: string; group: string }[];
-  onClose?: () => void;
-  onSignOut: () => void;
-}) {
-  const groups: Record<string, typeof navItems> = {};
-  for (const item of navItems) {
-    if (!groups[item.group]) groups[item.group] = [];
-    groups[item.group].push(item);
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Brand */}
-      <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
-        <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2.5">
-          <span className="text-2xl">🍦</span>
-          <span className="font-bold text-gray-900 text-base tracking-tight">Icestasy Ops</span>
-        </Link>
-        {onClose && (
-          <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 touch-manipulation lg:hidden">
-            <X size={18} />
-          </button>
-        )}
-      </div>
-
-      {/* User pill */}
-      <div className="px-4 py-3 border-b border-gray-100 shrink-0">
-        <p className="text-sm font-semibold text-gray-800 truncate">{displayName}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{role ? ROLE_LABELS[role as keyof typeof ROLE_LABELS] : ''}</p>
-      </div>
-
-      {/* Nav links */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
-        <div>
-          <Link
-            href="/dashboard"
-            onClick={onClose}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors touch-manipulation',
-              pathname === '/dashboard'
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-            )}
-          >
-            <Home size={16} />
-            Home
-          </Link>
-        </div>
-
-        {Object.entries(groups).map(([group, items]) => (
-          <div key={group}>
-            <p className="px-3 pb-1.5 text-xs font-bold text-gray-400 uppercase tracking-wider">{group}</p>
-            <div className="space-y-0.5">
-              {items.map(({ href, label }) => {
-                const Icon = ICON_MAP[href] || BarChart3;
-                const active = pathname === href;
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    onClick={onClose}
-                    className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors touch-manipulation',
-                      active
-                        ? 'bg-brand-500 text-white shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    )}
-                  >
-                    <Icon size={16} />
-                    {label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
-
-      {/* Sign out */}
-      <div className="px-3 py-3 border-t border-gray-100 shrink-0">
-        <button
-          onClick={onSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 w-full touch-manipulation transition-colors"
-        >
-          <LogOut size={16} />
-          Sign Out
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { displayName } = useUser();
   const { role } = useRole();
   const supabase = createClient();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const navItems = getNavItemsForRole(role);
+
+  const groups: Record<string, typeof navItems> = {};
+  for (const item of navItems) {
+    if (!groups[item.group]) groups[item.group] = [];
+    groups[item.group].push(item);
+  }
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -147,51 +47,90 @@ export default function NavBar() {
 
   return (
     <>
-      {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex flex-col w-56 shrink-0 bg-white border-r border-gray-100 h-screen sticky top-0">
-        <NavContent
-          pathname={pathname}
-          displayName={displayName}
-          role={role}
-          navItems={navItems}
-          onSignOut={handleSignOut}
-        />
-      </aside>
-
-      {/* ── Mobile / tablet top bar ── */}
-      <header className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-100 px-4 h-14 flex items-center justify-between shadow-sm">
+      <header className="sticky top-0 z-40 bg-white border-b border-orange-100 px-4 h-14 flex items-center justify-between shadow-sm">
         <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-          <span className="text-xl">🍦</span>
-          <span className="font-bold text-gray-900">Icestasy Ops</span>
+          <span className="text-2xl">🍦</span>
+          <span className="font-bold text-gray-900 text-lg">Icestasy Ops</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400 hidden sm:block truncate max-w-[120px]">{displayName}</span>
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-sm text-gray-500 hidden sm:block truncate">Hi, {displayName}</span>
           <button
-            onClick={() => setMobileOpen(true)}
-            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors touch-manipulation"
-            aria-label="Open menu"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 rounded-xl bg-orange-50 text-brand-600 hover:bg-orange-100 transition-colors touch-manipulation shrink-0"
+            aria-label="Menu"
           >
-            <Menu size={20} />
+            <Menu size={22} />
           </button>
         </div>
       </header>
 
-      {/* ── Mobile drawer ── */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex" onClick={() => setMobileOpen(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div
-            className="relative ml-auto w-64 bg-white h-full shadow-2xl overflow-hidden flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            <NavContent
-              pathname={pathname}
-              displayName={displayName}
-              role={role}
-              navItems={navItems}
-              onClose={() => setMobileOpen(false)}
-              onSignOut={handleSignOut}
-            />
+      {menuOpen && (
+        <div className="fixed inset-0 z-30 flex" onClick={() => setMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="relative ml-auto w-72 bg-white h-full shadow-xl overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 h-14 border-b border-orange-100 shrink-0">
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">{displayName}</p>
+                <p className="text-xs text-gray-400">{role ? ROLE_LABELS[role] : ''}</p>
+              </div>
+              <button onClick={() => setMenuOpen(false)} className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 touch-manipulation">
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="p-3 flex-1 space-y-4 overflow-y-auto">
+              {/* Home always shown */}
+              <Link
+                href="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium transition-colors touch-manipulation',
+                  pathname === '/dashboard'
+                    ? 'bg-brand-500 text-white'
+                    : 'text-gray-700 hover:bg-orange-50'
+                )}
+              >
+                <Home size={20} />
+                Home
+              </Link>
+
+              {Object.entries(groups).map(([group, items]) => (
+                <div key={group}>
+                  <p className="px-4 pb-1 text-xs font-bold text-gray-400 uppercase tracking-wide">{group}</p>
+                  <div className="space-y-1">
+                    {items.map(({ href, label }) => {
+                      const Icon = ICON_MAP[href] || BarChart3;
+                      return (
+                        <Link
+                          key={href}
+                          href={href}
+                          onClick={() => setMenuOpen(false)}
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium transition-colors touch-manipulation',
+                            pathname === href
+                              ? 'bg-brand-500 text-white'
+                              : 'text-gray-700 hover:bg-orange-50'
+                          )}
+                        >
+                          <Icon size={20} />
+                          {label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+
+            <div className="p-3 border-t border-gray-100">
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium text-red-600 hover:bg-red-50 w-full touch-manipulation"
+              >
+                <LogOut size={20} />
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       )}

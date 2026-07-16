@@ -4,25 +4,26 @@ import { createClient } from '@/lib/supabase';
 import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
-import { AlertTriangle, Package, Beaker, Box, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Package, Beaker, Box, FlaskConical, Users, TestTube, ArrowRight, Truck } from 'lucide-react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
 import type { AppRole } from '@/lib/roles';
 
 interface Action {
   href: string;
-  icon: string;
+  icon: React.ElementType;
+  iconColor: string;
   label: string;
   desc: string;
-  iconBg: string;
+  color: string;
 }
 
 const ALL_ACTIONS: Action[] = [
-  { href: '/receive',   icon: '📦', label: 'Receive Ingredients',  desc: 'Log a raw material delivery',        iconBg: 'bg-blue-50' },
-  { href: '/make-prep', icon: '🧪', label: 'Make Kitchen Mix',      desc: 'Batch a flavour mix in the kitchen', iconBg: 'bg-purple-50' },
-  { href: '/transfer',  icon: '➡️', label: 'Transfer to Factory',   desc: 'Move mix from kitchen to factory',   iconBg: 'bg-amber-50' },
-  { href: '/make-tubs', icon: '🍦', label: 'Make Tubs',             desc: 'Fill tubs from factory stock',       iconBg: 'bg-pink-50' },
-  { href: '/dispatch',  icon: '🚚', label: 'Dispatch Order',        desc: 'Send finished tubs to a customer',   iconBg: 'bg-emerald-50' },
+  { href: '/receive',   icon: Package,    iconColor: 'text-blue-500',   label: 'Receive Ingredients',  desc: 'Log a new delivery of raw materials',        color: 'bg-blue-50 border-blue-100' },
+  { href: '/make-prep', icon: TestTube,   iconColor: 'text-purple-500', label: 'Make Kitchen Mix',      desc: 'Make a batch of flavour mix in the kitchen',  color: 'bg-purple-50 border-purple-100' },
+  { href: '/transfer',  icon: ArrowRight, iconColor: 'text-amber-500',  label: 'Transfer to Factory',   desc: 'Move mix from kitchen to the factory',        color: 'bg-yellow-50 border-yellow-100' },
+  { href: '/make-tubs', icon: Box,        iconColor: 'text-pink-500',   label: 'Make Tubs',             desc: 'Fill tubs from factory stock',                color: 'bg-pink-50 border-pink-100' },
+  { href: '/dispatch',  icon: Truck,      iconColor: 'text-green-600',  label: 'Dispatch Order',        desc: 'Send finished tubs to a customer',            color: 'bg-green-50 border-green-100' },
 ];
 
 const KITCHEN_ACTIONS = new Set(['/receive', '/make-prep', '/transfer']);
@@ -43,40 +44,6 @@ interface StockSummary {
   fgOnHand: number;
 }
 
-function StockCard({
-  href, icon: Icon, iconColor, label, critical, low, okLabel,
-}: {
-  href: string; icon: React.ElementType; iconColor: string;
-  label: string; critical: number; low: number; okLabel: string;
-}) {
-  const isCrit = critical > 0;
-  const isLow  = !isCrit && low > 0;
-  return (
-    <Link href={href} className="card hover:shadow-md transition-all touch-manipulation group">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2.5">
-          <div className={`p-2 rounded-lg bg-gray-50 group-hover:bg-gray-100 transition-colors`}>
-            <Icon size={18} className={iconColor} />
-          </div>
-          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</span>
-        </div>
-        {isCrit && <TrendingDown size={14} className="text-red-400 shrink-0 mt-1" />}
-      </div>
-      <div className="mt-3">
-        {isCrit ? (
-          <p className="text-lg font-bold text-red-600">{critical} Critical</p>
-        ) : isLow ? (
-          <p className="text-lg font-bold text-amber-600">{low} Low</p>
-        ) : (
-          <p className="text-lg font-bold text-emerald-600">{okLabel}</p>
-        )}
-        {isCrit && low > 0 && <p className="text-xs text-amber-600 mt-0.5">{low} low</p>}
-        {!isCrit && !isLow && <p className="text-xs text-gray-400 mt-0.5">All levels good</p>}
-      </div>
-    </Link>
-  );
-}
-
 export default function DashboardPage() {
   const { displayName, loading: userLoading } = useUser();
   const { role, loading: roleLoading } = useRole();
@@ -91,18 +58,18 @@ export default function DashboardPage() {
       supabase.schema('production').from('v_stock_alerts_fg').select('status'),
       supabase.schema('production').from('v_fg_stock').select('qty_on_hand'),
     ]);
-    const rm   = rmAlerts.data || [];
+    const rm = rmAlerts.data || [];
     const prep = prepAlerts.data || [];
-    const fg   = fgAlerts.data || [];
+    const fg = fgAlerts.data || [];
     const fgData = fgStock.data || [];
     setSummary({
-      rmCritical:   rm.filter(r => r.status === 'critical').length,
-      rmLow:        rm.filter(r => r.status === 'low').length,
+      rmCritical: rm.filter(r => r.status === 'critical').length,
+      rmLow: rm.filter(r => r.status === 'low').length,
       prepCritical: prep.filter(r => r.status === 'critical').length,
-      prepLow:      prep.filter(r => r.status === 'low').length,
-      fgCritical:   fg.filter(r => r.status === 'critical').length,
-      fgLow:        fg.filter(r => r.status === 'low').length,
-      fgOnHand:     fgData.reduce((s, r) => s + ((r.qty_on_hand as number) || 0), 0),
+      prepLow: prep.filter(r => r.status === 'low').length,
+      fgCritical: fg.filter(r => r.status === 'critical').length,
+      fgLow: fg.filter(r => r.status === 'low').length,
+      fgOnHand: fgData.reduce((s, r) => s + ((r.qty_on_hand as number) || 0), 0),
     });
     setSummaryLoading(false);
   }, [supabase]);
@@ -119,103 +86,125 @@ export default function DashboardPage() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <span className="text-5xl mb-4">🔒</span>
         <h2 className="text-xl font-bold text-gray-900 mb-2">No role assigned</h2>
-        <p className="text-gray-500 text-sm max-w-xs">Your account hasn&apos;t been assigned a role yet. Ask your Super Admin to set it up.</p>
+        <p className="text-gray-500 text-sm max-w-xs">Your account hasn&apos;t been assigned a role yet. Ask your Super Admin to set up your account.</p>
       </div>
     );
   }
 
   const actions = actionsForRole(role);
-  const showRM   = role === 'kitchen'  || role === 'super_admin';
-  const showPrep = role === 'factory'  || role === 'super_admin';
-  const showFG   = role === 'factory'  || role === 'super_admin';
+  const showRM    = role === 'kitchen'  || role === 'super_admin';
+  const showPrep  = role === 'factory'  || role === 'super_admin';
+  const showFG    = role === 'factory'  || role === 'super_admin';
 
-  const totalAlerts = (summary ? [
-    showRM   ? summary.rmCritical   + summary.rmLow   : 0,
+  const relevantAlerts = (summary ? [
+    showRM  ? summary.rmCritical + summary.rmLow : 0,
     showPrep ? summary.prepCritical + summary.prepLow : 0,
-    showFG   ? summary.fgCritical   + summary.fgLow   : 0,
+    showFG  ? summary.fgCritical + summary.fgLow : 0,
   ] : []).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="space-y-7">
-      {/* Greeting */}
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{greeting}, {displayName} 👋</h1>
-        <p className="text-sm text-gray-500 mt-1">Here&apos;s your production overview for today.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{greeting}, {displayName}! 👋</h1>
+        <p className="text-gray-500 mt-1">What would you like to do today?</p>
       </div>
 
-      {/* Alert banner */}
-      {totalAlerts > 0 && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+      {relevantAlerts > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+          <AlertTriangle className="text-amber-600 shrink-0" size={22} />
           <div>
-            <p className="font-semibold text-amber-800 text-sm">{totalAlerts} item{totalAlerts > 1 ? 's' : ''} need attention</p>
-            <p className="text-amber-600 text-xs mt-0.5">Check the stock dashboards below for details.</p>
+            <p className="font-semibold text-amber-800">{relevantAlerts} item{relevantAlerts > 1 ? 's' : ''} need attention</p>
+            <p className="text-amber-600 text-sm">Check the dashboards below for details.</p>
           </div>
         </div>
       )}
 
-      {/* Stock overview */}
+      {/* Stock overview cards — shown only for relevant dashboards */}
       {!summaryLoading && summary && (showRM || showPrep || showFG) && (
         <section>
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Stock Overview</h2>
-          <div className={`grid gap-3 ${[showRM, showPrep, showFG].filter(Boolean).length === 3 ? 'grid-cols-3' : [showRM, showPrep, showFG].filter(Boolean).length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <h2 className="text-lg font-bold text-gray-700 mb-3">Stock Overview</h2>
+          <div className={`grid gap-2 sm:gap-3 ${[showRM, showPrep, showFG].filter(Boolean).length === 3 ? 'grid-cols-3' : [showRM, showPrep, showFG].filter(Boolean).length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {showRM && (
-              <StockCard href="/dashboards/raw-materials" icon={Package} iconColor="text-orange-500"
-                label="Raw Materials" critical={summary.rmCritical} low={summary.rmLow} okLabel="All OK" />
+              <Link href="/dashboards/raw-materials"
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-3 sm:p-4">
+                <Package size={22} className="mx-auto text-orange-500" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide leading-tight">Raw Materials</p>
+                {summary.rmCritical > 0 ? (
+                  <p className="text-sm font-bold text-red-600">{summary.rmCritical} Critical</p>
+                ) : summary.rmLow > 0 ? (
+                  <p className="text-sm font-bold text-amber-600">{summary.rmLow} Low</p>
+                ) : (
+                  <p className="text-sm font-bold text-green-600">All OK</p>
+                )}
+              </Link>
             )}
             {showPrep && (
-              <StockCard href="/dashboards/prep" icon={Beaker} iconColor="text-purple-500"
-                label="Prep / Mix" critical={summary.prepCritical} low={summary.prepLow} okLabel="All OK" />
+              <Link href="/dashboards/prep"
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-3 sm:p-4">
+                <Beaker size={22} className="mx-auto text-purple-500" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Prep / Mix</p>
+                {summary.prepCritical > 0 ? (
+                  <p className="text-sm font-bold text-red-600">{summary.prepCritical} Critical</p>
+                ) : summary.prepLow > 0 ? (
+                  <p className="text-sm font-bold text-amber-600">{summary.prepLow} Low</p>
+                ) : (
+                  <p className="text-sm font-bold text-green-600">All OK</p>
+                )}
+              </Link>
             )}
             {showFG && (
-              <StockCard href="/dashboards/finished-goods" icon={Box} iconColor="text-pink-500"
-                label="Finished Goods" critical={summary.fgCritical} low={summary.fgLow}
-                okLabel={`${formatNumber(summary.fgOnHand)} tubs`} />
+              <Link href="/dashboards/finished-goods"
+                className="card hover:shadow-md transition-all touch-manipulation text-center space-y-1 p-3 sm:p-4">
+                <Box size={22} className="mx-auto text-pink-500" />
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Finished Goods</p>
+                {summary.fgCritical > 0 ? (
+                  <p className="text-sm font-bold text-red-600">{summary.fgCritical} Critical</p>
+                ) : summary.fgLow > 0 ? (
+                  <p className="text-sm font-bold text-amber-600">{summary.fgLow} Low</p>
+                ) : (
+                  <p className="text-sm font-bold text-green-600">{formatNumber(summary.fgOnHand)} tubs</p>
+                )}
+              </Link>
             )}
           </div>
         </section>
       )}
 
-      {/* Operations */}
       <section>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Operations</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-          {actions.map(a => (
-            <Link key={a.href} href={a.href}
-              className="group bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:shadow-md transition-all touch-manipulation flex flex-col gap-3">
-              <div className={`w-10 h-10 ${a.iconBg} rounded-lg flex items-center justify-center text-xl shrink-0`}>
-                {a.icon}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 leading-snug">{a.label}</p>
-                <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{a.desc}</p>
-              </div>
-            </Link>
-          ))}
+        <h2 className="text-lg font-bold text-gray-700 mb-3">Operations</h2>
+        <div className="grid grid-cols-3 gap-3">
+          {actions.map(a => {
+            const Icon = a.icon;
+            return (
+              <Link key={a.href} href={a.href}
+                className={`card border ${a.color} hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center`}>
+                <Icon size={24} className={a.iconColor} strokeWidth={1.7} />
+                <p className="text-xs font-bold text-gray-700 leading-tight">{a.label}</p>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
-      {/* Admin */}
       {role === 'super_admin' && (
         <section>
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Admin</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { href: '/admin/flavours', emoji: '🍨', bg: 'bg-brand-50', label: 'Manage Flavours',     desc: 'Add or edit flavour profiles' },
-              { href: '/admin/rm-items', emoji: '🌿', bg: 'bg-orange-50', label: 'Manage Ingredients', desc: 'Configure raw material items' },
-              { href: '/admin/users',    emoji: '👥', bg: 'bg-blue-50',   label: 'Manage Employees',   desc: 'Assign roles and access' },
-            ].map(({ href, emoji, bg, label, desc }) => (
-              <Link key={href} href={href}
-                className="group bg-white border border-gray-100 rounded-xl p-4 hover:border-gray-200 hover:shadow-md transition-all touch-manipulation flex flex-col gap-3">
-                <div className={`w-10 h-10 ${bg} rounded-lg flex items-center justify-center text-xl shrink-0`}>
-                  {emoji}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 leading-snug">{label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{desc}</p>
-                </div>
-              </Link>
-            ))}
+          <h2 className="text-lg font-bold text-gray-700 mb-3">Admin</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <Link href="/admin/flavours"
+              className="card hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center">
+              <FlaskConical size={22} className="text-brand-600" />
+              <p className="text-xs font-bold text-gray-700 leading-tight">Manage Flavours</p>
+            </Link>
+            <Link href="/admin/rm-items"
+              className="card hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center">
+              <Package size={22} className="text-orange-500" />
+              <p className="text-xs font-bold text-gray-700 leading-tight">Manage Ingredients</p>
+            </Link>
+            <Link href="/admin/users"
+              className="card hover:shadow-md transition-all touch-manipulation flex flex-col items-center gap-2 py-4 text-center">
+              <Users size={22} className="text-blue-500" />
+              <p className="text-xs font-bold text-gray-700 leading-tight">Manage Employees</p>
+            </Link>
           </div>
         </section>
       )}
