@@ -2,8 +2,8 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-// @ts-expect-error xlsx-js-style has no types
-import XLSXStyle from 'xlsx-js-style';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const XLSXStyle = require('xlsx-js-style');
 
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjbmdkcGNweGJ1cmt6cXhqcGJmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTc5ODgyNywiZXhwIjoyMDk3Mzc0ODI3fQ.dZHfewnIMa8GV4aPMYXKdOPGSWz00g33u3_QDCjAC2g';
@@ -204,10 +204,10 @@ export async function GET() {
     const now = new Date();
     const dateStr = now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-    function calcStatus(inHand: number, weekly: number | undefined): string {
+    const calcStatus = (inHand: number, weekly: number | undefined): string => {
       if (!weekly || weekly <= 0) return 'unknown';
       return inHand < weekly ? 'critical' : inHand < Math.ceil(weekly * 2.5) ? 'low' : 'ok';
-    }
+    };
 
     // ── Sheet 1: Raw Materials (grouped by category) ─────────────────────
     const rmByCategory: Record<string, { name: string; unit: string; inHand: number; weekly: number | undefined; threshold: number | undefined; status: string }[]> = {};
