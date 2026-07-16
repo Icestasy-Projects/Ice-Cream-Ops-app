@@ -5,7 +5,7 @@ import { useRole } from '@/hooks/useRole';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { UserPlus, RefreshCw, Shield, ChefHat, Factory } from 'lucide-react';
+import { UserPlus, RefreshCw, Shield, ChefHat, Factory, Users } from 'lucide-react';
 import { ROLE_LABELS, AppRole } from '@/lib/roles';
 import { useRouter } from 'next/navigation';
 
@@ -99,7 +99,7 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="👥"
+        icon={Users} iconColor="text-blue-500"
         title="Manage Employees"
         description="Add staff accounts and assign roles. New users log in with the default password test@123 and are prompted to change it."
       />

@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, Clock } from 'lucide-react';
+import { CheckCircle, Clock, Truck } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface FgSku {
@@ -149,7 +149,7 @@ export default function DispatchPage() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="🚚"
+        icon={Truck} iconColor="text-green-600"
         title="Dispatch Order"
         description="Record tubs sent out to a customer. Reduces finished goods stock."
       />

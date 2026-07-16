@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Box } from 'lucide-react';
 
 interface FgItem {
   fg_sku_id: number;
@@ -198,7 +198,7 @@ export default function FinishedGoodsDashboard() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="🍦"
+        icon={Box} iconColor="text-pink-500"
         title="Finished Goods Stock"
         description="Weekly requirements from 42-day order history (6-week avg). Threshold = 2.5× weekly req."
       />

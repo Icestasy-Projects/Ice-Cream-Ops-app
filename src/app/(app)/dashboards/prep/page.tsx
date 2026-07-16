@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, Download } from 'lucide-react';
+import { RefreshCw, Search, Download, Beaker } from 'lucide-react';
 
 interface PrepItem {
   prep_product_id: number;
@@ -122,7 +122,7 @@ export default function PrepDashboard() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="🧪"
+        icon={Beaker} iconColor="text-purple-500"
         title="Prep / Mix Stock"
         description="Weekly batch requirements from 42-day order history. Threshold = 2.5× weekly req."
       />

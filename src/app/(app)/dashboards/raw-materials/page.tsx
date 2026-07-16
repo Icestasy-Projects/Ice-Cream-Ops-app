@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Leaf } from 'lucide-react';
 
 interface RmItem {
   rm_item_id: number;
@@ -218,7 +218,7 @@ export default function RawMaterialsDashboard() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="🌿"
+        icon={Leaf} iconColor="text-orange-500"
         title="Raw Materials Stock"
         description="Weekly requirements from 42-day order history (6-week avg). Threshold = 2.5× weekly req."
       />

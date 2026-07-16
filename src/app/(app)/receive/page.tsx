@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { Trash2, CheckCircle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { Trash2, CheckCircle, ChevronDown, ChevronUp, RefreshCw, Package } from 'lucide-react';
 
 interface RmItem {
   rm_item_id: number;
@@ -300,7 +300,7 @@ export default function ReceivePage() {
   return (
     <div className="space-y-4">
       <ScreenHeader
-        icon="📦"
+        icon={Package} iconColor="text-blue-500"
         title="Receive Ingredients"
         description="Place a purchase order when ordering stock. Confirm receipt when the delivery arrives."
       />
