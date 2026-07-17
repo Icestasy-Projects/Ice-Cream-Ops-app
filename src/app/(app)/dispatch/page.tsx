@@ -1,20 +1,31 @@
 'use client';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase';
-import { useUser } from '@/hooks/useUser';
 import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
-import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, Clock, Truck } from 'lucide-react';
+import { formatNumber } from '@/lib/utils';
+import { Truck, Clock, CheckCircle, AlertTriangle, Package, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface FgSku {
-  fg_sku_id: number;
+interface OrderLine {
+  line_id: number;
+  sku_id: number;
+  quantity: number;
   product_name: string;
   unit: string;
   qty_on_hand: number;
+  has_stock: boolean;
+}
+
+interface PendingOrder {
+  order_id: number;
+  status: string;
+  created_at: string;
+  customer_name: string | null;
+  order_ref: string | null;
+  lines: OrderLine[];
 }
 
 interface DispatchRecord {
@@ -27,262 +38,263 @@ interface DispatchRecord {
   note: string | null;
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  approved: 'Approved',
+  invoiced: 'Invoiced',
+  in_production: 'In Production',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  approved: 'bg-green-100 text-green-800',
+  invoiced: 'bg-blue-100 text-blue-800',
+  in_production: 'bg-amber-100 text-amber-800',
+};
+
 export default function DispatchPage() {
   const supabase = createClient();
-  const { user } = useUser();
 
-  const [stock, setStock] = useState<FgSku[]>([]);
+  const [orders, setOrders] = useState<PendingOrder[]>([]);
   const [history, setHistory] = useState<DispatchRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<FgSku | null>(null);
-  const [qty, setQty] = useState('');
-  const [note, setNote] = useState('');
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [confirmOrder, setConfirmOrder] = useState<PendingOrder | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [lastResult, setLastResult] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
-    const [stockRes, histRes] = await Promise.all([
-      supabase.schema('production').from('v_fg_stock')
-        .select('fg_sku_id, product_name, unit, qty_on_hand')
-        .gt('qty_on_hand', 0)
-        .order('product_name'),
+    const [ordersRes, histRes, stockRes] = await Promise.all([
+      fetch('/api/dispatch-order').then(r => r.json()),
       supabase.schema('production').from('fg_dispatches')
-        .select('id, fg_sku_id, qty, dispatched_at, note, status')
+        .select('id, fg_sku_id, qty, dispatched_at, note')
         .order('dispatched_at', { ascending: false })
         .limit(30),
+      supabase.schema('production').from('v_fg_stock')
+        .select('fg_sku_id, product_name, unit'),
     ]);
 
-    const stockData: FgSku[] = (stockRes.data || []).map((r: Record<string, unknown>) => ({
-      fg_sku_id: r.fg_sku_id as number,
-      product_name: r.product_name as string,
-      unit: r.unit as string,
-      qty_on_hand: (r.qty_on_hand as number) || 0,
-    }));
-    setStock(stockData);
+    setOrders(ordersRes.orders || []);
 
-    const histData = histRes.data || [];
-    setHistory(histData.map((r: Record<string, unknown>) => {
-      const sku = stockData.find(s => s.fg_sku_id === (r.fg_sku_id as number));
-      return {
-        id: r.id as number,
-        fg_sku_id: r.fg_sku_id as number,
-        product_name: sku?.product_name || `SKU #${r.fg_sku_id}`,
-        qty: r.qty as number,
-        unit: sku?.unit || 'tubs',
-        dispatched_at: r.dispatched_at as string,
-        note: r.note as string | null,
-      };
-    }));
+    const skuNames: Record<number, { name: string; unit: string }> = {};
+    for (const s of stockRes.data || []) {
+      const r = s as Record<string, unknown>;
+      skuNames[r.fg_sku_id as number] = { name: r.product_name as string, unit: r.unit as string };
+    }
+
+    setHistory((histRes.data || []).map((r: Record<string, unknown>) => ({
+      id: r.id as number,
+      fg_sku_id: r.fg_sku_id as number,
+      product_name: skuNames[r.fg_sku_id as number]?.name || `SKU #${r.fg_sku_id}`,
+      qty: r.qty as number,
+      unit: skuNames[r.fg_sku_id as number]?.unit || 'units',
+      dispatched_at: r.dispatched_at as string,
+      note: r.note as string | null,
+    })));
+
     setLoading(false);
+    setRefreshing(false);
   }, [supabase]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const grouped = useMemo(() => {
-    const groups: Record<string, FgSku[]> = {};
-    for (const s of stock) {
-      const fmt = s.unit || 'Other';
-      if (!groups[fmt]) groups[fmt] = [];
-      groups[fmt].push(s);
-    }
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [stock]);
+  const handleRefresh = () => { setRefreshing(true); loadData(); };
 
-  function selectSku(s: FgSku) {
-    if (selected?.fg_sku_id === s.fg_sku_id) {
-      setSelected(null);
-    } else {
-      setSelected(s);
-      setQty('');
-      setLastResult(null);
-    }
-  }
-
-  async function handleSubmit() {
-    if (!selected) return;
-    if (!qty || parseFloat(qty) <= 0) { toast.error('Enter the quantity to dispatch.'); return; }
-    if (parseFloat(qty) > selected.qty_on_hand) {
-      toast.error(`Only ${formatNumber(selected.qty_on_hand)} ${selected.unit} in stock.`);
-      return;
-    }
-
+  async function handleDispatch() {
+    if (!confirmOrder) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .schema('production')
-        .from('fg_dispatches')
-        .insert({
-          fg_sku_id: selected.fg_sku_id,
-          qty: parseFloat(qty),
-          dispatched_by: user?.id,
-          note: note || null,
-          status: 'posted',
-        });
+      const res = await fetch('/api/dispatch-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: confirmOrder.order_id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Dispatch failed');
 
-      if (error) throw new Error(error.message);
-
-      const before = selected.qty_on_hand;
-      const after = before - parseFloat(qty);
-      setLastResult(`Dispatched ${qty} ${selected.unit} of ${selected.product_name}. Stock: ${formatNumber(before)} → ${formatNumber(after)} ${selected.unit}.`);
-      toast.success(`Dispatch recorded! ${qty} ${selected.unit} of ${selected.product_name} sent out.`);
-      setShowConfirm(false);
-      setSelected(null);
-      setQty('');
-      setNote('');
+      toast.success(`Order #${confirmOrder.order_id} dispatched! ${data.lines_dispatched} item${data.lines_dispatched !== 1 ? 's' : ''} deducted from stock.`);
+      setConfirmOrder(null);
       await loadData();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.toLowerCase().includes('insufficient') || msg.toLowerCase().includes('negative')) {
-        toast.error(`Not enough ${selected.product_name} in stock.`);
-      } else {
-        toast.error(parseSupabaseError(msg));
-      }
-      setShowConfirm(false);
+      toast.error(e instanceof Error ? e.message : 'Dispatch failed');
+      setConfirmOrder(null);
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (loading) return <LoadingSpinner text="Loading finished goods..." />;
+  if (loading) return <LoadingSpinner text="Loading pending orders..." />;
+
+  const allHaveStock = (order: PendingOrder) => order.lines.every(l => l.has_stock);
 
   return (
     <div className="space-y-4">
-      <ScreenHeader
-        icon={Truck} iconColor="text-green-600"
-        title="Dispatch Order"
-        description="Record tubs sent out to a customer. Reduces finished goods stock."
-      />
+      <div className="flex items-start justify-between gap-3">
+        <ScreenHeader
+          icon={Truck} iconColor="text-green-600"
+          title="Dispatch Order"
+          description="Select a pending sales order and confirm dispatch to deduct stock."
+        />
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="shrink-0 mt-1 p-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-brand-600 transition-colors touch-manipulation"
+          title="Refresh"
+        >
+          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+        </button>
+      </div>
 
-      {lastResult && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
-          <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
-          <p className="text-green-800 font-medium">{lastResult}</p>
-        </div>
-      )}
+      <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-      {stock.length === 0 ? (
-        <div className="card text-center py-10">
-          <p className="text-4xl mb-3">📦</p>
-          <p className="font-bold text-gray-900 text-lg">No finished goods in stock</p>
-          <p className="text-gray-500 mt-2">Fill some tubs first before dispatching.</p>
-        </div>
-      ) : (
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-start">
-
-          {/* Left: SKU selector grouped by pack format */}
-          <div className="flex-1 min-w-0 card space-y-5">
-            <h2 className="section-title">What are you dispatching?</h2>
-
-            {grouped.map(([packFormat, items]) => (
-              <div key={packFormat}>
-                <div className="mb-2">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">{packFormat}</span>
-                  <span className="ml-2 text-xs text-gray-400">{items.length} SKU{items.length !== 1 ? 's' : ''}</span>
-                </div>
-                <div className="space-y-2">
-                  {items.map(s => (
-                    <div key={s.fg_sku_id}>
-                      <button
-                        onClick={() => selectSku(s)}
-                        className={`w-full text-left px-5 py-4 rounded-2xl border-2 transition-all touch-manipulation ${
-                          selected?.fg_sku_id === s.fg_sku_id
-                            ? 'border-brand-500 bg-orange-50 rounded-b-none border-b-0'
-                            : 'border-gray-100 bg-white hover:border-orange-200'
-                        }`}
-                      >
-                        <p className="font-bold text-gray-900">{s.product_name}</p>
-                        <p className="text-sm text-green-600 mt-0.5">In stock: {formatNumber(s.qty_on_hand)} {s.unit}</p>
-                      </button>
-
-                      {selected?.fg_sku_id === s.fg_sku_id && (
-                        <div className="border-2 border-t-0 border-brand-500 bg-orange-50 rounded-b-2xl px-5 pb-5 pt-4 space-y-4">
-                          <div>
-                            <label className="label-text block mb-2">How many {s.unit} are you sending?</label>
-                            <input
-                              type="number" min="1" step="1"
-                              max={s.qty_on_hand}
-                              value={qty}
-                              onChange={e => setQty(e.target.value)}
-                              placeholder={`Max ${formatNumber(s.qty_on_hand)} ${s.unit}`}
-                              className="input-field"
-                              autoFocus
-                            />
-                          </div>
-                          <div>
-                            <label className="label-text block mb-2">Note (optional)</label>
-                            <textarea
-                              value={note}
-                              onChange={e => setNote(e.target.value)}
-                              placeholder="Customer name, delivery details, etc."
-                              className="input-field"
-                              rows={2}
-                            />
-                          </div>
-                          {qty && parseFloat(qty) > 0 && (
-                            <button onClick={() => setShowConfirm(true)} className="btn-primary">
-                              Dispatch {qty} {s.unit} of {s.product_name}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Right: Recent dispatches sidebar */}
-          <div className="w-full lg:w-80 shrink-0">
-            <div className="card space-y-3">
-              <div className="flex items-center gap-2">
-                <Clock size={16} className="text-gray-400" />
-                <h2 className="font-bold text-gray-900 text-sm">Recent Dispatches</h2>
-              </div>
-              {history.length === 0 ? (
-                <p className="text-center text-gray-400 py-4 text-sm">No dispatches recorded yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {history.map(d => (
-                    <div key={d.id} className="border-b border-gray-50 pb-2 last:border-0 last:pb-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-gray-900 text-sm leading-snug">{d.product_name}</p>
-                        <span className="text-xs text-gray-400 whitespace-nowrap shrink-0 mt-0.5">
-                          {format(new Date(d.dispatched_at), 'd MMM')}
+        {/* Left: pending orders */}
+        <div className="flex-1 min-w-0 space-y-3">
+          {orders.length === 0 ? (
+            <div className="card text-center py-10">
+              <CheckCircle size={40} className="mx-auto text-green-400 mb-3" />
+              <p className="font-bold text-gray-900 text-lg">No pending orders</p>
+              <p className="text-gray-500 mt-2 text-sm">All approved orders have been dispatched.</p>
+            </div>
+          ) : (
+            orders.map(order => {
+              const canDispatch = allHaveStock(order);
+              return (
+                <div key={order.order_id} className="card space-y-3">
+                  {/* Order header */}
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-gray-900 text-base">
+                          {order.customer_name || `Order #${order.order_id}`}
+                        </span>
+                        {order.customer_name && (
+                          <span className="text-xs text-gray-400">#{order.order_id}</span>
+                        )}
+                        {order.order_ref && (
+                          <span className="text-xs text-gray-400">· Ref: {order.order_ref}</span>
+                        )}
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_COLOR[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                          {STATUS_LABEL[order.status] || order.status}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {formatNumber(d.qty)} {d.unit}
-                        {d.note && <span className="ml-1 text-gray-400">· {d.note}</span>}
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Ordered {format(new Date(order.created_at), 'd MMM yyyy')}
                       </p>
                     </div>
-                  ))}
+                    <button
+                      onClick={() => setConfirmOrder(order)}
+                      disabled={!canDispatch}
+                      className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold text-sm transition-all touch-manipulation ${
+                        canDispatch
+                          ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Truck size={15} />
+                      Dispatch
+                    </button>
+                  </div>
+
+                  {/* Order lines table */}
+                  <div className="overflow-x-auto rounded-xl border border-gray-100">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+                          <th className="text-left px-3 py-2 font-semibold">Product</th>
+                          <th className="text-right px-3 py-2 font-semibold">Ordered</th>
+                          <th className="text-right px-3 py-2 font-semibold">In Stock</th>
+                          <th className="text-center px-3 py-2 font-semibold">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {order.lines.map(line => (
+                          <tr key={line.line_id} className={line.has_stock ? '' : 'bg-red-50'}>
+                            <td className="px-3 py-2.5 font-medium text-gray-900 flex items-center gap-2">
+                              <Package size={14} className="text-gray-400 shrink-0" />
+                              {line.product_name}
+                            </td>
+                            <td className="px-3 py-2.5 text-right text-gray-700 whitespace-nowrap">
+                              {formatNumber(line.quantity)} {line.unit}
+                            </td>
+                            <td className={`px-3 py-2.5 text-right whitespace-nowrap font-medium ${line.has_stock ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatNumber(line.qty_on_hand)} {line.unit}
+                            </td>
+                            <td className="px-3 py-2.5 text-center">
+                              {line.has_stock ? (
+                                <CheckCircle size={16} className="mx-auto text-green-500" />
+                              ) : (
+                                <AlertTriangle size={16} className="mx-auto text-red-500" />
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {!canDispatch && (
+                    <p className="text-xs text-red-600 flex items-center gap-1.5">
+                      <AlertTriangle size={13} />
+                      Some items are out of stock. Make tubs before dispatching.
+                    </p>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-
+              );
+            })
+          )}
         </div>
-      )}
 
-      {showConfirm && selected && (
+        {/* Right: recent dispatches */}
+        <div className="w-full lg:w-72 shrink-0">
+          <div className="card space-y-3">
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="text-gray-400" />
+              <h2 className="font-bold text-gray-900 text-sm">Recent Dispatches</h2>
+            </div>
+            {history.length === 0 ? (
+              <p className="text-center text-gray-400 py-4 text-sm">No dispatches recorded yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {history.map(d => (
+                  <div key={d.id} className="border-b border-gray-50 pb-2 last:border-0 last:pb-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-gray-900 text-sm leading-snug">{d.product_name}</p>
+                      <span className="text-xs text-gray-400 whitespace-nowrap shrink-0 mt-0.5">
+                        {format(new Date(d.dispatched_at), 'd MMM')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {formatNumber(d.qty)} {d.unit}
+                      {d.note && <span className="ml-1 text-gray-400">· {d.note}</span>}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {confirmOrder && (
         <ConfirmModal
           title="Confirm Dispatch"
           message={
-            <div className="space-y-2">
-              <p>Dispatching:</p>
-              <p className="text-xl font-bold text-gray-900">
-                {qty} {selected.unit} of {selected.product_name}
+            <div className="space-y-3">
+              <p className="font-semibold text-gray-900">
+                {confirmOrder.customer_name || `Order #${confirmOrder.order_id}`}
               </p>
-              <p className="text-sm text-gray-500">
-                Stock after: {formatNumber(selected.qty_on_hand - parseFloat(qty))} {selected.unit}
+              <div className="space-y-1">
+                {confirmOrder.lines.map(line => (
+                  <p key={line.line_id} className="text-sm text-gray-700">
+                    · {formatNumber(line.quantity)} {line.unit} of {line.product_name}
+                  </p>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 pt-1">
+                Stock will be deducted immediately and the order marked as dispatched.
               </p>
             </div>
           }
           confirmLabel="Yes, Dispatch Now"
-          onConfirm={handleSubmit}
-          onCancel={() => setShowConfirm(false)}
+          onConfirm={handleDispatch}
+          onCancel={() => setConfirmOrder(null)}
           loading={submitting}
         />
       )}
