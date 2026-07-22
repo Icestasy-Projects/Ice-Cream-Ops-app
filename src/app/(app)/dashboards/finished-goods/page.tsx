@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Box } from 'lucide-react';
+import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Box, ChevronsUpDown } from 'lucide-react';
 
 interface FgItem {
   fg_sku_id: number;
@@ -39,6 +39,24 @@ function StatusBadge({ status }: { status: StatusType }) {
   );
 }
 
+type SortCol = 'name' | 'onhand' | 'weekly' | 'threshold' | 'status';
+
+function SortTh({ col, label, sort, onSort, align = 'right' }: {
+  col: SortCol; label: string; sort: { col: SortCol; asc: boolean };
+  onSort: (c: SortCol) => void; align?: 'left' | 'right' | 'center';
+}) {
+  const active = sort.col === col;
+  return (
+    <th onClick={() => onSort(col)} className={`px-4 py-2 text-xs font-semibold text-gray-500 cursor-pointer select-none hover:text-gray-800 whitespace-nowrap text-${align}`}>
+      <span className="inline-flex items-center gap-1">
+        {align === 'right' && (active ? (sort.asc ? '▲' : '▼') : <ChevronsUpDown size={10} className="text-gray-300" />)}
+        {label}
+        {align !== 'right' && (active ? (sort.asc ? ' ▲' : ' ▼') : <ChevronsUpDown size={10} className="text-gray-300 ml-1" />)}
+      </span>
+    </th>
+  );
+}
+
 function PackSection({
   packFormat, items, weeklyReq,
 }: {
@@ -47,18 +65,30 @@ function PackSection({
   weeklyReq: Record<number, number>;
 }) {
   const [open, setOpen] = useState(true);
+  const [sort, setSort] = useState<{ col: SortCol; asc: boolean }>({ col: 'status', asc: true });
 
-  const withStatus = useMemo(() => items.map(item => ({
-    ...item,
-    weekly: weeklyReq[item.fg_sku_id],
-    threshold: weeklyReq[item.fg_sku_id] ? Math.ceil(weeklyReq[item.fg_sku_id] * 2.5) : undefined,
-    status: computeStatus(item.qty_on_hand, weeklyReq[item.fg_sku_id]),
-  })).sort((a, b) => {
+  function toggleSort(col: SortCol) {
+    setSort(s => s.col === col ? { col, asc: !s.asc } : { col, asc: true });
+  }
+
+  const withStatus = useMemo(() => {
+    const rows = items.map(item => ({
+      ...item,
+      weekly: weeklyReq[item.fg_sku_id],
+      threshold: weeklyReq[item.fg_sku_id] ? Math.ceil(weeklyReq[item.fg_sku_id] * 2.5) : undefined,
+      status: computeStatus(item.qty_on_hand, weeklyReq[item.fg_sku_id]),
+    }));
     const ord: Record<StatusType, number> = { critical: 0, low: 1, ok: 2, unknown: 3 };
-    return ord[a.status] !== ord[b.status]
-      ? ord[a.status] - ord[b.status]
-      : a.product_name.localeCompare(b.product_name);
-  }), [items, weeklyReq]);
+    return rows.sort((a, b) => {
+      let cmp = 0;
+      if (sort.col === 'name') cmp = a.product_name.localeCompare(b.product_name);
+      else if (sort.col === 'onhand') cmp = a.qty_on_hand - b.qty_on_hand;
+      else if (sort.col === 'weekly') cmp = (a.weekly ?? 0) - (b.weekly ?? 0);
+      else if (sort.col === 'threshold') cmp = (a.threshold ?? 0) - (b.threshold ?? 0);
+      else cmp = ord[a.status] - ord[b.status] || a.product_name.localeCompare(b.product_name);
+      return sort.asc ? cmp : -cmp;
+    });
+  }, [items, weeklyReq, sort]);
 
   const crit = withStatus.filter(i => i.status === 'critical').length;
   const low = withStatus.filter(i => i.status === 'low').length;
@@ -84,11 +114,11 @@ function PackSection({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-white">
-                <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 min-w-[180px]">Product</th>
-                <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">In Hand</th>
-                <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">Wkly Req</th>
-                <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">Threshold</th>
-                <th className="text-center px-4 py-2 text-xs font-semibold text-gray-500">Status</th>
+                <SortTh col="name" label="Product" sort={sort} onSort={toggleSort} align="left" />
+                <SortTh col="onhand" label="In Hand" sort={sort} onSort={toggleSort} />
+                <SortTh col="weekly" label="Wkly Req" sort={sort} onSort={toggleSort} />
+                <SortTh col="threshold" label="Threshold" sort={sort} onSort={toggleSort} />
+                <SortTh col="status" label="Status" sort={sort} onSort={toggleSort} align="center" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">

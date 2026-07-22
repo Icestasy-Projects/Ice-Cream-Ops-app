@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { Trash2, CheckCircle, ChevronDown, ChevronUp, RefreshCw, Package } from 'lucide-react';
+import { Trash2, CheckCircle, ChevronDown, ChevronUp, RefreshCw, Package, History } from 'lucide-react';
 
 interface RmItem {
   rm_item_id: number;
@@ -49,7 +49,17 @@ interface PurchaseOrder {
   expanded: boolean;
 }
 
-type Tab = 'place' | 'confirm';
+type Tab = 'place' | 'confirm' | 'history';
+
+interface HistoryOrder {
+  id: number;
+  vendor_name: string;
+  ordered_at: string;
+  status: string;
+  note: string | null;
+  lines: { ingredient_name: string; unit: string; qty_ordered: number; qty_received: number }[];
+  expanded: boolean;
+}
 
 export default function ReceivePage() {
   const supabase = createClient();
@@ -73,6 +83,10 @@ export default function ReceivePage() {
   const [orders, setOrders] = useState<PurchaseOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [confirming, setConfirming] = useState<number | null>(null);
+
+  // History state
+  const [history, setHistory] = useState<HistoryOrder[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const filtered = items.filter(i =>
     i.name.toLowerCase().includes(search.toLowerCase())
@@ -146,9 +160,45 @@ export default function ReceivePage() {
     setOrdersLoading(false);
   }, [supabase]);
 
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    const res = await supabase.schema('production').from('rm_purchase_orders')
+      .select(`
+        id, ordered_at, status, note,
+        vendor:vendor_id(name),
+        lines:rm_purchase_order_lines(id, rm_item_id, qty_ordered, qty_received, status, item:rm_item_id(name, unit))
+      `)
+      .in('status', ['received', 'partially_received'])
+      .order('ordered_at', { ascending: false })
+      .limit(50);
+    setHistory((res.data || []).map((o: Record<string, unknown>) => {
+      const vendor = o.vendor as Record<string, unknown> | null;
+      const rawLines = (o.lines as Record<string, unknown>[]) || [];
+      return {
+        id: o.id as number,
+        vendor_name: (vendor?.name as string) || 'Unknown',
+        ordered_at: o.ordered_at as string,
+        status: o.status as string,
+        note: o.note as string | null,
+        expanded: false,
+        lines: rawLines.map((l: Record<string, unknown>) => {
+          const item = l.item as Record<string, unknown> | null;
+          return {
+            ingredient_name: (item?.name as string) || '',
+            unit: (item?.unit as string) || '',
+            qty_ordered: l.qty_ordered as number,
+            qty_received: (l.qty_received as number) || 0,
+          };
+        }),
+      };
+    }));
+    setHistoryLoading(false);
+  }, [supabase]);
+
   useEffect(() => {
     if (tab === 'confirm') loadOrders();
-  }, [tab, loadOrders]);
+    if (tab === 'history') loadHistory();
+  }, [tab, loadOrders, loadHistory]);
 
   // --- Place order ---
   function addLine(item: RmItem) {
@@ -313,7 +363,7 @@ export default function ReceivePage() {
             tab === 'place' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          📋 Place Order
+          Place Order
         </button>
         <button
           onClick={() => setTab('confirm')}
@@ -321,7 +371,15 @@ export default function ReceivePage() {
             tab === 'confirm' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
           }`}
         >
-          ✅ Confirm Receipt
+          Confirm Receipt
+        </button>
+        <button
+          onClick={() => setTab('history')}
+          className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-all touch-manipulation ${
+            tab === 'history' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          History
         </button>
       </div>
 
@@ -434,6 +492,75 @@ export default function ReceivePage() {
             )}
           </div>
         </>
+      )}
+
+      {/* HISTORY TAB */}
+      {tab === 'history' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">Past received purchase orders.</p>
+            <button onClick={loadHistory} className="flex items-center gap-1.5 text-gray-500 text-sm hover:text-orange-600 touch-manipulation">
+              <RefreshCw size={14} />
+              Refresh
+            </button>
+          </div>
+          {historyLoading ? <LoadingSpinner text="Loading history..." /> : history.length === 0 ? (
+            <div className="card text-center py-10 text-gray-400">
+              <History size={36} className="mx-auto mb-3 text-gray-300" />
+              <p className="font-semibold text-gray-600">No history yet</p>
+              <p className="text-sm mt-1">Received orders will appear here.</p>
+            </div>
+          ) : history.map(order => (
+            <div key={order.id} className="card p-0 overflow-hidden">
+              <button
+                onClick={() => setHistory(prev => prev.map(o => o.id === order.id ? { ...o, expanded: !o.expanded } : o))}
+                className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left touch-manipulation hover:bg-orange-50 transition-colors"
+              >
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-bold text-gray-900">PO #{order.id} — {order.vendor_name}</p>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                      order.status === 'received' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {order.status === 'received' ? 'Received' : 'Partial'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {new Date(order.ordered_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {' · '}{order.lines.length} item{order.lines.length !== 1 ? 's' : ''}
+                    {order.note ? ` · ${order.note}` : ''}
+                  </p>
+                </div>
+                {order.expanded ? <ChevronUp size={18} className="text-gray-400 shrink-0" /> : <ChevronDown size={18} className="text-gray-400 shrink-0" />}
+              </button>
+
+              {order.expanded && (
+                <div className="border-t border-gray-100 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100">
+                        <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500">Ingredient</th>
+                        <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">Ordered</th>
+                        <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 whitespace-nowrap">Received</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {order.lines.map((line, i) => (
+                        <tr key={i} className="hover:bg-orange-50">
+                          <td className="px-4 py-2.5 font-medium text-gray-900 text-xs">{line.ingredient_name}</td>
+                          <td className="px-4 py-2.5 text-right text-xs text-gray-600 whitespace-nowrap">{line.qty_ordered} {line.unit}</td>
+                          <td className={`px-4 py-2.5 text-right text-xs font-semibold whitespace-nowrap ${line.qty_received >= line.qty_ordered ? 'text-green-600' : 'text-amber-600'}`}>
+                            {line.qty_received} {line.unit}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       {/* CONFIRM RECEIPT TAB */}

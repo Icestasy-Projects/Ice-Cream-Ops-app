@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Plus, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Package, Search } from 'lucide-react';
 
 interface Category { id: number; name: string; }
 interface RmItem {
@@ -28,6 +28,7 @@ export default function RmItemsPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
 
   // Form state
   const [name, setName] = useState('');
@@ -108,9 +109,11 @@ export default function RmItemsPage() {
     }
   }
 
-  // Group items by category
+  const q = search.toLowerCase();
+  const filtered = q ? items.filter(i => i.name.toLowerCase().includes(q) || i.category_name.toLowerCase().includes(q)) : items;
+
   const grouped: Record<string, RmItem[]> = {};
-  for (const item of items) {
+  for (const item of filtered) {
     if (!grouped[item.category_name]) grouped[item.category_name] = [];
     grouped[item.category_name].push(item);
   }
@@ -125,6 +128,18 @@ export default function RmItemsPage() {
         title="Manage Ingredients"
         description="Add raw material ingredients used in flavour recipes and purchase orders."
       />
+
+      {/* Search */}
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search ingredient or category..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
+        />
+      </div>
 
       <button onClick={() => setShowAdd(s => !s)} className="btn-primary flex items-center gap-2">
         <Plus size={18} />
