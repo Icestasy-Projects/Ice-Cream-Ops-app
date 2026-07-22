@@ -41,7 +41,6 @@ export default function BreakBulkPage() {
       .select('fg_sku_id, product_name, unit, qty_on_hand')
       .gt('qty_on_hand', 0)
       .order('product_name');
-    // Only show bulk SKUs (unit or product_name contains 'bulk', case-insensitive)
     const all = (data || []).map((r: Record<string, unknown>) => ({
       fg_sku_id: r.fg_sku_id as number,
       product_name: r.product_name as string,
@@ -139,99 +138,106 @@ export default function BreakBulkPage() {
         />
       </div>
 
-      {/* Select source bulk SKU */}
-      <div className="card space-y-3">
-        <h2 className="section-title">Select Bulk SKU to Break</h2>
+      {/* SKU list with inline expansion */}
+      <div className="card space-y-2">
+        <h2 className="section-title mb-3">Select Bulk SKU to Break</h2>
         {filtered.length === 0 ? (
           <p className="text-sm text-gray-400 py-4 text-center">
             {skus.length === 0 ? 'No bulk stock available. Make tubs first.' : 'No results match your search.'}
           </p>
         ) : (
-          <div className="space-y-2">
-            {filtered.map(s => (
-              <button
-                key={s.fg_sku_id}
-                onClick={() => selectSku(s)}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border-2 transition-all touch-manipulation text-left ${
-                  selected?.fg_sku_id === s.fg_sku_id
-                    ? 'border-brand-500 bg-orange-50'
-                    : 'border-gray-200 hover:border-orange-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                    <Package size={16} className="text-brand-600" />
+          filtered.map(s => {
+            const isSelected = selected?.fg_sku_id === s.fg_sku_id;
+            return (
+              <div key={s.fg_sku_id}>
+                <button
+                  onClick={() => selectSku(s)}
+                  className={`w-full flex items-center justify-between px-4 py-3 border-2 transition-all touch-manipulation text-left ${
+                    isSelected
+                      ? 'rounded-t-2xl border-b-0 border-brand-500 bg-orange-50'
+                      : 'rounded-2xl border-gray-200 hover:border-orange-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
+                      <Package size={16} className="text-brand-600" />
+                    </div>
+                    <p className={`font-semibold text-sm ${isSelected ? 'text-brand-700' : 'text-gray-900'}`}>
+                      {s.product_name}
+                    </p>
                   </div>
-                  <p className={`font-semibold text-sm ${selected?.fg_sku_id === s.fg_sku_id ? 'text-brand-700' : 'text-gray-900'}`}>
-                    {s.product_name}
-                  </p>
-                </div>
-                <span className="text-sm font-bold text-gray-700 shrink-0">
-                  {formatNumber(s.qty_on_hand)} {s.unit}
-                </span>
-              </button>
-            ))}
-          </div>
+                  <span className="text-sm font-bold text-gray-700 shrink-0">
+                    {formatNumber(s.qty_on_hand)} {s.unit}
+                  </span>
+                </button>
+
+                {isSelected && (
+                  <div className="border-2 border-t-0 border-brand-500 bg-orange-50 rounded-b-2xl px-4 pb-4 pt-3 space-y-4">
+                    <div>
+                      <label className="label-text block mb-1">
+                        Number of {s.unit} to open (max {formatNumber(s.qty_on_hand)})
+                      </label>
+                      <input
+                        type="number" min="0.5" step="0.5"
+                        max={s.qty_on_hand}
+                        value={tubsToBreak}
+                        onChange={e => { setTubsToBreak(e.target.value); setLastResult(null); }}
+                        placeholder="e.g. 2"
+                        className="input-field"
+                        autoFocus
+                      />
+                    </div>
+
+                    {tubsNum > 0 && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div
+                          className={`rounded-2xl border-2 p-4 space-y-1 cursor-pointer transition-all touch-manipulation ${
+                            packType === '12sq' ? 'border-brand-500 bg-white' : 'border-gray-200 bg-white hover:border-orange-200'
+                          }`}
+                          onClick={() => setPackType('12sq')}
+                        >
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">12 Squares</p>
+                          <p className="text-2xl font-bold text-gray-900">{sq12Out}</p>
+                          <p className="text-xs text-gray-500">packs × 150ml each</p>
+                          {(tubsNum * 4000) % PACK_CONFIG['12sq'].ml !== 0 && (
+                            <p className="text-xs text-amber-500">{formatNumber(((tubsNum * 4000) % PACK_CONFIG['12sq'].ml) / 1000)}L waste</p>
+                          )}
+                        </div>
+                        <div
+                          className={`rounded-2xl border-2 p-4 space-y-1 cursor-pointer transition-all touch-manipulation ${
+                            packType === 'sample' ? 'border-brand-500 bg-white' : 'border-gray-200 bg-white hover:border-orange-200'
+                          }`}
+                          onClick={() => setPackType('sample')}
+                        >
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Samples</p>
+                          <p className="text-2xl font-bold text-gray-900">{sampleOut}</p>
+                          <p className="text-xs text-gray-500">units × 50ml each</p>
+                          {(tubsNum * 4000) % PACK_CONFIG['sample'].ml !== 0 && (
+                            <p className="text-xs text-amber-500">{formatNumber(((tubsNum * 4000) % PACK_CONFIG['sample'].ml) / 1000)}L waste</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {tubsNum > 0 && (
+                      <button
+                        onClick={handleSubmit}
+                        disabled={submitting || tubsNum <= 0}
+                        className="btn-primary"
+                      >
+                        {submitting
+                          ? 'Processing...'
+                          : `Break ${tubsNum} Tub${tubsNum !== 1 ? 's' : ''} → ${packType === '12sq' ? `${sq12Out} × 12-Square Packs` : `${sampleOut} × Samples`}`
+                        }
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
-
-      {/* Quantity + output + pack type */}
-      {selected && (
-        <div className="card space-y-4">
-          <h2 className="section-title">How Many Tubs to Break?</h2>
-          <div>
-            <label className="label-text block mb-1">
-              Number of {selected.unit} to open (max {formatNumber(selected.qty_on_hand)})
-            </label>
-            <input
-              type="number" min="0.5" step="0.5"
-              max={selected.qty_on_hand}
-              value={tubsToBreak}
-              onChange={e => { setTubsToBreak(e.target.value); setLastResult(null); }}
-              placeholder="e.g. 2"
-              className="input-field"
-            />
-          </div>
-
-          {tubsNum > 0 && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className={`rounded-2xl border-2 p-4 space-y-1 cursor-pointer transition-all touch-manipulation ${
-                packType === '12sq' ? 'border-brand-500 bg-orange-50' : 'border-gray-200 hover:border-orange-200'
-              }`} onClick={() => setPackType('12sq')}>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">12 Squares</p>
-                <p className="text-2xl font-bold text-gray-900">{sq12Out}</p>
-                <p className="text-xs text-gray-500">packs × 150ml each</p>
-                {(tubsNum * 4000) % PACK_CONFIG['12sq'].ml !== 0 && (
-                  <p className="text-xs text-amber-500">{formatNumber(((tubsNum * 4000) % PACK_CONFIG['12sq'].ml) / 1000)}L waste</p>
-                )}
-              </div>
-              <div className={`rounded-2xl border-2 p-4 space-y-1 cursor-pointer transition-all touch-manipulation ${
-                packType === 'sample' ? 'border-brand-500 bg-orange-50' : 'border-gray-200 hover:border-orange-200'
-              }`} onClick={() => setPackType('sample')}>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Samples</p>
-                <p className="text-2xl font-bold text-gray-900">{sampleOut}</p>
-                <p className="text-xs text-gray-500">units × 50ml each</p>
-                {(tubsNum * 4000) % PACK_CONFIG['sample'].ml !== 0 && (
-                  <p className="text-xs text-amber-500">{formatNumber(((tubsNum * 4000) % PACK_CONFIG['sample'].ml) / 1000)}L waste</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {tubsNum > 0 && (
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || tubsNum <= 0}
-              className="btn-primary"
-            >
-              {submitting
-                ? 'Processing...'
-                : `Break ${tubsNum} Tub${tubsNum !== 1 ? 's' : ''} → ${packType === '12sq' ? `${sq12Out} × 12-Square Packs` : `${sampleOut} × Samples`}`
-              }
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
