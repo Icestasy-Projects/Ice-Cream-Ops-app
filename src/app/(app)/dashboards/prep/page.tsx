@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, Download, Beaker } from 'lucide-react';
+import { RefreshCw, Search, Download, Beaker, ChevronsUpDown } from 'lucide-react';
 
 interface PrepItem {
   prep_product_id: number;
@@ -42,6 +42,24 @@ function StatusBadge({ status }: { status: StatusType }) {
   );
 }
 
+type PrepSortCol = 'name' | 'factory' | 'kitchen' | 'total' | 'weekly' | 'threshold' | 'status';
+
+function SortTh({ col, label, sort, onSort, align = 'right' }: {
+  col: PrepSortCol; label: string; sort: { col: PrepSortCol; asc: boolean };
+  onSort: (c: PrepSortCol) => void; align?: 'left' | 'right' | 'center';
+}) {
+  const active = sort.col === col;
+  return (
+    <th onClick={() => onSort(col)} className={`px-4 py-3 text-xs font-semibold text-gray-500 cursor-pointer select-none hover:text-gray-800 whitespace-nowrap text-${align}`}>
+      <span className="inline-flex items-center gap-1">
+        {align === 'right' && (active ? (sort.asc ? '▲' : '▼') : <ChevronsUpDown size={10} className="text-gray-300" />)}
+        {label}
+        {align !== 'right' && (active ? (sort.asc ? ' ▲' : ' ▼') : <ChevronsUpDown size={10} className="text-gray-300 ml-1" />)}
+      </span>
+    </th>
+  );
+}
+
 export default function PrepDashboard() {
   const supabase = createClient();
   const [data, setData] = useState<PrepItem[]>([]);
@@ -49,6 +67,11 @@ export default function PrepDashboard() {
   const [weeklyReq, setWeeklyReq] = useState<Record<number, number>>({});
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | StatusType>('all');
+  const [sort, setSort] = useState<{ col: PrepSortCol; asc: boolean }>({ col: 'status', asc: true });
+
+  function toggleSort(col: PrepSortCol) {
+    setSort(s => s.col === col ? { col, asc: !s.asc } : { col, asc: true });
+  }
 
   useEffect(() => {
     fetch('/api/weekly-req')
@@ -103,11 +126,17 @@ export default function PrepDashboard() {
       return true;
     }).sort((a, b) => {
       const ord: Record<StatusType, number> = { critical: 0, low: 1, ok: 2, unknown: 3 };
-      return ord[a.status] !== ord[b.status]
-        ? ord[a.status] - ord[b.status]
-        : a.product_name.localeCompare(b.product_name);
+      let cmp = 0;
+      if (sort.col === 'name') cmp = a.product_name.localeCompare(b.product_name);
+      else if (sort.col === 'factory') cmp = a.qty_factory - b.qty_factory;
+      else if (sort.col === 'kitchen') cmp = a.qty_kitchen - b.qty_kitchen;
+      else if (sort.col === 'total') cmp = a.qty_total - b.qty_total;
+      else if (sort.col === 'weekly') cmp = (a.weekly ?? 0) - (b.weekly ?? 0);
+      else if (sort.col === 'threshold') cmp = (a.threshold ?? 0) - (b.threshold ?? 0);
+      else cmp = ord[a.status] - ord[b.status] || a.product_name.localeCompare(b.product_name);
+      return sort.asc ? cmp : -cmp;
     });
-  }, [enriched, search, filterStatus]);
+  }, [enriched, search, filterStatus, sort]);
 
   const critCount = enriched.filter(i => i.status === 'critical').length;
   const lowCount = enriched.filter(i => i.status === 'low').length;
@@ -176,14 +205,14 @@ export default function PrepDashboard() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 min-w-[160px]">Flavour</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Yield / Batch</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Factory</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Kitchen</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Total (units)</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Wkly Req</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Threshold</th>
-                  <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500">Status</th>
+                  <SortTh col="name" label="Flavour" sort={sort} onSort={toggleSort} align="left" />
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Yield/Batch</th>
+                  <SortTh col="factory" label="Factory" sort={sort} onSort={toggleSort} />
+                  <SortTh col="kitchen" label="Kitchen" sort={sort} onSort={toggleSort} />
+                  <SortTh col="total" label="Total (units)" sort={sort} onSort={toggleSort} />
+                  <SortTh col="weekly" label="Wkly Req" sort={sort} onSort={toggleSort} />
+                  <SortTh col="threshold" label="Threshold" sort={sort} onSort={toggleSort} />
+                  <SortTh col="status" label="Status" sort={sort} onSort={toggleSort} align="center" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 bg-white">

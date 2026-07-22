@@ -1,11 +1,11 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { formatNumber } from '@/lib/utils';
-import { Package, PackageOpen } from 'lucide-react';
+import { Package, PackageOpen, Search, CheckCircle } from 'lucide-react';
 
 interface FgSku {
   fg_sku_id: number;
@@ -16,15 +16,20 @@ interface FgSku {
 
 type PackType = '12sq' | 'sample';
 
-const PACK_CONFIG: Record<PackType, { label: string; ml: number; unit: string; emoji: string }> = {
-  '12sq': { label: '12 Squares (150ml each)', ml: 1800, unit: 'pack', emoji: '🟫' },
-  'sample': { label: 'Sample (50ml)', ml: 50, unit: 'unit', emoji: '🧁' },
+const PACK_CONFIG: Record<PackType, { label: string; ml: number; unit: string }> = {
+  '12sq':   { label: '12 Squares (150ml each)', ml: 1800, unit: 'pack' },
+  'sample': { label: 'Sample (50ml)',            ml: 50,   unit: 'unit' },
 };
+
+function calcOutput(tubs: number, packMl: number) {
+  return tubs > 0 ? Math.floor((tubs * 4000) / packMl) : 0;
+}
 
 export default function BreakBulkPage() {
   const supabase = createClient();
   const [skus, setSkus] = useState<FgSku[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<FgSku | null>(null);
   const [packType, setPackType] = useState<PackType>('12sq');
   const [tubsToBreak, setTubsToBreak] = useState('');
@@ -36,16 +41,26 @@ export default function BreakBulkPage() {
       .select('fg_sku_id, product_name, unit, qty_on_hand')
       .gt('qty_on_hand', 0)
       .order('product_name');
-    setSkus((data || []).map((r: Record<string, unknown>) => ({
+    // Only show bulk SKUs (unit or product_name contains 'bulk', case-insensitive)
+    const all = (data || []).map((r: Record<string, unknown>) => ({
       fg_sku_id: r.fg_sku_id as number,
       product_name: r.product_name as string,
       unit: r.unit as string,
       qty_on_hand: (r.qty_on_hand as number) || 0,
-    })));
+    }));
+    setSkus(all.filter(s =>
+      s.unit.toLowerCase().includes('bulk') || s.product_name.toLowerCase().includes('bulk')
+    ));
     setLoading(false);
   }, [supabase]);
 
   useEffect(() => { loadSkus(); }, [loadSkus]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return skus;
+    const q = search.toLowerCase();
+    return skus.filter(s => s.product_name.toLowerCase().includes(q));
+  }, [skus, search]);
 
   function selectSku(s: FgSku) {
     setSelected(prev => prev?.fg_sku_id === s.fg_sku_id ? null : s);
@@ -54,8 +69,8 @@ export default function BreakBulkPage() {
   }
 
   const tubsNum = parseFloat(tubsToBreak) || 0;
-  const pack = PACK_CONFIG[packType];
-  const outputQty = tubsNum > 0 ? Math.floor((tubsNum * 4000) / pack.ml) : 0;
+  const sq12Out = calcOutput(tubsNum, PACK_CONFIG['12sq'].ml);
+  const sampleOut = calcOutput(tubsNum, PACK_CONFIG['sample'].ml);
 
   async function handleSubmit() {
     if (!selected) { toast.error('Select a bulk SKU to break.'); return; }
@@ -64,6 +79,8 @@ export default function BreakBulkPage() {
       toast.error(`Only ${formatNumber(selected.qty_on_hand)} ${selected.unit} in stock.`);
       return;
     }
+    const pack = PACK_CONFIG[packType];
+    const outputQty = calcOutput(tubsNum, pack.ml);
     if (outputQty === 0) { toast.error('Too few tubs for even 1 output pack.'); return; }
 
     setSubmitting(true);
@@ -81,8 +98,7 @@ export default function BreakBulkPage() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || 'Failed');
 
-      const msg = `${tubsNum} × ${selected.unit} broken into ${body.output_qty} × ${pack.label}`;
-      setLastResult(msg);
+      setLastResult(`${tubsNum} × ${selected.unit} broken into ${body.output_qty} × ${pack.label}`);
       toast.success('Stock updated!');
       setSelected(null);
       setTubsToBreak('');
@@ -101,47 +117,38 @@ export default function BreakBulkPage() {
       <ScreenHeader
         icon={PackageOpen} iconColor="text-blue-500"
         title="Break Bulk"
-        description="Open 4L bulk tubs to produce 12-square packs or 50ml samples. Deducts from bulk FG stock and adds to smaller SKU stock."
+        description="Open 4L bulk tubs to produce 12-square packs or 50ml samples."
       />
 
       {lastResult && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-sm text-green-800 font-medium">
-          ✓ {lastResult}
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center gap-3 text-sm text-green-800 font-medium">
+          <CheckCircle size={18} className="text-green-600 shrink-0" />
+          {lastResult}
         </div>
       )}
 
-      {/* Pack type selector */}
-      <div className="card space-y-3">
-        <h2 className="section-title">Output Pack Type</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {(Object.entries(PACK_CONFIG) as [PackType, typeof PACK_CONFIG[PackType]][]).map(([key, cfg]) => (
-            <button
-              key={key}
-              onClick={() => { setPackType(key); setLastResult(null); }}
-              className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all touch-manipulation ${
-                packType === key
-                  ? 'border-brand-500 bg-orange-50'
-                  : 'border-gray-200 hover:border-orange-200'
-              }`}
-            >
-              <span className="text-2xl">{cfg.emoji}</span>
-              <p className={`font-semibold text-sm text-center ${packType === key ? 'text-brand-600' : 'text-gray-700'}`}>
-                {cfg.label}
-              </p>
-              <p className="text-xs text-gray-400">{cfg.ml}ml per {cfg.unit}</p>
-            </button>
-          ))}
-        </div>
+      {/* Search */}
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search bulk flavour..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
+        />
       </div>
 
-      {/* Select source SKU */}
+      {/* Select source bulk SKU */}
       <div className="card space-y-3">
         <h2 className="section-title">Select Bulk SKU to Break</h2>
-        {skus.length === 0 ? (
-          <p className="text-sm text-gray-400 py-4 text-center">No bulk stock available. Make tubs first.</p>
+        {filtered.length === 0 ? (
+          <p className="text-sm text-gray-400 py-4 text-center">
+            {skus.length === 0 ? 'No bulk stock available. Make tubs first.' : 'No results match your search.'}
+          </p>
         ) : (
           <div className="space-y-2">
-            {skus.map(s => (
+            {filtered.map(s => (
               <button
                 key={s.fg_sku_id}
                 onClick={() => selectSku(s)}
@@ -159,7 +166,7 @@ export default function BreakBulkPage() {
                     {s.product_name}
                   </p>
                 </div>
-                <span className="text-sm font-bold text-gray-700">
+                <span className="text-sm font-bold text-gray-700 shrink-0">
                   {formatNumber(s.qty_on_hand)} {s.unit}
                 </span>
               </button>
@@ -168,7 +175,7 @@ export default function BreakBulkPage() {
         )}
       </div>
 
-      {/* Quantity + preview */}
+      {/* Quantity + output + pack type */}
       {selected && (
         <div className="card space-y-4">
           <h2 className="section-title">How Many Tubs to Break?</h2>
@@ -187,29 +194,42 @@ export default function BreakBulkPage() {
           </div>
 
           {tubsNum > 0 && (
-            <div className="bg-brand-50 border border-brand-200 rounded-2xl px-5 py-4 space-y-1">
-              <p className="text-xs font-bold text-brand-600 uppercase tracking-wide">Preview</p>
-              <p className="text-sm text-gray-700">
-                <strong>{formatNumber(tubsNum)}</strong> × {selected.unit} ({formatNumber(tubsNum * 4)}L total)
-              </p>
-              <p className="text-sm text-gray-700">
-                ÷ {pack.ml}ml per {pack.unit} = <strong className="text-brand-700">{outputQty} × {pack.label}</strong>
-              </p>
-              {(tubsNum * 4000) % pack.ml !== 0 && (
-                <p className="text-xs text-amber-600">
-                  {formatNumber(((tubsNum * 4000) % pack.ml) / 1000)}L remainder (waste)
-                </p>
-              )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`rounded-2xl border-2 p-4 space-y-1 cursor-pointer transition-all touch-manipulation ${
+                packType === '12sq' ? 'border-brand-500 bg-orange-50' : 'border-gray-200 hover:border-orange-200'
+              }`} onClick={() => setPackType('12sq')}>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">12 Squares</p>
+                <p className="text-2xl font-bold text-gray-900">{sq12Out}</p>
+                <p className="text-xs text-gray-500">packs × 150ml each</p>
+                {(tubsNum * 4000) % PACK_CONFIG['12sq'].ml !== 0 && (
+                  <p className="text-xs text-amber-500">{formatNumber(((tubsNum * 4000) % PACK_CONFIG['12sq'].ml) / 1000)}L waste</p>
+                )}
+              </div>
+              <div className={`rounded-2xl border-2 p-4 space-y-1 cursor-pointer transition-all touch-manipulation ${
+                packType === 'sample' ? 'border-brand-500 bg-orange-50' : 'border-gray-200 hover:border-orange-200'
+              }`} onClick={() => setPackType('sample')}>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Samples</p>
+                <p className="text-2xl font-bold text-gray-900">{sampleOut}</p>
+                <p className="text-xs text-gray-500">units × 50ml each</p>
+                {(tubsNum * 4000) % PACK_CONFIG['sample'].ml !== 0 && (
+                  <p className="text-xs text-amber-500">{formatNumber(((tubsNum * 4000) % PACK_CONFIG['sample'].ml) / 1000)}L waste</p>
+                )}
+              </div>
             </div>
           )}
 
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || tubsNum <= 0 || outputQty === 0}
-            className="btn-primary"
-          >
-            {submitting ? 'Processing...' : `✓ Break ${tubsNum || ''} Tub${tubsNum !== 1 ? 's' : ''} → ${outputQty} ${pack.label}`}
-          </button>
+          {tubsNum > 0 && (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || tubsNum <= 0}
+              className="btn-primary"
+            >
+              {submitting
+                ? 'Processing...'
+                : `Break ${tubsNum} Tub${tubsNum !== 1 ? 's' : ''} → ${packType === '12sq' ? `${sq12Out} × 12-Square Packs` : `${sampleOut} × Samples`}`
+              }
+            </button>
+          )}
         </div>
       )}
     </div>
