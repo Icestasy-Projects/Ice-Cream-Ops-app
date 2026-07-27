@@ -6,7 +6,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { formatNumber } from '@/lib/utils';
-import { Truck, Clock, CheckCircle, AlertTriangle, Package, RefreshCw } from 'lucide-react';
+import { Truck, Clock, CheckCircle, AlertTriangle, Package, RefreshCw, Download } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface OrderLine {
@@ -132,14 +132,24 @@ export default function DispatchPage() {
           title="Dispatch Order"
           description="Select a pending sales order and confirm dispatch to deduct stock."
         />
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="shrink-0 mt-1 p-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-brand-600 transition-colors touch-manipulation"
-          title="Refresh"
-        >
-          <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2 shrink-0 mt-1">
+          <a
+            href="/api/reports/dispatch-export"
+            download
+            className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-xl hover:bg-green-100 touch-manipulation"
+          >
+            <Download size={14} />
+            Export
+          </a>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-brand-600 transition-colors touch-manipulation"
+            title="Refresh"
+          >
+            <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-4 items-start">
