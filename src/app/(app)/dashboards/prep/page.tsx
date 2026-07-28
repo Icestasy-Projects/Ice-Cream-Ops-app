@@ -68,6 +68,7 @@ export default function PrepDashboard() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | StatusType>('all');
   const [sort, setSort] = useState<{ col: PrepSortCol; asc: boolean }>({ col: 'status', asc: true });
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   function toggleSort(col: PrepSortCol) {
     setSort(s => s.col === col ? { col, asc: !s.asc } : { col, asc: true });
@@ -101,6 +102,7 @@ export default function PrepDashboard() {
       }))
     );
     setLoading(false);
+    setLastUpdated(new Date());
   }, [supabase]);
 
   useEffect(() => {
@@ -178,10 +180,17 @@ export default function PrepDashboard() {
             <Download size={13} />
             Export
           </a>
-          <button onClick={load} className="flex items-center gap-2 text-gray-500 text-sm hover:text-orange-600 touch-manipulation">
-            <RefreshCw size={16} />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            {lastUpdated && (
+              <span className="text-xs text-gray-400 hidden sm:block">
+                Updated {lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            )}
+            <button onClick={load} className="flex items-center gap-2 text-gray-500 text-sm hover:text-orange-600 touch-manipulation">
+              <RefreshCw size={16} />
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
