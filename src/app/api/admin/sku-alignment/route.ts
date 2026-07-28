@@ -21,7 +21,7 @@ export async function GET() {
       // All unique sku_ids referenced in order_lines
       admin.schema('sales').from('order_lines').select('sku_id'),
       // Existing sales.skus entries
-      admin.schema('sales').from('skus').select('id, name, flavour_id, pack_format_id'),
+      admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       // Production FG stock (fg_sku_id = production side identifier)
       admin.schema('production').from('v_fg_stock').select('fg_sku_id, product_name, unit, qty_on_hand'),
       // Pack formats from sales side
@@ -38,7 +38,7 @@ export async function GET() {
     )).sort((a, b) => a - b);
 
     const salesSkus = (salesSkusRes.data || []) as Array<{
-      id: number; name: string; flavour_id: number | null; pack_format_id: number | null;
+      id: number; sku_code: string | null; flavour_id: number | null; pack_format_id: number | null;
     }>;
     const salesSkuMap = new Map(salesSkus.map(s => [s.id, s]));
 
@@ -66,7 +66,7 @@ export async function GET() {
       return {
         sku_id: skuId,
         linked: !!existing,
-        name: existing?.name ?? null,
+        name: existing?.sku_code ?? null,
         flavour_id: existing?.flavour_id ?? null,
         flavour_name: flavour?.name ?? null,
         pack_format_id: existing?.pack_format_id ?? null,
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await admin.schema('sales').from('skus').upsert({
       id: sku_id,
-      name: name || `SKU #${sku_id}`,
+      sku_code: name || `SKU-${sku_id}`,
       flavour_id,
       pack_format_id,
     }, { onConflict: 'id' });
