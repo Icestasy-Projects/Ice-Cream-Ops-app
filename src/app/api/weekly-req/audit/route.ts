@@ -33,7 +33,7 @@ export async function GET() {
         .select('sku_id, quantity, orders!inner(created_at, status)')
         .gte('orders.created_at', since)
         .in('orders.status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']),
-      admin.schema('sales').from('skus').select('id, name, flavour_id, pack_format_id'),
+      admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
       admin.schema('production').from('prep_products').select('id, name, flavour_id, batch_yield_l, unit'),
       admin.schema('production').from('prep_recipes').select('prep_product_id, rm_item_id, qty_per_unit'),
@@ -113,7 +113,7 @@ export async function GET() {
 
       const packFmtId = sku?.pack_format_id as number | undefined;
       const pack = packFmtId ? packMap.get(packFmtId) : undefined;
-      if (!pack) { rowWarnings.push(`No pack_format found (pack_format_id=${packFmtId})`); warnings.push(`FG SKU #${id} (${sku?.name}): missing pack format`); }
+      if (!pack) { rowWarnings.push(`No pack_format found (pack_format_id=${packFmtId})`); warnings.push(`FG SKU #${id} (${sku?.sku_code}): missing pack format`); }
 
       const unitVolMl = (pack?.unit_volume_ml as number) || 0;
       const unitsPerPack = (pack?.units_per_pack as number) || 0;
@@ -132,7 +132,7 @@ export async function GET() {
       const prepProd = flavourId ? flavourToPrepMap.get(flavourId) : undefined;
       if (!prepProd && flavourId) {
         rowWarnings.push(`No prep_product mapped for flavour_id=${flavourId} — prep & RM reqs will be 0`);
-        warnings.push(`FG SKU #${id} (${sku?.name}): flavour_id=${flavourId} has no prep_product`);
+        warnings.push(`FG SKU #${id} (${sku?.sku_code}): flavour_id=${flavourId} has no prep_product`);
       }
 
       const weeklyLitres = weeklyReq * litresPerUnit;
@@ -143,12 +143,12 @@ export async function GET() {
         const pid = prepProd.id as number;
         if (!prepDemand[pid]) prepDemand[pid] = { batches: 0, contributors: [] };
         prepDemand[pid].batches += weeklyBatches;
-        prepDemand[pid].contributors.push(`${sku?.name || `SKU#${id}`} (${weeklyBatches.toFixed(2)} batches)`);
+        prepDemand[pid].contributors.push(`${sku?.sku_code || `SKU#${id}`} (${weeklyBatches.toFixed(2)} batches)`);
       }
 
       fgAudit.push({
         sku_id: id,
-        sku_name: (sku?.name as string) || (stock?.product_name as string) || `SKU #${id}`,
+        sku_name: (sku?.sku_code as string) || (stock?.product_name as string) || `SKU #${id}`,
         pack_format: (pack?.name as string) || '—',
         unit_volume_ml: unitVolMl,
         units_per_pack: unitsPerPack,

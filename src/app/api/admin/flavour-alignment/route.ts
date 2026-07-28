@@ -38,7 +38,7 @@ export async function GET() {
     const [flavoursRes, prepProdsRes, salesSkusRes, packFormatsRes, orderLineSkuIdsRes] = await Promise.all([
       admin.schema('production').from('flavours').select('id, name'),
       admin.schema('production').from('prep_products').select('id, name, flavour_id, batch_yield_l, status'),
-      admin.schema('sales').from('skus').select('id, name, flavour_id, pack_format_id'),
+      admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
       // distinct sku_ids used in order_lines
       admin.schema('sales').from('order_lines').select('sku_id'),
@@ -89,7 +89,7 @@ export async function GET() {
           id: p.id, name: p.name, batch_yield_l: p.batch_yield_l, status: p.status,
         })),
         sales_skus: skus.map(s => ({
-          id: s.id, name: s.name, pack_format_id: s.pack_format_id,
+          id: s.id, name: s.sku_code, pack_format_id: s.pack_format_id,
           pack_format_name: (packFormats.find(p => p.id === s.pack_format_id) as R | undefined)?.name ?? null,
           in_order_lines: orderLineSkuIds.includes(s.id as number),
         })),
@@ -111,7 +111,7 @@ export async function GET() {
     const orphanSalesSkus = salesSkus
       .filter(s => s.flavour_id && !flavourById.has(s.flavour_id as number))
       .map(s => ({
-        id: s.id, name: s.name, flavour_id: s.flavour_id,
+        id: s.id, name: s.sku_code, flavour_id: s.flavour_id,
         pack_format_id: s.pack_format_id,
         in_order_lines: orderLineSkuIds.includes(s.id as number),
       }));
@@ -175,7 +175,7 @@ export async function POST(req: NextRequest) {
       // Upsert a sales.skus entry
       const { error } = await admin.schema('sales').from('skus').upsert({
         id: body.sku_id,
-        name: body.name,
+        sku_code: body.name,
         flavour_id: body.flavour_id,
         pack_format_id: body.pack_format_id,
       }, { onConflict: 'id' });
