@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, ChevronDown, ArrowRight } from 'lucide-react';
+import { CheckCircle, ChevronDown, ArrowRight, FlaskConical, Factory } from 'lucide-react';
 
 interface PrepStock {
   prep_product_id: number;
@@ -99,7 +99,7 @@ export default function TransferPage() {
 
       {stock.length === 0 ? (
         <div className="card text-center py-10">
-          <p className="text-4xl mb-3">🧪</p>
+          <FlaskConical size={40} className="text-gray-300 mx-auto mb-3" />
           <p className="font-bold text-gray-900 text-lg">No mix in the kitchen right now</p>
           <p className="text-gray-500 mt-2">Make a kitchen batch first, then come back here to transfer it.</p>
         </div>
@@ -119,8 +119,8 @@ export default function TransferPage() {
               >
                 <p className="font-bold text-gray-900">{s.product_name}</p>
                 <div className="flex gap-4 mt-1">
-                  <p className="text-sm text-blue-600">🧪 Kitchen: {formatNumber(s.qty_kitchen)} {s.unit}</p>
-                  <p className="text-sm text-green-600">🏭 Factory: {formatNumber(s.qty_factory)} {s.unit}</p>
+                  <span className="text-sm text-blue-600 flex items-center gap-1"><FlaskConical size={13} /> Kitchen: {formatNumber(s.qty_kitchen)} {s.unit}</span>
+                  <span className="text-sm text-green-600 flex items-center gap-1"><Factory size={13} /> Factory: {formatNumber(s.qty_factory)} {s.unit}</span>
                 </div>
               </button>
             ))}
