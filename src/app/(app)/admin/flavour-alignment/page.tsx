@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { GitMerge, RefreshCw, CheckCircle2, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
+import { GitMerge, RefreshCw, CheckCircle2, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Plus, X, Wand2 } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -131,6 +131,8 @@ export default function FlavourAlignmentPage() {
   const [filter, setFilter] = useState<'all' | 'issues'>('issues');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [modal, setModal] = useState<{ flavourId: number; flavourName: string } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -156,6 +158,22 @@ export default function FlavourAlignmentPage() {
       s.has(id) ? s.delete(id) : s.add(id);
       return s;
     });
+  }
+
+  async function syncAll() {
+    setSyncing(true); setSyncResult(null);
+    try {
+      const res = await fetch('/api/admin/flavour-alignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync_all' }),
+      });
+      const json = await res.json();
+      if (json.error) { setSyncResult(`Error: ${json.error}`); }
+      else { setSyncResult(`Done — ${json.inserted} flavour${json.inserted !== 1 ? 's' : ''} added to production.flavours.`); }
+      await load();
+    } catch (e) { setSyncResult(String(e)); }
+    setSyncing(false);
   }
 
   async function createSalesSku(flavourId: number, skuId: number, packFormatId: number, name: string) {
@@ -235,6 +253,25 @@ export default function FlavourAlignmentPage() {
           <p className="text-xs text-gray-500 mt-1">
             SKU IDs: {orphan_sales_skus.map(s => s.id).join(', ')}
           </p>
+        </div>
+      )}
+
+      {/* Sync All button */}
+      {orphan_sales_skus.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={syncAll}
+            disabled={syncing}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 w-fit touch-manipulation"
+          >
+            <Wand2 size={16} />
+            {syncing ? 'Syncing…' : 'Sync All Flavours into production.flavours'}
+          </button>
+          {syncResult && (
+            <p className={`text-sm px-3 py-2 rounded-xl ${syncResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+              {syncResult}
+            </p>
+          )}
         </div>
       )}
 
