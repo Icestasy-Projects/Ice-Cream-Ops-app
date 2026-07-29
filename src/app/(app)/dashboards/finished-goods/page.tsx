@@ -455,9 +455,12 @@ export default function FinishedGoodsDashboard() {
     });
   }, [enriched, search, filterStatus]);
 
+  const EXCLUDED_UNITS = new Set(['B2B Add-On', 'Extras']);
+
   const grouped = useMemo(() => {
     const g: Record<string, FgItem[]> = {};
     for (const item of filtered) {
+      if (EXCLUDED_UNITS.has(item.unit)) continue;
       if (!g[item.unit]) g[item.unit] = [];
       g[item.unit].push(item);
     }
