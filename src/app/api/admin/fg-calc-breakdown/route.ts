@@ -20,10 +20,6 @@ export interface FgCalcBreakdown {
   sku_id: number;
   product_name: string;
   unit: string;
-  source: 'orders' | 'dispatches';
-  window_days: number;
-  window_weeks: number;
-  divisor: number;
   orders: OrderContribution[];
   total_qty: number;
   weekly_req: number;
@@ -52,9 +48,6 @@ export async function GET(req: Request) {
   if (!skuId) return NextResponse.json({ error: 'sku_id required' }, { status: 400 });
 
   const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-  const WINDOW_DAYS = 42;
-  const WINDOW_WEEKS = 6;
-  const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   // FG stock info
   const { data: stockRows } = await admin.schema('production').from('v_fg_stock')
@@ -89,12 +82,11 @@ export async function GET(req: Request) {
     }
   }
 
-  // Order lines for this SKU in the window
+  // All open/pending order lines for this SKU (no date restriction)
   const { data: orderLines } = await admin.schema('sales').from('order_lines')
     .select('quantity, orders!inner(id, customer_name, order_ref, created_at, status)')
     .eq('sku_id', skuId)
-    .gte('orders.created_at', since)
-    .in('orders.status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
+    .in('orders.status', ['approved', 'invoiced', 'in_production']);
 
   const contributions: OrderContribution[] = [];
   let totalQty = 0;
@@ -115,8 +107,7 @@ export async function GET(req: Request) {
     totalQty += qty;
   }
 
-  const divisor = WINDOW_WEEKS;
-  const weeklyReq = Math.ceil(totalQty / divisor);
+  const weeklyReq = totalQty; // total outstanding = what needs to be fulfilled
   const threshold = Math.ceil(weeklyReq * 2.5);
   const qtyOnHand = (stock?.qty_on_hand as number) || 0;
 
@@ -124,10 +115,6 @@ export async function GET(req: Request) {
     sku_id: skuId,
     product_name: (stock?.product_name as string) || `SKU #${skuId}`,
     unit: (stock?.unit as string) || 'unit',
-    source,
-    window_days: WINDOW_DAYS,
-    window_weeks: WINDOW_WEEKS,
-    divisor,
     orders: contributions,
     total_qty: totalQty,
     weekly_req: weeklyReq,
