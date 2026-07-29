@@ -111,8 +111,14 @@ export async function POST() {
       .single();
 
     if (insErr || !newOrder) {
-      console.error('order insert error:', insErr?.message, insertRow);
-      continue;
+      return NextResponse.json({
+        error: insErr?.message || 'Insert returned no row',
+        insert_row: insertRow,
+        id_col: idCol,
+        date_col: dateCol,
+        status_col: statusCol,
+        all_cols: cols,
+      }, { status: 500 });
     }
 
     const newOrderId = newOrder[idCol] as number;

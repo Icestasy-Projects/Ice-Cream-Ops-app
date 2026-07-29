@@ -33,8 +33,7 @@ export async function GET() {
       .schema('sales')
       .from('orders')
       .select('id')
-      .gte('created_at', since)
-      .in('status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
+      .gte('created_at', since);
 
     const recentOrderIds = (recentOrders || []).map((o: Record<string, unknown>) => o.id as number);
 
