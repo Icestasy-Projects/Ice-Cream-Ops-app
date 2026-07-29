@@ -26,8 +26,8 @@ export async function GET() {
     // ── Step 1: FG demand from sales orders in last 90 days ──────────────────
     // 90-day / 13-week window captures a full quarter of order history.
     // Includes all statuses so dispatched/delivered orders count too.
-    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const WINDOW_WEEKS = 13;
+    const since = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
+    const WINDOW_WEEKS = 6;
 
     const { data: recentOrders } = await admin
       .schema('sales')
