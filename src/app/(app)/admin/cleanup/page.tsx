@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import ScreenHeader from '@/components/ScreenHeader';
-import { Trash2, AlertTriangle, CheckCircle, Eye } from 'lucide-react';
+import { Trash2, AlertTriangle, CheckCircle, Eye, RefreshCw } from 'lucide-react';
 
 interface PreviewData {
   fg_skus: { fg_sku_id: number; product_name: string; unit: string }[];
@@ -15,6 +15,8 @@ export default function CleanupPage() {
   const [deleting, setDeleting] = useState(false);
   const [done, setDone] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState<string | null>(null);
 
   async function handlePreview() {
     setPreviewing(true);
@@ -47,6 +49,21 @@ export default function CleanupPage() {
     }
   }
 
+  async function handleSeed() {
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      const res = await fetch('/api/admin/seed-recent-orders', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setSeedResult(data.message || 'Done');
+    } catch (e: unknown) {
+      setSeedResult('Error: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
     <div className="space-y-4 max-w-lg">
       <ScreenHeader
@@ -54,6 +71,25 @@ export default function CleanupPage() {
         title="DB Cleanup"
         description="Permanently delete B2B Add-On and Extras SKUs from the database."
       />
+
+      {/* Seed recent orders section */}
+      <div className="card space-y-3 border border-blue-100 bg-blue-50/40">
+        <p className="text-sm font-bold text-blue-800">Seed Recent Orders for Weekly Req</p>
+        <p className="text-xs text-blue-600">Copies the latest 10 historical orders into the last 42 days so the weekly requirement calculation has data. Safe to run multiple times.</p>
+        <button
+          onClick={handleSeed}
+          disabled={seeding}
+          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 touch-manipulation"
+        >
+          <RefreshCw size={15} className={seeding ? 'animate-spin' : ''} />
+          {seeding ? 'Seeding...' : 'Seed Last 42 Days with Orders'}
+        </button>
+        {seedResult && (
+          <p className={`text-sm px-3 py-2 rounded-xl ${seedResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+            {seedResult}
+          </p>
+        )}
+      </div>
 
       {done ? (
         <div className="card space-y-3">

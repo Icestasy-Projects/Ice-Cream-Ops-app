@@ -216,13 +216,13 @@ function CalcModal({ skuId, productName, onClose }: {
                 <div className="flex items-center gap-2 mb-3">
                   <Package size={14} className="text-gray-400" />
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    Orders in last 90 days for this SKU
+                    Orders in last 42 days for this SKU
                     <span className="ml-2 normal-case font-normal text-gray-400">({data.orders.length} records)</span>
                   </p>
                 </div>
 
                 {data.orders.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">No orders in the last 90 days for this SKU — requirement is 0.</p>
+                  <p className="text-sm text-gray-400 text-center py-4">No orders in the last 42 days for this SKU — requirement is 0.</p>
                 ) : (
                   <div className="space-y-2">
                     {data.orders.map((o, i) => (
