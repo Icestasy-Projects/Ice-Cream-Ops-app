@@ -23,6 +23,7 @@ export interface FgCalcBreakdown {
   source: 'orders' | 'dispatches';
   window_days: number;
   window_weeks: number;
+  divisor: number;
   orders: OrderContribution[];
   total_qty: number;
   weekly_req: number;
@@ -149,6 +150,7 @@ export async function GET(req: Request) {
     source,
     window_days: WINDOW_DAYS,
     window_weeks: WINDOW_WEEKS,
+    divisor,
     orders: contributions,
     total_qty: totalQty,
     weekly_req: weeklyReq,

@@ -77,6 +77,7 @@ interface FgCalcBreakdown {
   source: 'orders' | 'dispatches';
   window_days: number;
   window_weeks: number;
+  divisor: number;
   orders: OrderContribution[];
   total_qty: number;
   weekly_req: number;
@@ -176,25 +177,25 @@ function CalcModal({ skuId, productName, onClose }: {
                 </div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Source</span>
+                    <span className="font-semibold text-gray-900">
+                      {data.source === 'orders' ? 'Sales Orders' : 'Dispatch History (fallback)'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Lookback window</span>
+                    <span className="font-semibold text-gray-900">{data.window_days} days ({data.window_weeks} weeks)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-600">
-                      Source
+                      {data.source === 'orders' ? 'Total ordered in window' : 'Total dispatched in window'}
                     </span>
-                    <span className="font-semibold text-gray-900 capitalize">
-                      {data.source === 'orders' ? 'Sales Orders' : 'Dispatch History'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Window</span>
-                    <span className="font-semibold text-gray-900">{data.window_days} days ({data.source === 'orders' ? data.window_weeks : 4} weeks)</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Total ordered in window</span>
                     <span className="font-semibold text-gray-900">{data.total_qty} {data.unit}</span>
                   </div>
                   <div className="border-t border-indigo-100 pt-2 space-y-1.5">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">
-                        ÷ {data.source === 'orders' ? data.window_weeks : 4} weeks
+                        ÷ {data.divisor} weeks avg
                         <span className="text-gray-400 text-xs ml-1">(then ceil)</span>
                       </span>
                       <span className="font-bold text-indigo-700 text-base">{data.weekly_req} {data.unit}/wk</span>
@@ -221,7 +222,7 @@ function CalcModal({ skuId, productName, onClose }: {
                 <div className="flex items-center gap-2 mb-3">
                   <Package size={14} className="text-gray-400" />
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    {data.source === 'orders' ? `Orders in last ${data.window_days} days` : `Dispatch records in last ${data.window_days} days`}
+                    {data.source === 'orders' ? `Sales orders in last ${data.window_days} days (${data.window_weeks} wks)` : `Dispatch records in last ${data.window_days} days (${data.window_weeks} wks)`}
                     <span className="ml-2 normal-case font-normal text-gray-400">({data.orders.length} records)</span>
                   </p>
                 </div>
