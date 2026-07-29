@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
+import { useRole } from '@/hooks/useRole';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Box, ChevronsUpDown } from 'lucide-react';
+import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Box, ChevronsUpDown, X, Calculator, Info, Package } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface FgItem {
   fg_sku_id: number;
@@ -57,12 +59,228 @@ function SortTh({ col, label, sort, onSort, align = 'right' }: {
   );
 }
 
+// ── Calc Breakdown Modal ─────────────────────────────────────────────────────
+
+interface OrderContribution {
+  order_id: number;
+  customer_name: string | null;
+  order_ref: string | null;
+  order_date: string;
+  status: string;
+  qty: number;
+}
+
+interface FgCalcBreakdown {
+  sku_id: number;
+  product_name: string;
+  unit: string;
+  source: 'orders' | 'dispatches';
+  window_days: number;
+  window_weeks: number;
+  orders: OrderContribution[];
+  total_qty: number;
+  weekly_req: number;
+  threshold: number;
+  qty_on_hand: number;
+  sku_code: string | null;
+  flavour_name: string | null;
+  pack_format_name: string | null;
+  litres_per_pack: number | null;
+}
+
+const STATUS_PILL: Record<string, string> = {
+  approved: 'bg-green-100 text-green-700',
+  invoiced: 'bg-blue-100 text-blue-700',
+  in_production: 'bg-amber-100 text-amber-700',
+  dispatched: 'bg-gray-100 text-gray-600',
+  delivered: 'bg-purple-100 text-purple-700',
+};
+
+function CalcModal({ skuId, productName, onClose }: {
+  skuId: number;
+  productName: string;
+  onClose: () => void;
+}) {
+  const [data, setData] = useState<FgCalcBreakdown | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/fg-calc-breakdown?sku_id=${skuId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) setError(d.error);
+        else setData(d);
+      })
+      .catch(() => setError('Failed to load'))
+      .finally(() => setLoading(false));
+  }, [skuId]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-t-3xl sm:rounded-2xl w-full sm:max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-start justify-between gap-3 rounded-t-3xl sm:rounded-t-2xl z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0">
+              <Calculator size={18} className="text-indigo-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Calc Breakdown</p>
+              <p className="font-bold text-gray-900 text-sm leading-tight">{productName}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400 touch-manipulation shrink-0">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 space-y-5">
+          {loading && (
+            <div className="flex items-center justify-center py-10">
+              <div className="w-6 h-6 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
+            </div>
+          )}
+
+          {error && (
+            <p className="text-sm text-red-600 text-center py-6">{error}</p>
+          )}
+
+          {data && (
+            <>
+              {/* SKU link info */}
+              <div className="bg-gray-50 rounded-2xl p-4 space-y-2">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">SKU Details</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+                  <span className="text-gray-500">SKU Code</span>
+                  <span className="font-semibold text-gray-900">{data.sku_code || <span className="text-red-500">Not linked</span>}</span>
+                  <span className="text-gray-500">Flavour</span>
+                  <span className="font-semibold text-gray-900">{data.flavour_name || <span className="text-red-500">Not linked</span>}</span>
+                  <span className="text-gray-500">Pack Format</span>
+                  <span className="font-semibold text-gray-900">{data.pack_format_name || <span className="text-red-500">Not linked</span>}</span>
+                  {data.litres_per_pack !== null && (
+                    <>
+                      <span className="text-gray-500">Litres / Pack</span>
+                      <span className="font-semibold text-gray-900">{data.litres_per_pack}L</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Formula */}
+              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Info size={14} className="text-indigo-500" />
+                  <p className="text-xs font-bold text-indigo-700 uppercase tracking-wide">How it's calculated</p>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">
+                      Source
+                    </span>
+                    <span className="font-semibold text-gray-900 capitalize">
+                      {data.source === 'orders' ? 'Sales Orders' : 'Dispatch History'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Window</span>
+                    <span className="font-semibold text-gray-900">{data.window_days} days ({data.source === 'orders' ? data.window_weeks : 4} weeks)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Total ordered in window</span>
+                    <span className="font-semibold text-gray-900">{data.total_qty} {data.unit}</span>
+                  </div>
+                  <div className="border-t border-indigo-100 pt-2 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        ÷ {data.source === 'orders' ? data.window_weeks : 4} weeks
+                        <span className="text-gray-400 text-xs ml-1">(then ceil)</span>
+                      </span>
+                      <span className="font-bold text-indigo-700 text-base">{data.weekly_req} {data.unit}/wk</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        Threshold
+                        <span className="text-gray-400 text-xs ml-1">(2.5× weekly req)</span>
+                      </span>
+                      <span className="font-bold text-orange-600 text-base">{data.threshold} {data.unit}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Currently in stock</span>
+                      <span className={`font-bold text-base ${data.qty_on_hand < data.weekly_req ? 'text-red-600' : data.qty_on_hand < data.threshold ? 'text-amber-600' : 'text-green-600'}`}>
+                        {data.qty_on_hand} {data.unit}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order list */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Package size={14} className="text-gray-400" />
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                    {data.source === 'orders' ? `Orders in last ${data.window_days} days` : `Dispatch records in last ${data.window_days} days`}
+                    <span className="ml-2 normal-case font-normal text-gray-400">({data.orders.length} records)</span>
+                  </p>
+                </div>
+
+                {data.orders.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-4">No records in this window — weekly req defaults to 0.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {data.orders.map((o, i) => (
+                      <div key={i} className="flex items-start justify-between gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {o.order_id > 0 && (
+                              <span className="text-xs font-bold text-gray-700">#{o.order_id}</span>
+                            )}
+                            <span className="text-xs text-gray-600 truncate">{o.customer_name || 'Unknown'}</span>
+                            {o.order_ref && (
+                              <span className="text-xs text-gray-400">· {o.order_ref}</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs text-gray-400">{format(new Date(o.order_date), 'd MMM yyyy')}</span>
+                            <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${STATUS_PILL[o.status] || 'bg-gray-100 text-gray-500'}`}>
+                              {o.status}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900 whitespace-nowrap shrink-0">
+                          +{o.qty} <span className="font-normal text-gray-400 text-xs">{data.unit}</span>
+                        </span>
+                      </div>
+                    ))}
+
+                    {/* Total row */}
+                    <div className="flex justify-between items-center bg-indigo-50 rounded-xl px-3 py-2.5 border border-indigo-100">
+                      <span className="text-sm font-bold text-indigo-700">Total</span>
+                      <span className="text-sm font-bold text-indigo-700">{data.total_qty} {data.unit}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PackSection ──────────────────────────────────────────────────────────────
+
 function PackSection({
-  packFormat, items, weeklyReq,
+  packFormat, items, weeklyReq, isAdmin, onCalcClick,
 }: {
   packFormat: string;
   items: FgItem[];
   weeklyReq: Record<number, number>;
+  isAdmin: boolean;
+  onCalcClick: (item: FgItem) => void;
 }) {
   const [open, setOpen] = useState(true);
   const [sort, setSort] = useState<{ col: SortCol; asc: boolean }>({ col: 'status', asc: true });
@@ -136,8 +354,31 @@ function PackSection({
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     {item.weekly ? (
-                      <span className="text-indigo-600 font-semibold text-xs">{item.weekly}</span>
-                    ) : <span className="text-gray-300 text-xs">—</span>}
+                      isAdmin ? (
+                        <button
+                          onClick={() => onCalcClick(item)}
+                          className="group inline-flex items-center gap-1 text-indigo-600 font-semibold text-xs hover:text-indigo-800 hover:underline touch-manipulation"
+                          title="View calculation breakdown"
+                        >
+                          {item.weekly}
+                          <Calculator size={11} className="text-indigo-400 group-hover:text-indigo-600 shrink-0" />
+                        </button>
+                      ) : (
+                        <span className="text-indigo-600 font-semibold text-xs">{item.weekly}</span>
+                      )
+                    ) : (
+                      isAdmin ? (
+                        <button
+                          onClick={() => onCalcClick(item)}
+                          className="text-gray-300 text-xs hover:text-indigo-400 touch-manipulation"
+                          title="View why this is 0"
+                        >
+                          — <Calculator size={10} className="inline ml-0.5" />
+                        </button>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     {item.threshold ? (
@@ -157,14 +398,20 @@ function PackSection({
   );
 }
 
+// ── Main Page ────────────────────────────────────────────────────────────────
+
 export default function FinishedGoodsDashboard() {
   const supabase = createClient();
+  const { role } = useRole();
+  const isAdmin = role === 'super_admin';
+
   const [data, setData] = useState<FgItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [weeklyReq, setWeeklyReq] = useState<Record<number, number>>({});
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | StatusType>('all');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [calcItem, setCalcItem] = useState<FgItem | null>(null);
 
   useEffect(() => {
     fetch('/api/weekly-req')
@@ -232,7 +479,7 @@ export default function FinishedGoodsDashboard() {
       <ScreenHeader
         icon={Box} iconColor="text-pink-500"
         title="Finished Goods Stock"
-        description="Weekly requirements from 42-day order history (6-week avg). Threshold = 2.5× weekly req."
+        description={`Weekly requirements from 42-day order history (6-week avg). Threshold = 2.5× weekly req.${isAdmin ? ' Tap any Wkly Req number to see the calculation.' : ''}`}
       />
 
       {/* Controls */}
@@ -283,6 +530,13 @@ export default function FinishedGoodsDashboard() {
         />
       </div>
 
+      {isAdmin && (
+        <div className="flex items-center gap-2 text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2">
+          <Calculator size={13} className="shrink-0" />
+          <span>Admin: tap any <strong>Wkly Req</strong> number to see its full calculation breakdown.</span>
+        </div>
+      )}
+
       {loading ? (
         <LoadingSpinner text="Loading finished goods..." />
       ) : grouped.length === 0 ? (
@@ -295,9 +549,19 @@ export default function FinishedGoodsDashboard() {
               packFormat={packFormat}
               items={items}
               weeklyReq={weeklyReq}
+              isAdmin={isAdmin}
+              onCalcClick={setCalcItem}
             />
           ))}
         </div>
+      )}
+
+      {calcItem && (
+        <CalcModal
+          skuId={calcItem.fg_sku_id}
+          productName={calcItem.product_name}
+          onClose={() => setCalcItem(null)}
+        />
       )}
     </div>
   );
