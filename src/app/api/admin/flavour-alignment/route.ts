@@ -45,9 +45,9 @@ export async function GET() {
     const salesSkus = (salesSkusRes.data || []) as R[];
     const packFormats = (packFormatsRes.data || []) as R[];
 
-    const orderLineSkuIds = Array.from(new Set(
+    const orderLineSkuIds = (Array.from(new Set(
       (orderLineSkuIdsRes.data || []).map((r: R) => r.sku_id as number)
-    )).sort((a, b) => a - b);
+    )) as number[]).sort((a, b) => a - b);
 
     // prep_product id → prep_product row
     const prepById = new Map<number, R>(prepProds.map(p => [p.id as number, p]));
