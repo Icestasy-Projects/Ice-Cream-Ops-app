@@ -88,9 +88,8 @@ export async function GET(req: Request) {
   const since = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: recentOrders } = await admin.schema('sales').from('orders')
-    .select('id, customer_name, order_ref, created_at, status')
-    .gte('created_at', since)
-    .in('status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
+    .select('id, client_id, order_no, created_at, status')
+    .gte('created_at', since);
 
   const recentOrderIds = (recentOrders || []).map((o: Record<string, unknown>) => o.id as number);
   const orderMap = new Map<number, Record<string, unknown>>(
@@ -115,8 +114,8 @@ export async function GET(req: Request) {
     const qty = (line.quantity as number) || 0;
     contributions.push({
       order_id: ordId,
-      customer_name: (order?.customer_name as string) || null,
-      order_ref: (order?.order_ref as string) || null,
+      customer_name: (order?.client_id as string) || null,
+      order_ref: (order?.order_no as string) || null,
       order_date: (order?.created_at as string) || '',
       status: (order?.status as string) || '',
       qty,
