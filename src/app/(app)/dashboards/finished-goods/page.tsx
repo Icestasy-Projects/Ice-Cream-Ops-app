@@ -77,6 +77,7 @@ interface FgCalcBreakdown {
   orders: OrderContribution[];
   total_qty: number;
   weekly_req: number;
+  window_weeks: number;
   threshold: number;
   qty_on_hand: number;
   sku_code: string | null;
@@ -174,15 +175,23 @@ function CalcModal({ skuId, productName, onClose }: {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Source</span>
-                    <span className="font-semibold text-gray-900">All open sales orders</span>
+                    <span className="font-semibold text-gray-900">Last 90 days of orders</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Statuses included</span>
-                    <span className="font-semibold text-gray-900">Approved · Invoiced · In Production</span>
+                    <span className="font-semibold text-gray-900 text-right">All (incl. dispatched)</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Window</span>
+                    <span className="font-semibold text-gray-900">{data.window_weeks} weeks</span>
                   </div>
                   <div className="border-t border-indigo-100 pt-2 space-y-1.5">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Total outstanding qty</span>
+                      <span className="text-gray-600">Total qty in window</span>
+                      <span className="font-semibold text-gray-700">{data.total_qty} {data.unit}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Weekly avg <span className="text-gray-400 text-xs">(÷{data.window_weeks} wks, rounded up)</span></span>
                       <span className="font-bold text-indigo-700 text-base">{data.weekly_req} {data.unit}</span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -207,13 +216,13 @@ function CalcModal({ skuId, productName, onClose }: {
                 <div className="flex items-center gap-2 mb-3">
                   <Package size={14} className="text-gray-400" />
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                    Open sales orders contributing to this requirement
+                    Orders in last 90 days for this SKU
                     <span className="ml-2 normal-case font-normal text-gray-400">({data.orders.length} records)</span>
                   </p>
                 </div>
 
                 {data.orders.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">No open orders for this SKU — requirement is 0.</p>
+                  <p className="text-sm text-gray-400 text-center py-4">No orders in the last 90 days for this SKU — requirement is 0.</p>
                 ) : (
                   <div className="space-y-2">
                     {data.orders.map((o, i) => (
