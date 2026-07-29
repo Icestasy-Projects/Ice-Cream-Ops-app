@@ -82,26 +82,38 @@ export async function GET(req: Request) {
     }
   }
 
-  // All open/pending order lines for this SKU (no date restriction)
-  const { data: orderLines } = await admin.schema('sales').from('order_lines')
-    .select('quantity, orders!inner(id, customer_name, order_ref, created_at, status)')
-    .eq('sku_id', skuId)
-    .in('orders.status', ['approved', 'invoiced', 'in_production']);
+  // Fetch open orders first, then lines — avoids PostgREST nested filter issues
+  const { data: openOrders } = await admin.schema('sales').from('orders')
+    .select('id, customer_name, order_ref, created_at, status')
+    .in('status', ['approved', 'invoiced', 'in_production']);
+
+  const openOrderIds = (openOrders || []).map((o: Record<string, unknown>) => o.id as number);
+  const orderMap = new Map<number, Record<string, unknown>>(
+    (openOrders || []).map((o: Record<string, unknown>) => [o.id as number, o])
+  );
+
+  let orderLines: Record<string, unknown>[] = [];
+  if (openOrderIds.length > 0) {
+    const { data: lines } = await admin.schema('sales').from('order_lines')
+      .select('quantity, order_id')
+      .eq('sku_id', skuId)
+      .in('order_id', openOrderIds);
+    orderLines = (lines || []) as Record<string, unknown>[];
+  }
 
   const contributions: OrderContribution[] = [];
   let totalQty = 0;
-  const source: 'orders' | 'dispatches' = 'orders';
 
-  for (const line of orderLines || []) {
-    const l = line as Record<string, unknown>;
-    const order = l.orders as Record<string, unknown>;
-    const qty = (l.quantity as number) || 0;
+  for (const line of orderLines) {
+    const ordId = line.order_id as number;
+    const order = orderMap.get(ordId);
+    const qty = (line.quantity as number) || 0;
     contributions.push({
-      order_id: order.id as number,
-      customer_name: order.customer_name as string | null,
-      order_ref: order.order_ref as string | null,
-      order_date: order.created_at as string,
-      status: order.status as string,
+      order_id: ordId,
+      customer_name: (order?.customer_name as string) || null,
+      order_ref: (order?.order_ref as string) || null,
+      order_date: (order?.created_at as string) || '',
+      status: (order?.status as string) || '',
       qty,
     });
     totalQty += qty;
