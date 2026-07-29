@@ -23,31 +23,40 @@ export async function GET() {
 
     const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // ── Step 1: FG demand from ALL open/pending sales orders ─────────────────
-    // Fetch open order IDs first, then get their lines — avoids PostgREST
-    // nested-filter limitations that silently return empty results.
-    const { data: openOrders } = await admin
+    // ── Step 1: FG demand from sales orders in last 90 days ──────────────────
+    // 90-day / 13-week window captures a full quarter of order history.
+    // Includes all statuses so dispatched/delivered orders count too.
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const WINDOW_WEEKS = 13;
+
+    const { data: recentOrders } = await admin
       .schema('sales')
       .from('orders')
       .select('id')
-      .in('status', ['approved', 'invoiced', 'in_production']);
+      .gte('created_at', since)
+      .in('status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
 
-    const openOrderIds = (openOrders || []).map((o: Record<string, unknown>) => o.id as number);
+    const recentOrderIds = (recentOrders || []).map((o: Record<string, unknown>) => o.id as number);
 
     const fgWeekly: Record<number, number> = {};
     const source: 'orders' | 'dispatches' = 'orders';
 
-    if (openOrderIds.length > 0) {
+    if (recentOrderIds.length > 0) {
       const { data: orderLines } = await admin
         .schema('sales')
         .from('order_lines')
         .select('sku_id, quantity')
-        .in('order_id', openOrderIds);
+        .in('order_id', recentOrderIds);
 
       for (const line of orderLines || []) {
         const id = (line as Record<string, unknown>).sku_id as number;
         fgWeekly[id] = (fgWeekly[id] || 0) + (((line as Record<string, unknown>).quantity as number) || 0);
       }
+    }
+
+    // Weekly avg = total in window ÷ window weeks, rounded up
+    for (const id in fgWeekly) {
+      fgWeekly[id] = Math.ceil(fgWeekly[id] / WINDOW_WEEKS);
     }
 
     const skuIds = Object.keys(fgWeekly).map(Number);
