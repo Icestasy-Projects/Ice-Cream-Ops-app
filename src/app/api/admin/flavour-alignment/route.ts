@@ -1,15 +1,13 @@
 /**
  * GET  /api/admin/flavour-alignment
- *   Returns a 3-way comparison:
- *     • production.flavours          (the shared reference table)
- *     • production.prep_products     (what the kitchen actually makes)
- *     • sales.skus                   (what the sales side can sell)
+ *   Returns a 2-way comparison:
+ *     • production.prep_products  (flavour = prep_product; id is the shared flavour_id)
+ *     • sales.skus                (sales.skus.flavour_id → prep_products.id)
  *
  * POST /api/admin/flavour-alignment
- *   Body: { action: 'upsert_flavour', name: string }
- *     → ensures a row exists in production.flavours for this name
- *   Body: { action: 'link_prep_product', prep_product_id, flavour_id }
- *     → sets production.prep_products.flavour_id
+ *   Body: { action: 'sync_all' }
+ *     → for every sales.skus.flavour_id with no matching prep_product, creates
+ *       a placeholder prep_product so the link is valid
  *   Body: { action: 'create_sales_sku', sku_id, flavour_id, pack_format_id, name }
  *     → upserts a row in sales.skus
  */
@@ -23,7 +21,7 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
 const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://acngdpcpxburkzqxjpbf.supabase.co').trim();
 
 function adminClient() {
-  return createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  return createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY) as any;
 }
 
 export async function GET() {
@@ -35,38 +33,26 @@ export async function GET() {
 
     const admin = adminClient();
 
-    const [flavoursRes, prepProdsRes, salesSkusRes, packFormatsRes, orderLineSkuIdsRes] = await Promise.all([
-      admin.schema('production').from('flavours').select('id, name'),
-      admin.schema('production').from('prep_products').select('id, name, flavour_id, batch_yield_l, status'),
+    const [prepProdsRes, salesSkusRes, packFormatsRes, orderLineSkuIdsRes] = await Promise.all([
+      admin.schema('production').from('prep_products').select('id, name, batch_yield_l, status'),
       admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
-      // distinct sku_ids used in order_lines
       admin.schema('sales').from('order_lines').select('sku_id'),
     ]);
 
     type R = Record<string, unknown>;
-    const flavours = (flavoursRes.data || []) as R[];
     const prepProds = (prepProdsRes.data || []) as R[];
     const salesSkus = (salesSkusRes.data || []) as R[];
     const packFormats = (packFormatsRes.data || []) as R[];
 
-    // unique order_line sku_ids
-    const orderLineSkuIds = Array.from(new Set(
+    const orderLineSkuIds = (Array.from(new Set(
       (orderLineSkuIdsRes.data || []).map((r: R) => r.sku_id as number)
-    )).sort((a, b) => a - b);
+    )) as number[]).sort((a, b) => a - b);
 
-    // Build look-up maps
-    const flavourById = new Map<number, R>(flavours.map(f => [f.id as number, f]));
-    // flavour_id → list of prep_products
-    const prepByFlavourId = new Map<number, R[]>();
-    for (const p of prepProds) {
-      const fid = p.flavour_id as number | null;
-      if (fid) {
-        if (!prepByFlavourId.has(fid)) prepByFlavourId.set(fid, []);
-        prepByFlavourId.get(fid)!.push(p);
-      }
-    }
-    // flavour_id → list of sales.skus
+    // prep_product id → prep_product row
+    const prepById = new Map<number, R>(prepProds.map(p => [p.id as number, p]));
+
+    // flavour_id → list of sales.skus (flavour_id = prep_product id)
     const salesByFlavourId = new Map<number, R[]>();
     for (const s of salesSkus) {
       const fid = s.flavour_id as number | null;
@@ -75,65 +61,59 @@ export async function GET() {
         salesByFlavourId.get(fid)!.push(s);
       }
     }
-    const salesSkuById = new Map<number, R>(salesSkus.map(s => [s.id as number, s]));
 
-    // ── Category A: production.flavours rows ──────────────────────────────
-    const flavourRows = flavours.map(f => {
-      const fid = f.id as number;
-      const preps = prepByFlavourId.get(fid) || [];
-      const skus = salesByFlavourId.get(fid) || [];
+    const salesSkuById = new Map<number, R>(salesSkus.map(s => [s.id as number, s]));
+    const packFormatById = new Map<number, R>(packFormats.map(p => [p.id as number, p]));
+
+    // ── Category A: prep_products rows (each is a flavour) ───────────────
+    const flavourRows = prepProds.map(p => {
+      const pid = p.id as number;
+      const skus = salesByFlavourId.get(pid) || [];
+      const status = skus.length > 0 ? 'ok' : 'no_sales_sku';
       return {
-        flavour_id: fid,
-        flavour_name: f.name as string,
-        prep_products: preps.map(p => ({
-          id: p.id, name: p.name, batch_yield_l: p.batch_yield_l, status: p.status,
-        })),
+        flavour_id: pid,
+        flavour_name: p.name as string,
+        prep_products: [{ id: pid, name: p.name, batch_yield_l: p.batch_yield_l, status: p.status }],
         sales_skus: skus.map(s => ({
-          id: s.id, name: s.sku_code, pack_format_id: s.pack_format_id,
-          pack_format_name: (packFormats.find(p => p.id === s.pack_format_id) as R | undefined)?.name ?? null,
+          id: s.id,
+          name: s.sku_code,
+          pack_format_id: s.pack_format_id,
+          pack_format_name: packFormatById.get(s.pack_format_id as number)?.name ?? null,
           in_order_lines: orderLineSkuIds.includes(s.id as number),
         })),
-        has_prep: preps.length > 0,
+        has_prep: true,
         has_sales_sku: skus.length > 0,
-        status: preps.length > 0 && skus.length > 0 ? 'ok'
-              : preps.length > 0 && skus.length === 0 ? 'no_sales_sku'
-              : preps.length === 0 && skus.length > 0 ? 'no_prep'
-              : 'orphan',
+        status,
       };
     });
 
-    // ── Category B: prep_products with no flavour_id (unlinked) ──────────
-    const unlinkedPreps = prepProds
-      .filter(p => !p.flavour_id)
-      .map(p => ({ id: p.id, name: p.name, batch_yield_l: p.batch_yield_l, status: p.status }));
-
-    // ── Category C: sales.skus with flavour_id not in production.flavours ─
+    // ── Category B: sales.skus with flavour_id that has no prep_product ──
     const orphanSalesSkus = salesSkus
-      .filter(s => s.flavour_id && !flavourById.has(s.flavour_id as number))
+      .filter(s => s.flavour_id && !prepById.has(s.flavour_id as number))
       .map(s => ({
         id: s.id, name: s.sku_code, flavour_id: s.flavour_id,
         pack_format_id: s.pack_format_id,
         in_order_lines: orderLineSkuIds.includes(s.id as number),
       }));
 
-    // ── Category D: order_line sku_ids not in sales.skus at all ──────────
+    // ── Category C: order_line sku_ids not in sales.skus ─────────────────
     const unlinkedOrderLineSkus = orderLineSkuIds.filter(id => !salesSkuById.has(id));
 
     return NextResponse.json({
       flavour_rows: flavourRows,
-      unlinked_preps: unlinkedPreps,
+      unlinked_preps: [],
       orphan_sales_skus: orphanSalesSkus,
       unlinked_order_line_skus: unlinkedOrderLineSkus,
       pack_formats: packFormats.map(p => ({
         id: p.id, name: p.name, unit_volume_ml: p.unit_volume_ml, units_per_pack: p.units_per_pack,
       })),
       summary: {
-        total_flavours: flavours.length,
+        total_flavours: prepProds.length,
         ok: flavourRows.filter(r => r.status === 'ok').length,
         no_sales_sku: flavourRows.filter(r => r.status === 'no_sales_sku').length,
-        no_prep: flavourRows.filter(r => r.status === 'no_prep').length,
-        orphan: flavourRows.filter(r => r.status === 'orphan').length,
-        unlinked_preps: unlinkedPreps.length,
+        no_prep: 0,
+        orphan: 0,
+        unlinked_preps: 0,
         unlinked_order_line_skus: unlinkedOrderLineSkus.length,
       },
     });
@@ -152,27 +132,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const admin = adminClient();
 
-    if (body.action === 'upsert_flavour') {
-      // Create a new entry in production.flavours
-      const { data, error } = await admin.schema('production').from('flavours')
-        .insert({ name: body.name })
-        .select('id, name')
-        .single();
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true, flavour: data });
-    }
-
-    if (body.action === 'link_prep_product') {
-      // Set flavour_id on a prep_product
-      const { error } = await admin.schema('production').from('prep_products')
-        .update({ flavour_id: body.flavour_id })
-        .eq('id', body.prep_product_id);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
-    }
-
     if (body.action === 'create_sales_sku') {
-      // Upsert a sales.skus entry
       const { error } = await admin.schema('sales').from('skus').upsert({
         id: body.sku_id,
         sku_code: body.name,
@@ -183,45 +143,35 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── sync_all: insert missing flavour rows derived from prep_products & sales.skus ──
+    // sync_all: create placeholder prep_products for any orphan flavour_ids in sales.skus
     if (body.action === 'sync_all') {
-      const a = adminClient() as any;
-
-      const [existingFlavoursRes, prepProdsRes2, salesSkusRes2] = await Promise.all([
-        a.schema('production').from('flavours').select('id'),
-        a.schema('production').from('prep_products').select('id, name, flavour_id'),
-        a.schema('sales').from('skus').select('id, flavour_id'),
+      const [prepProdsRes2, salesSkusRes2] = await Promise.all([
+        admin.schema('production').from('prep_products').select('id, name'),
+        admin.schema('sales').from('skus').select('id, flavour_id'),
       ]);
 
-      const existingIds = new Set<number>((existingFlavoursRes.data || []).map((r: any) => r.id as number));
+      const existingPrepIds = new Set<number>((prepProdsRes2.data || []).map((r: any) => r.id as number));
 
-      // Build map: flavour_id → best name (from prep_product name)
-      const nameMap = new Map<number, string>();
-      for (const p of prepProdsRes2.data || []) {
-        if (p.flavour_id && !nameMap.has(p.flavour_id)) {
-          nameMap.set(p.flavour_id, p.name as string);
-        }
-      }
+      // Collect all flavour_ids in sales.skus with no matching prep_product
+      const missingIds = Array.from(
+        new Set<number>((salesSkusRes2.data || [])
+          .filter((s: any) => s.flavour_id && !existingPrepIds.has(s.flavour_id as number))
+          .map((s: any) => s.flavour_id as number))
+      );
 
-      // Collect all referenced flavour_ids
-      const allIds = new Set<number>();
-      for (const p of prepProdsRes2.data || []) {
-        if (p.flavour_id) allIds.add(p.flavour_id as number);
-      }
-      for (const s of salesSkusRes2.data || []) {
-        if (s.flavour_id) allIds.add(s.flavour_id as number);
-      }
-
-      // Filter to only missing ones
-      const toInsert = Array.from(allIds)
-        .filter(id => !existingIds.has(id))
-        .map(id => ({ id, name: nameMap.get(id) || `Flavour #${id}` }));
-
-      if (toInsert.length === 0) {
+      if (missingIds.length === 0) {
         return NextResponse.json({ ok: true, inserted: 0 });
       }
 
-      const { error: insertErr } = await a.schema('production').from('flavours').insert(toInsert);
+      // Insert placeholder prep_products with matching IDs
+      const toInsert = missingIds.map(id => ({
+        id,
+        name: `Flavour #${id}`,
+        status: 'active',
+        batch_yield_l: null,
+      }));
+
+      const { error: insertErr } = await admin.schema('production').from('prep_products').insert(toInsert);
       if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
       return NextResponse.json({ ok: true, inserted: toInsert.length, flavours: toInsert });
     }

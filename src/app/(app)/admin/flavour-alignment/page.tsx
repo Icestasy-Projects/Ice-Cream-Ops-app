@@ -202,7 +202,7 @@ export default function FlavourAlignmentPage() {
       <ScreenHeader
         icon={GitMerge} iconColor="text-indigo-500"
         title="Flavour Alignment"
-        description="3-way check: production.flavours ↔ production.prep_products ↔ sales.skus. Ensures every flavour is fully linked end-to-end."
+        description="2-way check: production.prep_products (flavours) ↔ sales.skus. Ensures every prep product has a matching sales SKU."
       />
 
       {/* Summary tiles */}
@@ -265,7 +265,7 @@ export default function FlavourAlignmentPage() {
             className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 w-fit touch-manipulation"
           >
             <Wand2 size={16} />
-            {syncing ? 'Syncing…' : 'Sync All Flavours into production.flavours'}
+            {syncing ? 'Syncing…' : 'Create Missing Prep Products for Orphan SKUs'}
           </button>
           {syncResult && (
             <p className={`text-sm px-3 py-2 rounded-xl ${syncResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
