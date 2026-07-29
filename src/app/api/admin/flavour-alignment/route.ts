@@ -183,6 +183,49 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // ── sync_all: insert missing flavour rows derived from prep_products & sales.skus ──
+    if (body.action === 'sync_all') {
+      const a = adminClient() as any;
+
+      const [existingFlavoursRes, prepProdsRes2, salesSkusRes2] = await Promise.all([
+        a.schema('production').from('flavours').select('id'),
+        a.schema('production').from('prep_products').select('id, name, flavour_id'),
+        a.schema('sales').from('skus').select('id, flavour_id'),
+      ]);
+
+      const existingIds = new Set<number>((existingFlavoursRes.data || []).map((r: any) => r.id as number));
+
+      // Build map: flavour_id → best name (from prep_product name)
+      const nameMap = new Map<number, string>();
+      for (const p of prepProdsRes2.data || []) {
+        if (p.flavour_id && !nameMap.has(p.flavour_id)) {
+          nameMap.set(p.flavour_id, p.name as string);
+        }
+      }
+
+      // Collect all referenced flavour_ids
+      const allIds = new Set<number>();
+      for (const p of prepProdsRes2.data || []) {
+        if (p.flavour_id) allIds.add(p.flavour_id as number);
+      }
+      for (const s of salesSkusRes2.data || []) {
+        if (s.flavour_id) allIds.add(s.flavour_id as number);
+      }
+
+      // Filter to only missing ones
+      const toInsert = Array.from(allIds)
+        .filter(id => !existingIds.has(id))
+        .map(id => ({ id, name: nameMap.get(id) || `Flavour #${id}` }));
+
+      if (toInsert.length === 0) {
+        return NextResponse.json({ ok: true, inserted: 0 });
+      }
+
+      const { error: insertErr } = await a.schema('production').from('flavours').insert(toInsert);
+      if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
+      return NextResponse.json({ ok: true, inserted: toInsert.length, flavours: toInsert });
+    }
+
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
