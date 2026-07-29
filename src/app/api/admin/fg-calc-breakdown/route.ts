@@ -7,6 +7,8 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjbmdkcGNweGJ1cmt6cXhqcGJmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTc5ODgyNywiZXhwIjoyMDk3Mzc0ODI3fQ.dZHfewnIMa8GV4aPMYXKdOPGSWz00g33u3_QDCjAC2g';
 const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://acngdpcpxburkzqxjpbf.supabase.co').trim();
 
+const WINDOW_WEEKS = 13;
+
 export interface OrderContribution {
   order_id: number;
   customer_name: string | null;
@@ -23,9 +25,9 @@ export interface FgCalcBreakdown {
   orders: OrderContribution[];
   total_qty: number;
   weekly_req: number;
+  window_weeks: number;
   threshold: number;
   qty_on_hand: number;
-  // SKU link details
   sku_code: string | null;
   flavour_name: string | null;
   pack_format_name: string | null;
@@ -38,7 +40,6 @@ export async function GET(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
-  // Admin check
   const { data: profile } = await supabase
     .schema('production').from('user_profiles').select('role').eq('user_id', user.id).maybeSingle();
   if (profile?.role !== 'super_admin') return NextResponse.json({ error: 'Admin only' }, { status: 403 });
@@ -47,7 +48,7 @@ export async function GET(req: Request) {
   const skuId = parseInt(searchParams.get('sku_id') || '0', 10);
   if (!skuId) return NextResponse.json({ error: 'sku_id required' }, { status: 400 });
 
-  const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY) as any;
 
   // FG stock info
   const { data: stockRows } = await admin.schema('production').from('v_fg_stock')
@@ -56,7 +57,7 @@ export async function GET(req: Request) {
     .maybeSingle();
   const stock = stockRows as Record<string, unknown> | null;
 
-  // Sales SKU info (sku_id in sales = fg_sku_id)
+  // Sales SKU info
   const { data: skuRow } = await admin.schema('sales').from('skus')
     .select('id, sku_code, flavour_id, pack_format_id')
     .eq('id', skuId)
@@ -67,10 +68,11 @@ export async function GET(req: Request) {
   let packFormatName: string | null = null;
   let litresPerPack: number | null = null;
 
+  // Flavour name comes from prep_products (flavour_id = prep_product id)
   if (sku?.flavour_id) {
-    const { data: fl } = await admin.schema('production').from('flavours')
+    const { data: pp } = await admin.schema('production').from('prep_products')
       .select('name').eq('id', sku.flavour_id as number).maybeSingle();
-    flavourName = (fl as Record<string, unknown> | null)?.name as string || null;
+    flavourName = (pp as Record<string, unknown> | null)?.name as string || null;
   }
   if (sku?.pack_format_id) {
     const { data: pf } = await admin.schema('sales').from('pack_formats')
@@ -82,22 +84,25 @@ export async function GET(req: Request) {
     }
   }
 
-  // Fetch open orders first, then lines — avoids PostgREST nested filter issues
-  const { data: openOrders } = await admin.schema('sales').from('orders')
-    .select('id, customer_name, order_ref, created_at, status')
-    .in('status', ['approved', 'invoiced', 'in_production']);
+  // Same 90-day / 13-week window as /api/weekly-req
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
 
-  const openOrderIds = (openOrders || []).map((o: Record<string, unknown>) => o.id as number);
+  const { data: recentOrders } = await admin.schema('sales').from('orders')
+    .select('id, customer_name, order_ref, created_at, status')
+    .gte('created_at', since)
+    .in('status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
+
+  const recentOrderIds = (recentOrders || []).map((o: Record<string, unknown>) => o.id as number);
   const orderMap = new Map<number, Record<string, unknown>>(
-    (openOrders || []).map((o: Record<string, unknown>) => [o.id as number, o])
+    (recentOrders || []).map((o: Record<string, unknown>) => [o.id as number, o])
   );
 
   let orderLines: Record<string, unknown>[] = [];
-  if (openOrderIds.length > 0) {
+  if (recentOrderIds.length > 0) {
     const { data: lines } = await admin.schema('sales').from('order_lines')
       .select('quantity, order_id')
       .eq('sku_id', skuId)
-      .in('order_id', openOrderIds);
+      .in('order_id', recentOrderIds);
     orderLines = (lines || []) as Record<string, unknown>[];
   }
 
@@ -119,7 +124,7 @@ export async function GET(req: Request) {
     totalQty += qty;
   }
 
-  const weeklyReq = totalQty; // total outstanding = what needs to be fulfilled
+  const weeklyReq = Math.ceil(totalQty / WINDOW_WEEKS);
   const threshold = Math.ceil(weeklyReq * 2.5);
   const qtyOnHand = (stock?.qty_on_hand as number) || 0;
 
@@ -130,6 +135,7 @@ export async function GET(req: Request) {
     orders: contributions,
     total_qty: totalQty,
     weekly_req: weeklyReq,
+    window_weeks: WINDOW_WEEKS,
     threshold,
     qty_on_hand: qtyOnHand,
     sku_code: (sku?.sku_code as string) || null,
