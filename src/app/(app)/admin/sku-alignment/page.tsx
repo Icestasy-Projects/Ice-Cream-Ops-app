@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Link2, RefreshCw, CheckCircle2, AlertCircle, Search, X } from 'lucide-react';
+import { Link2, RefreshCw, CheckCircle2, AlertCircle, Search, X, Wand2 } from 'lucide-react';
 
 interface AlignmentRow {
   sku_id: number;
@@ -60,6 +60,8 @@ export default function SkuAlignmentPage() {
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [autoAligning, setAutoAligning] = useState(false);
+  const [autoAlignResult, setAutoAlignResult] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -131,6 +133,25 @@ export default function SkuAlignmentPage() {
     setSaving(false);
   }
 
+  async function runAutoAlign() {
+    setAutoAligning(true);
+    setAutoAlignResult(null);
+    try {
+      const res = await fetch('/api/admin/sku-alignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auto_align' }),
+      });
+      const json = await res.json();
+      if (json.error) { setAutoAlignResult(`Error: ${json.error}`); }
+      else {
+        setAutoAlignResult(`Done — ${json.applied} SKU flavour links updated. ${json.unmatched_count} could not be matched automatically.`);
+        await load();
+      }
+    } catch (e) { setAutoAlignResult(`Error: ${String(e)}`); }
+    setAutoAligning(false);
+  }
+
   async function deleteLink(skuId: number) {
     if (!confirm(`Remove link for SKU #${skuId}? This will break weekly req calculations for this SKU.`)) return;
     await fetch(`/api/admin/sku-alignment?sku_id=${skuId}`, { method: 'DELETE' });
@@ -168,6 +189,23 @@ export default function SkuAlignmentPage() {
               <p className="text-2xl font-bold text-red-700">{data.unlinked}</p>
               <p className="text-xs text-red-600 mt-0.5">Unlinked</p>
             </div>
+          </div>
+
+          {/* Auto-align */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={runAutoAlign}
+              disabled={autoAligning}
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 w-fit touch-manipulation"
+            >
+              <Wand2 size={16} />
+              {autoAligning ? 'Aligning…' : 'Auto-Align Flavours by Product Name'}
+            </button>
+            {autoAlignResult && (
+              <p className={`text-sm px-3 py-2 rounded-xl ${autoAlignResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                {autoAlignResult}
+              </p>
+            )}
           </div>
 
           {/* Controls */}
