@@ -23,16 +23,14 @@ export async function GET() {
 
     const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // ── Step 1: weekly FG demand from sales.orders (last 42 days / 6 weeks) ─
-    const since = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
-
-    // Weekly FG demand from sales.order_lines (last 42 days / 6-week avg)
+    // ── Step 1: FG demand from ALL open/pending sales orders ─────────────────
+    // No date restriction — we aggregate all outstanding order quantities.
+    // "Weekly req" = total open qty (what needs to be fulfilled right now).
     const { data: orderLines } = await admin
       .schema('sales')
       .from('order_lines')
-      .select('sku_id, quantity, orders!inner(created_at, status)')
-      .gte('orders.created_at', since)
-      .in('orders.status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
+      .select('sku_id, quantity, orders!inner(status)')
+      .in('orders.status', ['approved', 'invoiced', 'in_production']);
 
     const fgWeekly: Record<number, number> = {};
     const source: 'orders' | 'dispatches' = 'orders';
@@ -40,9 +38,6 @@ export async function GET() {
     for (const line of orderLines || []) {
       const id = line.sku_id as number;
       fgWeekly[id] = (fgWeekly[id] || 0) + ((line.quantity as number) || 0);
-    }
-    for (const id in fgWeekly) {
-      fgWeekly[id] = Math.ceil(fgWeekly[id] / 6); // 6-week average → weekly, rounded up
     }
 
     const skuIds = Object.keys(fgWeekly).map(Number);
