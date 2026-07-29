@@ -178,9 +178,7 @@ function CalcModal({ skuId, productName, onClose }: {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Source</span>
-                    <span className="font-semibold text-gray-900">
-                      {data.source === 'orders' ? 'Sales Orders' : 'Dispatch History (fallback)'}
-                    </span>
+                    <span className="font-semibold text-gray-900">Sales Orders (last 42 days)</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Lookback window</span>
