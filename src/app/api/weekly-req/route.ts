@@ -24,20 +24,30 @@ export async function GET() {
     const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
     // ── Step 1: FG demand from ALL open/pending sales orders ─────────────────
-    // No date restriction — we aggregate all outstanding order quantities.
-    // "Weekly req" = total open qty (what needs to be fulfilled right now).
-    const { data: orderLines } = await admin
+    // Fetch open order IDs first, then get their lines — avoids PostgREST
+    // nested-filter limitations that silently return empty results.
+    const { data: openOrders } = await admin
       .schema('sales')
-      .from('order_lines')
-      .select('sku_id, quantity, orders!inner(status)')
-      .in('orders.status', ['approved', 'invoiced', 'in_production']);
+      .from('orders')
+      .select('id')
+      .in('status', ['approved', 'invoiced', 'in_production']);
+
+    const openOrderIds = (openOrders || []).map((o: Record<string, unknown>) => o.id as number);
 
     const fgWeekly: Record<number, number> = {};
     const source: 'orders' | 'dispatches' = 'orders';
 
-    for (const line of orderLines || []) {
-      const id = line.sku_id as number;
-      fgWeekly[id] = (fgWeekly[id] || 0) + ((line.quantity as number) || 0);
+    if (openOrderIds.length > 0) {
+      const { data: orderLines } = await admin
+        .schema('sales')
+        .from('order_lines')
+        .select('sku_id, quantity')
+        .in('order_id', openOrderIds);
+
+      for (const line of orderLines || []) {
+        const id = (line as Record<string, unknown>).sku_id as number;
+        fgWeekly[id] = (fgWeekly[id] || 0) + (((line as Record<string, unknown>).quantity as number) || 0);
+      }
     }
 
     const skuIds = Object.keys(fgWeekly).map(Number);
