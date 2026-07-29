@@ -50,6 +50,18 @@ export async function POST() {
   const since42 = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
 
   // Fetch recent orders using * to discover real column names
+  // Check if orders already exist in the 42-day window
+  const { data: existingInWindow } = await admin.schema('sales').from('orders')
+    .select('id').gte('created_at', since42).limit(1);
+
+  if (existingInWindow && existingInWindow.length > 0) {
+    return NextResponse.json({
+      ok: true,
+      orders_created: 0,
+      message: 'Orders already exist in the last 42 days — no seeding needed. Weekly req should now calculate correctly.',
+    });
+  }
+
   const { data: sourceOrders, error: soErr } = await admin.schema('sales').from('orders')
     .select('*')
     .lt('created_at', since42)
@@ -104,6 +116,8 @@ export async function POST() {
     }
     insertRow[dateCol] = orderDate;
     if (statusCol) insertRow[statusCol] = 'dispatched';
+    // Make order_no unique to avoid unique constraint violations
+    if ('order_no' in insertRow) insertRow['order_no'] = `SEED-${Date.now()}-${i}`;
 
     const { data: newOrder, error: insErr } = await admin.schema('sales').from('orders')
       .insert(insertRow)
