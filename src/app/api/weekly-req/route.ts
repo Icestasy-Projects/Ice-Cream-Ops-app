@@ -26,8 +26,7 @@ export async function GET() {
     // ── Step 1: weekly FG demand from sales.orders (last 42 days / 6 weeks) ─
     const since = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Try sales.orders first; fall back to fg_dispatches if no data
-    // order_lines.sku_id, order_lines.quantity, orders.created_at, orders.status
+    // Weekly FG demand from sales.order_lines (last 42 days / 6-week avg)
     const { data: orderLines } = await admin
       .schema('sales')
       .from('order_lines')
@@ -35,34 +34,15 @@ export async function GET() {
       .gte('orders.created_at', since)
       .in('orders.status', ['approved', 'invoiced', 'in_production', 'dispatched', 'delivered']);
 
-    let fgWeekly: Record<number, number> = {};
-    let source: 'orders' | 'dispatches' = 'orders';
+    const fgWeekly: Record<number, number> = {};
+    const source: 'orders' | 'dispatches' = 'orders';
 
-    if (orderLines && orderLines.length > 0) {
-      // Aggregate from sales orders
-      for (const line of orderLines) {
-        const id = line.sku_id as number;
-        fgWeekly[id] = (fgWeekly[id] || 0) + ((line.quantity as number) || 0);
-      }
-      for (const id in fgWeekly) {
-        fgWeekly[id] = Math.ceil(fgWeekly[id] / 6); // 6-week average → weekly, rounded up
-      }
-    } else {
-      // Fallback: use actual dispatch history
-      source = 'dispatches';
-      const { data: dispatchRows } = await admin
-        .schema('production')
-        .from('fg_dispatches')
-        .select('fg_sku_id, qty')
-        .gte('dispatched_at', since);
-
-      for (const row of dispatchRows || []) {
-        const id = row.fg_sku_id as number;
-        fgWeekly[id] = (fgWeekly[id] || 0) + ((row.qty as number) || 0);
-      }
-      for (const id in fgWeekly) {
-        fgWeekly[id] = Math.ceil(fgWeekly[id] / 4); // 4-week avg for dispatches, rounded up
-      }
+    for (const line of orderLines || []) {
+      const id = line.sku_id as number;
+      fgWeekly[id] = (fgWeekly[id] || 0) + ((line.quantity as number) || 0);
+    }
+    for (const id in fgWeekly) {
+      fgWeekly[id] = Math.ceil(fgWeekly[id] / 6); // 6-week average → weekly, rounded up
     }
 
     const skuIds = Object.keys(fgWeekly).map(Number);

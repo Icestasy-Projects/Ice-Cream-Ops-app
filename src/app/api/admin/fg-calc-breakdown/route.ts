@@ -98,47 +98,24 @@ export async function GET(req: Request) {
 
   const contributions: OrderContribution[] = [];
   let totalQty = 0;
-  let source: 'orders' | 'dispatches' = 'orders';
+  const source: 'orders' | 'dispatches' = 'orders';
 
-  if (orderLines && orderLines.length > 0) {
-    for (const line of orderLines) {
-      const l = line as Record<string, unknown>;
-      const order = l.orders as Record<string, unknown>;
-      const qty = (l.quantity as number) || 0;
-      contributions.push({
-        order_id: order.id as number,
-        customer_name: order.customer_name as string | null,
-        order_ref: order.order_ref as string | null,
-        order_date: order.created_at as string,
-        status: order.status as string,
-        qty,
-      });
-      totalQty += qty;
-    }
-  } else {
-    // Fallback: dispatch history
-    source = 'dispatches';
-    const { data: dispatchRows } = await admin.schema('production').from('fg_dispatches')
-      .select('qty, dispatched_at')
-      .eq('fg_sku_id', skuId)
-      .gte('dispatched_at', since);
-
-    for (const row of dispatchRows || []) {
-      const r = row as Record<string, unknown>;
-      const qty = (r.qty as number) || 0;
-      contributions.push({
-        order_id: 0,
-        customer_name: 'Dispatch record',
-        order_ref: null,
-        order_date: r.dispatched_at as string,
-        status: 'dispatched',
-        qty,
-      });
-      totalQty += qty;
-    }
+  for (const line of orderLines || []) {
+    const l = line as Record<string, unknown>;
+    const order = l.orders as Record<string, unknown>;
+    const qty = (l.quantity as number) || 0;
+    contributions.push({
+      order_id: order.id as number,
+      customer_name: order.customer_name as string | null,
+      order_ref: order.order_ref as string | null,
+      order_date: order.created_at as string,
+      status: order.status as string,
+      qty,
+    });
+    totalQty += qty;
   }
 
-  const divisor = source === 'orders' ? WINDOW_WEEKS : 4;
+  const divisor = WINDOW_WEEKS;
   const weeklyReq = Math.ceil(totalQty / divisor);
   const threshold = Math.ceil(weeklyReq * 2.5);
   const qtyOnHand = (stock?.qty_on_hand as number) || 0;
