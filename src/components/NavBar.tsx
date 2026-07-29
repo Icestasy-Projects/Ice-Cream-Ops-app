@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
 import { getNavItemsForRole, ROLE_LABELS } from '@/lib/roles';
-import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors, IceCream, ClipboardList, Link2, GitMerge } from 'lucide-react';
+import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors, IceCream, ClipboardList, Link2, GitMerge, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +25,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/dashboards/weekly-audit': ClipboardList,
   '/admin/sku-alignment': Link2,
   '/admin/flavour-alignment': GitMerge,
+  '/admin/cleanup': Trash2,
 };
 
 export default function NavBar() {
