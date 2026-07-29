@@ -16,7 +16,8 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://acngdpcpx
 
 const TARGET_UNITS = ['B2B Add-On', 'Extras'];
 
-async function gatherTargets(admin: ReturnType<typeof createSupabaseClient>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function gatherTargets(admin: any) {
   // 1. Find production.fg_skus with those unit names
   const { data: fgSkus, error: fgErr } = await admin
     .schema('production').from('fg_skus')
@@ -53,7 +54,8 @@ export async function GET() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
-    const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY) as any;
     const { fgSkus, salesSkus, stockSnapshot } = await gatherTargets(admin);
 
     return NextResponse.json({
@@ -83,7 +85,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Add ?confirm=yes to the URL to proceed.' }, { status: 400 });
     }
 
-    const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY) as any;
     const { fgSkus, fgSkuIds, salesSkus } = await gatherTargets(admin);
 
     if (fgSkuIds.length === 0) {
