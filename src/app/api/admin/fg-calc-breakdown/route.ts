@@ -7,7 +7,7 @@ const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjbmdkcGNweGJ1cmt6cXhqcGJmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTc5ODgyNywiZXhwIjoyMDk3Mzc0ODI3fQ.dZHfewnIMa8GV4aPMYXKdOPGSWz00g33u3_QDCjAC2g';
 const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://acngdpcpxburkzqxjpbf.supabase.co').trim();
 
-const WINDOW_WEEKS = 13;
+const WINDOW_WEEKS = 6;
 
 export interface OrderContribution {
   order_id: number;
@@ -85,7 +85,7 @@ export async function GET(req: Request) {
   }
 
   // Same 90-day / 13-week window as /api/weekly-req
-  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const since = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: recentOrders } = await admin.schema('sales').from('orders')
     .select('id, customer_name, order_ref, created_at, status')

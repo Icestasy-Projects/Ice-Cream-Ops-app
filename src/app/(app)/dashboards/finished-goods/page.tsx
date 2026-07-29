@@ -175,7 +175,7 @@ function CalcModal({ skuId, productName, onClose }: {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Source</span>
-                    <span className="font-semibold text-gray-900">Last 90 days of orders</span>
+                    <span className="font-semibold text-gray-900">Last 42 days of orders</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Statuses included</span>
