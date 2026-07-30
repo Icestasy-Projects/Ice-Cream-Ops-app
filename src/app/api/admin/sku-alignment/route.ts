@@ -156,16 +156,60 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ updates, unmatched });
       }
 
-      // Apply updates
+      // Multi-pass apply: handles chain dependencies (A needs B's slot, B needs C's slot…)
+      // Each pass applies updates whose target flavour_id is no longer held by another
+      // pending update with the same pack_format_id. Repeat until no progress.
       let applied = 0;
-      for (const u of updates) {
-        const { error } = await admin.schema('sales').from('skus')
-          .update({ flavour_id: u.flavour_id })
-          .eq('id', u.id);
-        if (!error) applied++;
+      let remaining = [...updates];
+      const MAX_PASSES = updates.length + 1;
+
+      for (let pass = 0; pass < MAX_PASSES && remaining.length > 0; pass++) {
+        const stillBlocked: typeof updates = [];
+        // IDs that still need updating (their current flavour slot may be in use)
+        const pendingIds = new Set(remaining.map(u => u.id));
+
+        for (const u of remaining) {
+          // Fetch current state to see if target flavour_id is occupied by another pending SKU
+          // with same pack_format_id (would hit unique constraint)
+          const { data: conflict } = await admin.schema('sales').from('skus')
+            .select('id')
+            .eq('flavour_id', u.flavour_id)
+            .neq('id', u.id)
+            .maybeSingle();
+
+          if (conflict && pendingIds.has(conflict.id)) {
+            // Slot still held by another pending SKU — retry next pass
+            stillBlocked.push(u);
+            continue;
+          }
+
+          const { error } = await admin.schema('sales').from('skus')
+            .update({ flavour_id: u.flavour_id })
+            .eq('id', u.id);
+          if (!error) { applied++; pendingIds.delete(u.id); }
+          else stillBlocked.push(u);
+        }
+
+        if (stillBlocked.length === remaining.length) break; // no progress, stop
+        remaining = stillBlocked;
       }
 
       return NextResponse.json({ ok: true, applied, unmatched_count: unmatched.length, unmatched });
+    }
+
+    // ── delete_pack_format ───────────────────────────────────────────────────
+    if (body.action === 'delete_pack_format') {
+      const { pack_format_id } = body as { pack_format_id: number };
+      if (!pack_format_id) return NextResponse.json({ error: 'pack_format_id required' }, { status: 400 });
+      // Check if any SKUs reference this format
+      const { data: refs } = await admin.schema('sales').from('skus')
+        .select('id').eq('pack_format_id', pack_format_id).limit(1);
+      if (refs && refs.length > 0) {
+        return NextResponse.json({ error: 'Cannot delete — SKUs are still using this pack format.' }, { status: 409 });
+      }
+      const { error } = await admin.schema('sales').from('pack_formats').delete().eq('id', pack_format_id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true });
     }
 
     // ── single upsert ────────────────────────────────────────────────────────
