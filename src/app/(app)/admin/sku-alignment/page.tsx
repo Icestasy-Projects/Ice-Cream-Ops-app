@@ -223,6 +223,18 @@ export default function SkuAlignmentPage() {
     setRenameSaving(false);
   }
 
+  async function deletePackFormat(id: number, name: string) {
+    if (!confirm(`Delete pack format "${name}"? This cannot be undone.`)) return;
+    const res = await fetch('/api/admin/sku-alignment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_pack_format', pack_format_id: id }),
+    });
+    const json = await res.json();
+    if (json.error) alert(json.error);
+    else await load();
+  }
+
   const flavours = data?.flavours || [];
   const packFormats = data?.pack_formats || [];
 
@@ -601,6 +613,51 @@ export default function SkuAlignmentPage() {
               </div>
             );
           })()}
+          {/* ── PACK FORMATS MANAGEMENT ── */}
+          <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+              <span className="text-sm font-bold text-gray-700">Pack Formats</span>
+              <span className="text-xs text-gray-400">{packFormats.length} formats</span>
+            </div>
+            <table className="w-full text-sm bg-white">
+              <thead className="border-b border-gray-100">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">Name</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">Volume</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">Units/Pack</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">SKUs using it</th>
+                  <th className="px-4 py-2"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {packFormats.sort((a, b) => a.name.localeCompare(b.name)).map(pf => {
+                  const skuCount = (data?.rows || []).filter(r => r.pack_format_id === pf.id).length;
+                  return (
+                    <tr key={pf.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 font-medium text-gray-800">{pf.name}</td>
+                      <td className="px-4 py-2 text-gray-500">{pf.unit_volume_ml} ml</td>
+                      <td className="px-4 py-2 text-gray-500">{pf.units_per_pack}</td>
+                      <td className="px-4 py-2">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${skuCount > 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-gray-100 text-gray-400'}`}>
+                          {skuCount} SKU{skuCount !== 1 ? 's' : ''}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        {skuCount === 0 && (
+                          <button
+                            onClick={() => deletePackFormat(pf.id, pf.name)}
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors touch-manipulation"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>
