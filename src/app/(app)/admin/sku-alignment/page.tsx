@@ -66,9 +66,6 @@ export default function SkuAlignmentPage() {
   const [autoAlignResult, setAutoAlignResult] = useState<string | null>(null);
   const [view, setView] = useState<'table' | 'map'>('table');
 
-  // Bulk unlink state
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [bulkUnlinking, setBulkUnlinking] = useState(false);
 
   // Flavour rename state
   const [renamingFlavour, setRenamingFlavour] = useState<{ id: number; name: string } | null>(null);
@@ -79,7 +76,6 @@ export default function SkuAlignmentPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setSelected(new Set());
     try {
       const res = await fetch('/api/admin/sku-alignment');
       const json = await res.json();
@@ -107,43 +103,6 @@ export default function SkuAlignmentPage() {
     }
     return true;
   });
-
-  const linkedFiltered = filtered.filter(r => r.linked);
-  const allLinkedFilteredSelected = linkedFiltered.length > 0 && linkedFiltered.every(r => selected.has(r.sku_id));
-
-  function toggleSelect(skuId: number) {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(skuId)) next.delete(skuId); else next.add(skuId);
-      return next;
-    });
-  }
-
-  function toggleSelectAll() {
-    if (allLinkedFilteredSelected) {
-      setSelected(prev => {
-        const next = new Set(prev);
-        linkedFiltered.forEach(r => next.delete(r.sku_id));
-        return next;
-      });
-    } else {
-      setSelected(prev => {
-        const next = new Set(prev);
-        linkedFiltered.forEach(r => next.add(r.sku_id));
-        return next;
-      });
-    }
-  }
-
-  async function bulkUnlink() {
-    if (selected.size === 0) return;
-    if (!confirm(`Unlink ${selected.size} SKU(s)? This will remove their flavour/format mappings.`)) return;
-    setBulkUnlinking(true);
-    const ids = Array.from(selected).join(',');
-    await fetch(`/api/admin/sku-alignment?sku_ids=${ids}`, { method: 'DELETE' });
-    setBulkUnlinking(false);
-    await load();
-  }
 
   function startEdit(row: AlignmentRow) {
     setEditing({
@@ -203,11 +162,6 @@ export default function SkuAlignmentPage() {
     setAutoAligning(false);
   }
 
-  async function deleteLink(skuId: number) {
-    if (!confirm(`Remove link for SKU #${skuId}? This will break weekly req calculations for this SKU.`)) return;
-    await fetch(`/api/admin/sku-alignment?sku_id=${skuId}`, { method: 'DELETE' });
-    await load();
-  }
 
   function startRenameFlavour(f: Flavour) {
     setRenamingFlavour(f);
@@ -317,15 +271,6 @@ export default function SkuAlignmentPage() {
                      key === 'linked' ? `Linked (${data.linked})` : `All (${data.total})`}
                   </button>
                 ))}
-                {selected.size > 0 && (
-                  <button
-                    onClick={bulkUnlink}
-                    disabled={bulkUnlinking}
-                    className="text-xs font-bold px-3 py-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 touch-manipulation"
-                  >
-                    {bulkUnlinking ? 'Unlinking…' : `Unlink Selected (${selected.size})`}
-                  </button>
-                )}
               </div>
               <div className="relative max-w-xs w-full sm:w-auto">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -460,15 +405,6 @@ export default function SkuAlignmentPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-3 py-3 w-8">
-                      <input
-                        type="checkbox"
-                        checked={allLinkedFilteredSelected}
-                        onChange={toggleSelectAll}
-                        className="rounded"
-                        title="Select all linked SKUs in view"
-                      />
-                    </th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">SKU</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">FG Product</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Mapped Flavour</th>
@@ -479,22 +415,11 @@ export default function SkuAlignmentPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400">No SKUs match your filter.</td></tr>
+                    <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">No SKUs match your filter.</td></tr>
                   ) : filtered.map(row => {
                     const mismatch = row.flavour_matches_product === false;
-                    const isSelected = selected.has(row.sku_id);
                     return (
-                      <tr key={row.sku_id} className={`hover:bg-gray-50 transition-colors ${isSelected ? 'bg-red-50/60' : mismatch ? 'bg-amber-50/40' : ''}`}>
-                        <td className="px-3 py-3 text-center">
-                          {row.linked && (
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleSelect(row.sku_id)}
-                              className="rounded"
-                            />
-                          )}
-                        </td>
+                      <tr key={row.sku_id} className={`hover:bg-gray-50 transition-colors ${mismatch ? 'bg-amber-50/40' : ''}`}>
                         <td className="px-4 py-3">
                           <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">#{row.sku_id}</span>
                           {row.name && <span className="ml-2 text-xs text-gray-500">{row.name}</span>}
@@ -515,18 +440,10 @@ export default function SkuAlignmentPage() {
                             : <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full"><CheckCircle2 size={11} /> OK</span>}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-2">
-                            <button onClick={() => startEdit(row)}
-                              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300 transition-colors touch-manipulation">
-                              {row.linked ? 'Edit' : 'Link'}
-                            </button>
-                            {row.linked && (
-                              <button onClick={() => deleteLink(row.sku_id)}
-                                className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-colors touch-manipulation">
-                                Unlink
-                              </button>
-                            )}
-                          </div>
+                          <button onClick={() => startEdit(row)}
+                            className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300 transition-colors touch-manipulation">
+                            {row.linked ? 'Edit' : 'Link'}
+                          </button>
                         </td>
                       </tr>
                     );

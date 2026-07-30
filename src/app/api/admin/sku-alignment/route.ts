@@ -218,25 +218,11 @@ export async function DELETE(req: NextRequest) {
     const admin = adminClient();
     const { searchParams } = new URL(req.url);
 
-    // Collect IDs to delete
-    let ids: number[] = [];
-    const bulkParam = searchParams.get('sku_ids');
-    if (bulkParam) {
-      ids = bulkParam.split(',').map(Number).filter(Boolean);
-      if (ids.length === 0) return NextResponse.json({ error: 'No valid ids' }, { status: 400 });
-    } else {
-      const skuId = Number(searchParams.get('sku_id'));
-      if (!skuId) return NextResponse.json({ error: 'sku_id or sku_ids required' }, { status: 400 });
-      ids = [skuId];
-    }
-
-    // Unlink = clear flavour_id and pack_format_id (do NOT delete the row —
-    // order_lines and sku_prices hold FK references to skus.id)
-    const { error } = await admin.schema('sales').from('skus')
-      .update({ flavour_id: null, pack_format_id: null })
-      .in('id', ids);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, unlinked: ids.length });
+    // skus.flavour_id is NOT NULL and order_lines references skus.id,
+    // so neither nulling fields nor deleting rows is possible.
+    return NextResponse.json({
+      error: 'Unlink is not supported: the database requires flavour_id to be set (NOT NULL) and order history references this SKU. Use Auto-Align to correct wrong mappings instead.',
+    }, { status: 422 });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
