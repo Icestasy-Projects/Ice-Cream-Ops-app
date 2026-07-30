@@ -156,29 +156,41 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ updates, unmatched });
       }
 
-      // Multi-pass apply: handles chain dependencies (A needs B's slot, B needs C's slot…)
-      // Each pass applies updates whose target flavour_id is no longer held by another
-      // pending update with the same pack_format_id. Repeat until no progress.
+      // Multi-pass apply: handles chain dependencies (A→B→C where each needs the next's slot)
+      // Build an in-memory map of current flavour assignments so we don't need extra DB queries.
+      // After each successful update, update the in-memory map so subsequent checks are accurate.
+      const { data: currentSkus } = await admin.schema('sales').from('skus')
+        .select('id, flavour_id, pack_format_id');
+
+      // Map: (flavour_id, pack_format_id) → sku_id (who currently holds this slot)
+      const slotHolder = new Map<string, number>();
+      for (const s of currentSkus || []) {
+        if (s.flavour_id && s.pack_format_id) {
+          slotHolder.set(`${s.flavour_id}:${s.pack_format_id}`, s.id);
+        }
+      }
+      // Map: sku_id → current pack_format_id and old flavour_id
+      const skuPackFormat = new Map<number, number>(
+        (currentSkus || []).map((s: any) => [s.id as number, s.pack_format_id as number])
+      );
+      const skuCurrentFlavour = new Map<number, number>(
+        (currentSkus || []).map((s: any) => [s.id as number, s.flavour_id as number])
+      );
+
       let applied = 0;
       let remaining = [...updates];
-      const MAX_PASSES = updates.length + 1;
 
-      for (let pass = 0; pass < MAX_PASSES && remaining.length > 0; pass++) {
+      for (let pass = 0; pass < updates.length + 1 && remaining.length > 0; pass++) {
         const stillBlocked: typeof updates = [];
-        // IDs that still need updating (their current flavour slot may be in use)
         const pendingIds = new Set(remaining.map(u => u.id));
 
         for (const u of remaining) {
-          // Fetch current state to see if target flavour_id is occupied by another pending SKU
-          // with same pack_format_id (would hit unique constraint)
-          const { data: conflict } = await admin.schema('sales').from('skus')
-            .select('id')
-            .eq('flavour_id', u.flavour_id)
-            .neq('id', u.id)
-            .maybeSingle();
+          const packFmt = skuPackFormat.get(u.id);
+          const slotKey = `${u.flavour_id}:${packFmt}`;
+          const holder = slotHolder.get(slotKey);
 
-          if (conflict && pendingIds.has(conflict.id)) {
-            // Slot still held by another pending SKU — retry next pass
+          // If the target slot is held by another SKU that is ALSO pending, wait
+          if (holder && holder !== u.id && pendingIds.has(holder)) {
             stillBlocked.push(u);
             continue;
           }
@@ -186,11 +198,22 @@ export async function POST(req: NextRequest) {
           const { error } = await admin.schema('sales').from('skus')
             .update({ flavour_id: u.flavour_id })
             .eq('id', u.id);
-          if (!error) { applied++; pendingIds.delete(u.id); }
-          else stillBlocked.push(u);
+
+          if (!error) {
+            applied++;
+            pendingIds.delete(u.id);
+            // Update in-memory map: free the old slot, occupy the new one
+            const oldFlavour = skuCurrentFlavour.get(u.id);
+            const oldPackFmt = skuPackFormat.get(u.id);
+            if (oldFlavour && oldPackFmt) slotHolder.delete(`${oldFlavour}:${oldPackFmt}`);
+            skuCurrentFlavour.set(u.id, u.flavour_id);
+            slotHolder.set(slotKey, u.id);
+          } else {
+            stillBlocked.push(u);
+          }
         }
 
-        if (stillBlocked.length === remaining.length) break; // no progress, stop
+        if (stillBlocked.length === remaining.length) break;
         remaining = stillBlocked;
       }
 
