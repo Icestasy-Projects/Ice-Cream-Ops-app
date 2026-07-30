@@ -169,12 +169,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'sku_id, flavour_id, pack_format_id are required' }, { status: 400 });
     }
 
-    const { error } = await admin.schema('sales').from('skus').upsert({
-      id: sku_id,
-      sku_code: name || `SKU-${sku_id}`,
-      flavour_id,
-      pack_format_id,
-    }, { onConflict: 'id' });
+    // Check if this (flavour_id, pack_format_id) pair is already used by a DIFFERENT SKU
+    const { data: conflictRow } = await admin.schema('sales').from('skus')
+      .select('id')
+      .eq('flavour_id', flavour_id)
+      .eq('pack_format_id', pack_format_id)
+      .neq('id', sku_id)
+      .maybeSingle();
+
+    if (conflictRow) {
+      return NextResponse.json({
+        error: `This flavour + pack format combination is already used by SKU #${conflictRow.id}. Each flavour/format pair must be unique.`,
+      }, { status: 409 });
+    }
+
+    // Check if SKU exists to decide update vs insert
+    const { data: existing } = await admin.schema('sales').from('skus')
+      .select('id').eq('id', sku_id).maybeSingle();
+
+    let error: { message: string } | null;
+    if (existing) {
+      ({ error } = await admin.schema('sales').from('skus')
+        .update({ sku_code: name || `SKU-${sku_id}`, flavour_id, pack_format_id })
+        .eq('id', sku_id));
+    } else {
+      ({ error } = await admin.schema('sales').from('skus')
+        .insert({ id: sku_id, sku_code: name || `SKU-${sku_id}`, flavour_id, pack_format_id }));
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
