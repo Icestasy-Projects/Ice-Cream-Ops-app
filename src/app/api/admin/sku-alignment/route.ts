@@ -207,18 +207,54 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE — remove a sales.skus entry (unlink)
+// DELETE — remove one or many sales.skus entries (unlink)
+// Single: ?sku_id=26
+// Bulk:   ?sku_ids=25,26,27  or body { sku_ids: [25,26,27] }
 export async function DELETE(req: NextRequest) {
   try {
     const user = await checkAuth();
     if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
+    const admin = adminClient();
     const { searchParams } = new URL(req.url);
+
+    // Bulk via query param
+    const bulkParam = searchParams.get('sku_ids');
+    if (bulkParam) {
+      const ids = bulkParam.split(',').map(Number).filter(Boolean);
+      if (ids.length === 0) return NextResponse.json({ error: 'No valid ids' }, { status: 400 });
+      const { error } = await admin.schema('sales').from('skus').delete().in('id', ids);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true, deleted: ids.length });
+    }
+
+    // Single via query param
     const skuId = Number(searchParams.get('sku_id'));
-    if (!skuId) return NextResponse.json({ error: 'sku_id required' }, { status: 400 });
+    if (!skuId) return NextResponse.json({ error: 'sku_id or sku_ids required' }, { status: 400 });
+    const { error } = await admin.schema('sales').from('skus').delete().eq('id', skuId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
+// PATCH — rename a prep_product (flavour) name
+export async function PATCH(req: NextRequest) {
+  try {
+    const user = await checkAuth();
+    if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
+
+    const body = await req.json();
+    const { prep_product_id, name } = body as { prep_product_id: number; name: string };
+    if (!prep_product_id || !name?.trim()) {
+      return NextResponse.json({ error: 'prep_product_id and name required' }, { status: 400 });
+    }
 
     const admin = adminClient();
-    const { error } = await admin.schema('sales').from('skus').delete().eq('id', skuId);
+    const { error } = await admin.schema('production').from('prep_products')
+      .update({ name: name.trim() })
+      .eq('id', prep_product_id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {
