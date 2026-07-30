@@ -117,7 +117,12 @@ export async function POST(req: NextRequest) {
         admin.schema('production').from('prep_products').select('id, name'),
       ]);
 
-      const salesSkus = (salesSkusRes.data || []) as Array<{ id: number; sku_code: string | null; pack_format_id: number | null }>;
+      let salesSkus = (salesSkusRes.data || []) as Array<{ id: number; sku_code: string | null; pack_format_id: number | null }>;
+      // If caller specified a subset of sku_ids, restrict to those
+      if (Array.isArray(body.sku_ids) && body.sku_ids.length > 0) {
+        const idSet = new Set(body.sku_ids as number[]);
+        salesSkus = salesSkus.filter(s => idSet.has(s.id));
+      }
       const fgStockMap = new Map((fgStockRes.data || []).map((s: any) => [s.fg_sku_id as number, s.product_name as string]));
       const prepProds = (prepProdsRes.data || []) as Array<{ id: number; name: string }>;
 

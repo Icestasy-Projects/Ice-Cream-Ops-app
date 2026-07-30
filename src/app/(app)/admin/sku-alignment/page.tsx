@@ -65,7 +65,7 @@ export default function SkuAlignmentPage() {
   const [autoAligning, setAutoAligning] = useState(false);
   const [autoAlignResult, setAutoAlignResult] = useState<string | null>(null);
   const [view, setView] = useState<'table' | 'map'>('table');
-
+  const [selected, setSelected] = useState<Set<number>>(new Set());
 
   // Flavour rename state
   const [renamingFlavour, setRenamingFlavour] = useState<{ id: number; name: string } | null>(null);
@@ -76,6 +76,7 @@ export default function SkuAlignmentPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSelected(new Set());
     try {
       const res = await fetch('/api/admin/sku-alignment');
       const json = await res.json();
@@ -103,6 +104,39 @@ export default function SkuAlignmentPage() {
     }
     return true;
   });
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every(r => selected.has(r.sku_id));
+
+  function toggleSelect(skuId: number) {
+    setSelected(prev => { const n = new Set(prev); n.has(skuId) ? n.delete(skuId) : n.add(skuId); return n; });
+  }
+  function toggleSelectAll() {
+    if (allFilteredSelected) {
+      setSelected(prev => { const n = new Set(prev); filtered.forEach(r => n.delete(r.sku_id)); return n; });
+    } else {
+      setSelected(prev => { const n = new Set(prev); filtered.forEach(r => n.add(r.sku_id)); return n; });
+    }
+  }
+
+  async function realignSelected() {
+    if (selected.size === 0) return;
+    setAutoAligning(true);
+    setAutoAlignResult(null);
+    try {
+      const res = await fetch('/api/admin/sku-alignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auto_align', sku_ids: Array.from(selected) }),
+      });
+      const json = await res.json();
+      if (json.error) setAutoAlignResult(`Error: ${json.error}`);
+      else {
+        setAutoAlignResult(`Done — ${json.applied} of ${selected.size} selected SKUs re-aligned. ${json.unmatched_count} could not be matched.`);
+        await load();
+      }
+    } catch (e) { setAutoAlignResult(`Error: ${String(e)}`); }
+    setAutoAligning(false);
+  }
 
   function startEdit(row: AlignmentRow) {
     setEditing({
@@ -271,6 +305,15 @@ export default function SkuAlignmentPage() {
                      key === 'linked' ? `Linked (${data.linked})` : `All (${data.total})`}
                   </button>
                 ))}
+                {selected.size > 0 && (
+                  <button
+                    onClick={realignSelected}
+                    disabled={autoAligning}
+                    className="text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 touch-manipulation"
+                  >
+                    {autoAligning ? 'Aligning…' : `Re-align Selected (${selected.size})`}
+                  </button>
+                )}
               </div>
               <div className="relative max-w-xs w-full sm:w-auto">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -405,6 +448,9 @@ export default function SkuAlignmentPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-3 py-3 w-8">
+                      <input type="checkbox" checked={allFilteredSelected} onChange={toggleSelectAll} className="rounded" />
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">SKU</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">FG Product</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Mapped Flavour</th>
@@ -415,11 +461,15 @@ export default function SkuAlignmentPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">No SKUs match your filter.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400">No SKUs match your filter.</td></tr>
                   ) : filtered.map(row => {
                     const mismatch = row.flavour_matches_product === false;
+                    const isSelected = selected.has(row.sku_id);
                     return (
-                      <tr key={row.sku_id} className={`hover:bg-gray-50 transition-colors ${mismatch ? 'bg-amber-50/40' : ''}`}>
+                      <tr key={row.sku_id} className={`hover:bg-gray-50 transition-colors ${isSelected ? 'bg-indigo-50/50' : mismatch ? 'bg-amber-50/40' : ''}`}>
+                        <td className="px-3 py-3 text-center">
+                          <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(row.sku_id)} className="rounded" />
+                        </td>
                         <td className="px-4 py-3">
                           <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">#{row.sku_id}</span>
                           {row.name && <span className="ml-2 text-xs text-gray-500">{row.name}</span>}
