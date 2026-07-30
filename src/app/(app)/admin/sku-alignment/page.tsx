@@ -8,11 +8,12 @@ interface AlignmentRow {
   sku_id: number;
   linked: boolean;
   name: string | null;
+  product_name: string | null;
   flavour_id: number | null;
   flavour_name: string | null;
   pack_format_id: number | null;
   pack_format_name: string | null;
-  prep_name: string | null;
+  flavour_matches_product: boolean | null;
 }
 
 interface FgStockItem {
@@ -42,6 +43,7 @@ interface AlignmentData {
   total: number;
   linked: number;
   unlinked: number;
+  mismatched: number;
 }
 
 interface EditState {
@@ -62,6 +64,7 @@ export default function SkuAlignmentPage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [autoAligning, setAutoAligning] = useState(false);
   const [autoAlignResult, setAutoAlignResult] = useState<string | null>(null);
+  const [view, setView] = useState<'table' | 'map'>('table');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -176,10 +179,10 @@ export default function SkuAlignmentPage() {
       ) : data && (
         <>
           {/* Summary tiles */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="bg-white border border-gray-100 rounded-2xl p-4 text-center shadow-sm">
               <p className="text-2xl font-bold text-gray-900">{data.total}</p>
-              <p className="text-xs text-gray-400 mt-0.5">Total SKU IDs</p>
+              <p className="text-xs text-gray-400 mt-0.5">Total SKUs</p>
             </div>
             <div className="bg-green-50 border border-green-100 rounded-2xl p-4 text-center shadow-sm">
               <p className="text-2xl font-bold text-green-700">{data.linked}</p>
@@ -188,6 +191,10 @@ export default function SkuAlignmentPage() {
             <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-center shadow-sm">
               <p className="text-2xl font-bold text-red-700">{data.unlinked}</p>
               <p className="text-xs text-red-600 mt-0.5">Unlinked</p>
+            </div>
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-center shadow-sm">
+              <p className="text-2xl font-bold text-amber-700">{data.mismatched}</p>
+              <p className="text-xs text-amber-600 mt-0.5">Name Mismatch</p>
             </div>
           </div>
 
@@ -208,43 +215,44 @@ export default function SkuAlignmentPage() {
             )}
           </div>
 
-          {/* Controls */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between flex-wrap">
-            <div className="flex gap-2 flex-wrap">
-              {(['unlinked', 'linked', 'all'] as const).map(key => (
-                <button
-                  key={key}
-                  onClick={() => setShowOnly(key)}
-                  className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${
-                    showOnly === key ? 'ring-2 ring-offset-1 ring-gray-400' : ''
-                  } ${
-                    key === 'unlinked' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                    key === 'linked' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                    'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {key === 'unlinked' ? `Unlinked (${data.unlinked})` :
-                   key === 'linked' ? `Linked (${data.linked})` :
-                   `All (${data.total})`}
+          {/* View toggle + Refresh */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+              {(['table', 'map'] as const).map(v => (
+                <button key={v} onClick={() => setView(v)}
+                  className={`px-4 py-2 text-sm font-semibold transition-colors ${view === v ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>
+                  {v === 'table' ? 'SKU Table' : 'Flavour Map'}
                 </button>
               ))}
             </div>
-            <button onClick={load} className="flex items-center gap-2 text-gray-500 text-sm hover:text-orange-600 touch-manipulation">
+            <button onClick={load} className="flex items-center gap-2 text-gray-500 text-sm hover:text-orange-600 touch-manipulation ml-auto">
               <RefreshCw size={16} /> Refresh
             </button>
           </div>
 
-          {/* Search */}
-          <div className="relative max-w-sm">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search SKU ID, flavour, format..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
-            />
-          </div>
+          {/* Controls (table view only) */}
+          {view === 'table' && (
+            <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between flex-wrap">
+              <div className="flex gap-2 flex-wrap">
+                {(['unlinked', 'linked', 'all'] as const).map(key => (
+                  <button key={key} onClick={() => setShowOnly(key)}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${showOnly === key ? 'ring-2 ring-offset-1 ring-gray-400' : ''} ${
+                      key === 'unlinked' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                      key === 'linked' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
+                      'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                    {key === 'unlinked' ? `Unlinked (${data.unlinked})` :
+                     key === 'linked' ? `Linked (${data.linked})` : `All (${data.total})`}
+                  </button>
+                ))}
+              </div>
+              <div className="relative max-w-xs w-full sm:w-auto">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input type="text" placeholder="Search SKU, flavour, format…" value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white" />
+              </div>
+            </div>
+          )}
 
           {/* Edit modal overlay */}
           {editing && (
@@ -327,67 +335,155 @@ export default function SkuAlignmentPage() {
             </div>
           )}
 
-          {/* SKU rows */}
-          <div className="space-y-2">
-            {filtered.length === 0 ? (
-              <p className="text-center text-gray-400 py-12 text-sm">No SKUs match your filter.</p>
-            ) : filtered.map(row => (
-              <div
-                key={row.sku_id}
-                className={`rounded-2xl border px-4 py-3 flex items-center gap-3 ${
-                  row.linked
-                    ? 'border-green-200 bg-green-50/40'
-                    : 'border-red-200 bg-red-50/30'
-                }`}
-              >
-                <div className="shrink-0">
-                  {row.linked
-                    ? <CheckCircle2 size={18} className="text-green-500" />
-                    : <AlertCircle size={18} className="text-red-400" />
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-gray-500">SKU #{row.sku_id}</span>
-                    {row.name && <span className="text-sm font-semibold text-gray-900">{row.name}</span>}
-                  </div>
-                  {row.linked ? (
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
-                      <span className="text-xs text-indigo-600">
-                        Flavour: <span className="font-semibold">{row.flavour_name ?? '—'}</span>
-                      </span>
-                      <span className="text-xs text-orange-600">
-                        Format: <span className="font-semibold">{row.pack_format_name ?? '—'}</span>
-                      </span>
-                      {row.prep_name && (
-                        <span className="text-xs text-purple-600">
-                          Prep: <span className="font-semibold">{row.prep_name}</span>
-                        </span>
-                      )}
+          {/* ── TABLE VIEW ── */}
+          {view === 'table' && (
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">SKU</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">FG Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Mapped Flavour</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Pack Format</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">No SKUs match your filter.</td></tr>
+                  ) : filtered.map(row => {
+                    const mismatch = row.flavour_matches_product === false;
+                    return (
+                      <tr key={row.sku_id} className={`hover:bg-gray-50 transition-colors ${mismatch ? 'bg-amber-50/40' : ''}`}>
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">#{row.sku_id}</span>
+                          {row.name && <span className="ml-2 text-xs text-gray-500">{row.name}</span>}
+                        </td>
+                        <td className="px-4 py-3 font-medium text-gray-900">{row.product_name ?? <span className="text-gray-300">—</span>}</td>
+                        <td className="px-4 py-3">
+                          {row.flavour_name
+                            ? <span className={`font-semibold ${mismatch ? 'text-amber-700' : 'text-indigo-700'}`}>{row.flavour_name}</span>
+                            : <span className="text-red-400 text-xs">Not linked</span>}
+                          {mismatch && <span className="ml-1 text-xs text-amber-500" title="Flavour name doesn't match product name">⚠</span>}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{row.pack_format_name ?? <span className="text-gray-300">—</span>}</td>
+                        <td className="px-4 py-3">
+                          {!row.linked
+                            ? <span className="inline-flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full"><AlertCircle size={11} /> Unlinked</span>
+                            : mismatch
+                            ? <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">⚠ Mismatch</span>
+                            : <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full"><CheckCircle2 size={11} /> OK</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
+                            <button onClick={() => startEdit(row)}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300 transition-colors touch-manipulation">
+                              {row.linked ? 'Edit' : 'Link'}
+                            </button>
+                            {row.linked && (
+                              <button onClick={() => deleteLink(row.sku_id)}
+                                className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-colors touch-manipulation">
+                                Unlink
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* ── FLAVOUR MAP VIEW ── */}
+          {view === 'map' && (() => {
+            // Group linked SKUs by flavour name
+            const byFlavour = new Map<string, AlignmentRow[]>();
+            for (const row of data.rows) {
+              if (!row.linked) continue;
+              const key = row.flavour_name ?? '(no flavour)';
+              if (!byFlavour.has(key)) byFlavour.set(key, []);
+              byFlavour.get(key)!.push(row);
+            }
+            const unlinkedRows = data.rows.filter(r => !r.linked);
+            const sorted = Array.from(byFlavour.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+            return (
+              <div className="space-y-3">
+                {sorted.map(([flavourName, rows]) => {
+                  const hasMismatch = rows.some(r => r.flavour_matches_product === false);
+                  return (
+                    <div key={flavourName} className={`rounded-2xl border overflow-hidden ${hasMismatch ? 'border-amber-200' : 'border-green-200'}`}>
+                      <div className={`px-4 py-2.5 flex items-center gap-2 ${hasMismatch ? 'bg-amber-50' : 'bg-green-50'}`}>
+                        <span className={`text-sm font-bold ${hasMismatch ? 'text-amber-800' : 'text-green-800'}`}>{flavourName}</span>
+                        <span className="text-xs text-gray-400">{rows.length} SKU{rows.length !== 1 ? 's' : ''}</span>
+                        {hasMismatch && <span className="text-xs text-amber-600 ml-auto">⚠ name mismatch</span>}
+                      </div>
+                      <table className="w-full text-sm bg-white">
+                        <thead className="border-b border-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">SKU ID</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">SKU Code</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">FG Product Name</th>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">Pack Format</th>
+                            <th className="px-4 py-2 text-xs font-semibold text-gray-400">Edit</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {rows.map(r => (
+                            <tr key={r.sku_id} className={r.flavour_matches_product === false ? 'bg-amber-50/30' : ''}>
+                              <td className="px-4 py-2 font-mono text-xs text-gray-500">#{r.sku_id}</td>
+                              <td className="px-4 py-2 text-gray-800 font-medium">{r.name ?? '—'}</td>
+                              <td className="px-4 py-2 text-gray-700">
+                                {r.product_name ?? '—'}
+                                {r.flavour_matches_product === false && <span className="ml-1 text-amber-500 text-xs">⚠ mismatch</span>}
+                              </td>
+                              <td className="px-4 py-2 text-gray-500 text-xs">{r.pack_format_name ?? '—'}</td>
+                              <td className="px-4 py-2">
+                                <button onClick={() => { setView('table'); setShowOnly('all'); startEdit(r); }}
+                                  className="text-xs text-indigo-600 hover:underline touch-manipulation">Edit</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  ) : (
-                    <p className="text-xs text-red-500 mt-0.5">Not linked — weekly req cannot be calculated</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => startEdit(row)}
-                    className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300 transition-colors touch-manipulation"
-                  >
-                    {row.linked ? 'Edit' : 'Link'}
-                  </button>
-                  {row.linked && (
-                    <button
-                      onClick={() => deleteLink(row.sku_id)}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-colors touch-manipulation"
-                    >
-                      Unlink
-                    </button>
-                  )}
-                </div>
+                  );
+                })}
+                {unlinkedRows.length > 0 && (
+                  <div className="rounded-2xl border border-red-200 overflow-hidden">
+                    <div className="px-4 py-2.5 bg-red-50 flex items-center gap-2">
+                      <AlertCircle size={14} className="text-red-500" />
+                      <span className="text-sm font-bold text-red-700">Unlinked SKUs</span>
+                      <span className="text-xs text-gray-400">{unlinkedRows.length} SKU{unlinkedRows.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <table className="w-full text-sm bg-white">
+                      <thead className="border-b border-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">SKU ID</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-400">FG Product Name</th>
+                          <th className="px-4 py-2 text-xs font-semibold text-gray-400">Link</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {unlinkedRows.map(r => (
+                          <tr key={r.sku_id}>
+                            <td className="px-4 py-2 font-mono text-xs text-gray-500">#{r.sku_id}</td>
+                            <td className="px-4 py-2 text-gray-700">{r.product_name ?? '—'}</td>
+                            <td className="px-4 py-2">
+                              <button onClick={() => { setView('table'); setShowOnly('unlinked'); startEdit(r); }}
+                                className="text-xs text-indigo-600 hover:underline touch-manipulation">Link</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </>
       )}
     </div>
