@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Link2, RefreshCw, CheckCircle2, AlertCircle, Search, X, Wand2 } from 'lucide-react';
+import { Link2, RefreshCw, CheckCircle2, AlertCircle, Search, X, Wand2, Pencil } from 'lucide-react';
 
 interface AlignmentRow {
   sku_id: number;
@@ -66,9 +66,20 @@ export default function SkuAlignmentPage() {
   const [autoAlignResult, setAutoAlignResult] = useState<string | null>(null);
   const [view, setView] = useState<'table' | 'map'>('table');
 
+  // Bulk unlink state
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [bulkUnlinking, setBulkUnlinking] = useState(false);
+
+  // Flavour rename state
+  const [renamingFlavour, setRenamingFlavour] = useState<{ id: number; name: string } | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameSaving, setRenameSaving] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSelected(new Set());
     try {
       const res = await fetch('/api/admin/sku-alignment');
       const json = await res.json();
@@ -96,6 +107,43 @@ export default function SkuAlignmentPage() {
     }
     return true;
   });
+
+  const linkedFiltered = filtered.filter(r => r.linked);
+  const allLinkedFilteredSelected = linkedFiltered.length > 0 && linkedFiltered.every(r => selected.has(r.sku_id));
+
+  function toggleSelect(skuId: number) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(skuId)) next.delete(skuId); else next.add(skuId);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (allLinkedFilteredSelected) {
+      setSelected(prev => {
+        const next = new Set(prev);
+        linkedFiltered.forEach(r => next.delete(r.sku_id));
+        return next;
+      });
+    } else {
+      setSelected(prev => {
+        const next = new Set(prev);
+        linkedFiltered.forEach(r => next.add(r.sku_id));
+        return next;
+      });
+    }
+  }
+
+  async function bulkUnlink() {
+    if (selected.size === 0) return;
+    if (!confirm(`Unlink ${selected.size} SKU(s)? This will remove their flavour/format mappings.`)) return;
+    setBulkUnlinking(true);
+    const ids = Array.from(selected).join(',');
+    await fetch(`/api/admin/sku-alignment?sku_ids=${ids}`, { method: 'DELETE' });
+    setBulkUnlinking(false);
+    await load();
+  }
 
   function startEdit(row: AlignmentRow) {
     setEditing({
@@ -159,6 +207,31 @@ export default function SkuAlignmentPage() {
     if (!confirm(`Remove link for SKU #${skuId}? This will break weekly req calculations for this SKU.`)) return;
     await fetch(`/api/admin/sku-alignment?sku_id=${skuId}`, { method: 'DELETE' });
     await load();
+  }
+
+  function startRenameFlavour(f: Flavour) {
+    setRenamingFlavour(f);
+    setRenameValue(f.name);
+    setRenameError(null);
+  }
+
+  async function saveRenameFlavour() {
+    if (!renamingFlavour) return;
+    if (!renameValue.trim()) { setRenameError('Name cannot be empty.'); return; }
+    setRenameSaving(true);
+    setRenameError(null);
+    try {
+      const res = await fetch('/api/admin/sku-alignment', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prep_product_id: renamingFlavour.id, name: renameValue.trim() }),
+      });
+      const json = await res.json();
+      if (json.error) { setRenameError(json.error); setRenameSaving(false); return; }
+      setRenamingFlavour(null);
+      await load();
+    } catch (e) { setRenameError(String(e)); }
+    setRenameSaving(false);
   }
 
   const flavours = data?.flavours || [];
@@ -233,7 +306,7 @@ export default function SkuAlignmentPage() {
           {/* Controls (table view only) */}
           {view === 'table' && (
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between flex-wrap">
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap items-center">
                 {(['unlinked', 'linked', 'all'] as const).map(key => (
                   <button key={key} onClick={() => setShowOnly(key)}
                     className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${showOnly === key ? 'ring-2 ring-offset-1 ring-gray-400' : ''} ${
@@ -244,6 +317,15 @@ export default function SkuAlignmentPage() {
                      key === 'linked' ? `Linked (${data.linked})` : `All (${data.total})`}
                   </button>
                 ))}
+                {selected.size > 0 && (
+                  <button
+                    onClick={bulkUnlink}
+                    disabled={bulkUnlinking}
+                    className="text-xs font-bold px-3 py-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 touch-manipulation"
+                  >
+                    {bulkUnlinking ? 'Unlinking…' : `Unlink Selected (${selected.size})`}
+                  </button>
+                )}
               </div>
               <div className="relative max-w-xs w-full sm:w-auto">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -335,12 +417,58 @@ export default function SkuAlignmentPage() {
             </div>
           )}
 
+          {/* Rename flavour modal */}
+          {renamingFlavour && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={() => setRenamingFlavour(null)}>
+              <div className="absolute inset-0 bg-black/40" />
+              <div
+                className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 space-y-4"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="font-bold text-gray-900">Rename Flavour</h2>
+                  <button onClick={() => setRenamingFlavour(null)} className="text-gray-400 hover:text-gray-700"><X size={20} /></button>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 mb-1">Flavour Name</label>
+                  <input
+                    type="text"
+                    value={renameValue}
+                    onChange={e => setRenameValue(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                    autoFocus
+                  />
+                </div>
+                {renameError && <p className="text-xs text-red-600 bg-red-50 rounded-xl px-3 py-2">{renameError}</p>}
+                <div className="flex gap-2">
+                  <button onClick={saveRenameFlavour} disabled={renameSaving}
+                    className="flex-1 bg-brand-500 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-brand-600 disabled:opacity-50 touch-manipulation">
+                    {renameSaving ? 'Saving…' : 'Save Name'}
+                  </button>
+                  <button onClick={() => setRenamingFlavour(null)}
+                    className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 touch-manipulation">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── TABLE VIEW ── */}
           {view === 'table' && (
             <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-3 py-3 w-8">
+                      <input
+                        type="checkbox"
+                        checked={allLinkedFilteredSelected}
+                        onChange={toggleSelectAll}
+                        className="rounded"
+                        title="Select all linked SKUs in view"
+                      />
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">SKU</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">FG Product</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wide">Mapped Flavour</th>
@@ -351,11 +479,22 @@ export default function SkuAlignmentPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">No SKUs match your filter.</td></tr>
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400">No SKUs match your filter.</td></tr>
                   ) : filtered.map(row => {
                     const mismatch = row.flavour_matches_product === false;
+                    const isSelected = selected.has(row.sku_id);
                     return (
-                      <tr key={row.sku_id} className={`hover:bg-gray-50 transition-colors ${mismatch ? 'bg-amber-50/40' : ''}`}>
+                      <tr key={row.sku_id} className={`hover:bg-gray-50 transition-colors ${isSelected ? 'bg-red-50/60' : mismatch ? 'bg-amber-50/40' : ''}`}>
+                        <td className="px-3 py-3 text-center">
+                          {row.linked && (
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSelect(row.sku_id)}
+                              className="rounded"
+                            />
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           <span className="font-mono text-xs bg-gray-100 px-1.5 py-0.5 rounded">#{row.sku_id}</span>
                           {row.name && <span className="ml-2 text-xs text-gray-500">{row.name}</span>}
@@ -399,26 +538,35 @@ export default function SkuAlignmentPage() {
 
           {/* ── FLAVOUR MAP VIEW ── */}
           {view === 'map' && (() => {
-            // Group linked SKUs by flavour name
-            const byFlavour = new Map<string, AlignmentRow[]>();
+            const byFlavour = new Map<string, { rows: AlignmentRow[]; flavour_id: number | null }>();
             for (const row of data.rows) {
               if (!row.linked) continue;
               const key = row.flavour_name ?? '(no flavour)';
-              if (!byFlavour.has(key)) byFlavour.set(key, []);
-              byFlavour.get(key)!.push(row);
+              if (!byFlavour.has(key)) byFlavour.set(key, { rows: [], flavour_id: row.flavour_id });
+              byFlavour.get(key)!.rows.push(row);
             }
             const unlinkedRows = data.rows.filter(r => !r.linked);
             const sorted = Array.from(byFlavour.entries()).sort((a, b) => a[0].localeCompare(b[0]));
             return (
               <div className="space-y-3">
-                {sorted.map(([flavourName, rows]) => {
+                {sorted.map(([flavourName, { rows, flavour_id }]) => {
                   const hasMismatch = rows.some(r => r.flavour_matches_product === false);
+                  const flavourObj = flavours.find(f => f.id === flavour_id);
                   return (
                     <div key={flavourName} className={`rounded-2xl border overflow-hidden ${hasMismatch ? 'border-amber-200' : 'border-green-200'}`}>
                       <div className={`px-4 py-2.5 flex items-center gap-2 ${hasMismatch ? 'bg-amber-50' : 'bg-green-50'}`}>
                         <span className={`text-sm font-bold ${hasMismatch ? 'text-amber-800' : 'text-green-800'}`}>{flavourName}</span>
                         <span className="text-xs text-gray-400">{rows.length} SKU{rows.length !== 1 ? 's' : ''}</span>
-                        {hasMismatch && <span className="text-xs text-amber-600 ml-auto">⚠ name mismatch</span>}
+                        {hasMismatch && <span className="text-xs text-amber-600">⚠ name mismatch</span>}
+                        {flavourObj && (
+                          <button
+                            onClick={() => startRenameFlavour(flavourObj)}
+                            className="ml-auto flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 px-2 py-0.5 rounded-lg hover:bg-white transition-colors touch-manipulation"
+                            title="Rename this flavour"
+                          >
+                            <Pencil size={11} /> Rename
+                          </button>
+                        )}
                       </div>
                       <table className="w-full text-sm bg-white">
                         <thead className="border-b border-gray-100">
