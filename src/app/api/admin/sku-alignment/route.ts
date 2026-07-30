@@ -218,22 +218,24 @@ export async function DELETE(req: NextRequest) {
     const admin = adminClient();
     const { searchParams } = new URL(req.url);
 
-    // Bulk via query param
+    // Collect IDs to delete
+    let ids: number[] = [];
     const bulkParam = searchParams.get('sku_ids');
     if (bulkParam) {
-      const ids = bulkParam.split(',').map(Number).filter(Boolean);
+      ids = bulkParam.split(',').map(Number).filter(Boolean);
       if (ids.length === 0) return NextResponse.json({ error: 'No valid ids' }, { status: 400 });
-      const { error } = await admin.schema('sales').from('skus').delete().in('id', ids);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true, deleted: ids.length });
+    } else {
+      const skuId = Number(searchParams.get('sku_id'));
+      if (!skuId) return NextResponse.json({ error: 'sku_id or sku_ids required' }, { status: 400 });
+      ids = [skuId];
     }
 
-    // Single via query param
-    const skuId = Number(searchParams.get('sku_id'));
-    if (!skuId) return NextResponse.json({ error: 'sku_id or sku_ids required' }, { status: 400 });
-    const { error } = await admin.schema('sales').from('skus').delete().eq('id', skuId);
+    // Delete dependent rows first (foreign key: sku_prices.sku_id → skus.id)
+    await admin.schema('sales').from('sku_prices').delete().in('sku_id', ids);
+
+    const { error } = await admin.schema('sales').from('skus').delete().in('id', ids);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, deleted: ids.length });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
