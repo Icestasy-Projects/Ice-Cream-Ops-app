@@ -66,6 +66,7 @@ export default function SkuAlignmentPage() {
   const [autoAlignResult, setAutoAlignResult] = useState<string | null>(null);
   const [view, setView] = useState<'table' | 'map'>('table');
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [bulkUnlinking, setBulkUnlinking] = useState(false);
 
   // Flavour rename state
   const [renamingFlavour, setRenamingFlavour] = useState<{ id: number; name: string } | null>(null);
@@ -117,6 +118,21 @@ export default function SkuAlignmentPage() {
     } else {
       setSelected(prev => { const n = new Set(prev); filtered.forEach(r => n.add(r.sku_id)); return n; });
     }
+  }
+
+  async function bulkUnlink() {
+    if (selected.size === 0) return;
+    if (!confirm(`Unlink ${selected.size} SKU(s)? Their flavour/format mappings will be cleared.`)) return;
+    setBulkUnlinking(true);
+    const ids = Array.from(selected).join(',');
+    await fetch(`/api/admin/sku-alignment?sku_ids=${ids}`, { method: 'DELETE' });
+    setBulkUnlinking(false);
+    await load();
+  }
+
+  async function deleteLink(skuId: number) {
+    await fetch(`/api/admin/sku-alignment?sku_id=${skuId}`, { method: 'DELETE' });
+    await load();
   }
 
   async function realignSelected() {
@@ -320,13 +336,22 @@ export default function SkuAlignmentPage() {
                   </button>
                 ))}
                 {selected.size > 0 && (
-                  <button
-                    onClick={realignSelected}
-                    disabled={autoAligning}
-                    className="text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 touch-manipulation"
-                  >
-                    {autoAligning ? 'Aligning…' : `Re-align Selected (${selected.size})`}
-                  </button>
+                  <>
+                    <button
+                      onClick={bulkUnlink}
+                      disabled={bulkUnlinking}
+                      className="text-xs font-bold px-3 py-1.5 rounded-full bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 touch-manipulation"
+                    >
+                      {bulkUnlinking ? 'Unlinking…' : `Unlink Selected (${selected.size})`}
+                    </button>
+                    <button
+                      onClick={realignSelected}
+                      disabled={autoAligning}
+                      className="text-xs font-bold px-3 py-1.5 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 touch-manipulation"
+                    >
+                      {autoAligning ? 'Aligning…' : `Re-align Selected (${selected.size})`}
+                    </button>
+                  </>
                 )}
               </div>
               <div className="relative max-w-xs w-full sm:w-auto">
@@ -504,10 +529,18 @@ export default function SkuAlignmentPage() {
                             : <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full"><CheckCircle2 size={11} /> OK</span>}
                         </td>
                         <td className="px-4 py-3">
-                          <button onClick={() => startEdit(row)}
-                            className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300 transition-colors touch-manipulation">
-                            {row.linked ? 'Edit' : 'Link'}
-                          </button>
+                          <div className="flex gap-2">
+                            <button onClick={() => startEdit(row)}
+                              className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-300 transition-colors touch-manipulation">
+                              {row.linked ? 'Edit' : 'Link'}
+                            </button>
+                            {row.linked && (
+                              <button onClick={() => deleteLink(row.sku_id)}
+                                className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-red-200 text-red-600 hover:bg-red-50 transition-colors touch-manipulation">
+                                Unlink
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
