@@ -35,9 +35,12 @@ export async function GET() {
       admin.schema('production').from('prep_products').select('id, name'),
     ]);
 
-    const allSkuIds = (Array.from(new Set(
-      (orderLinesRes.data || []).map((r: any) => r.sku_id as number)
-    )) as number[]).sort((a, b) => a - b);
+    // Union all known SKU IDs: from order lines, sales.skus, and v_fg_stock
+    const allSkuIds = (Array.from(new Set([
+      ...(orderLinesRes.data || []).map((r: any) => r.sku_id as number),
+      ...(salesSkusRes.data || []).map((r: any) => r.id as number),
+      ...(fgStockRes.data || []).map((r: any) => r.fg_sku_id as number),
+    ])) as number[]).sort((a, b) => a - b);
 
     const salesSkus = (salesSkusRes.data || []) as Array<{
       id: number; sku_code: string | null; flavour_id: number | null; pack_format_id: number | null;
