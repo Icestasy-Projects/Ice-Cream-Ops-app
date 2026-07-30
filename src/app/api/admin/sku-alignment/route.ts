@@ -230,12 +230,13 @@ export async function DELETE(req: NextRequest) {
       ids = [skuId];
     }
 
-    // Delete dependent rows first (foreign key: sku_prices.sku_id → skus.id)
-    await admin.schema('sales').from('sku_prices').delete().in('sku_id', ids);
-
-    const { error } = await admin.schema('sales').from('skus').delete().in('id', ids);
+    // Unlink = clear flavour_id and pack_format_id (do NOT delete the row —
+    // order_lines and sku_prices hold FK references to skus.id)
+    const { error } = await admin.schema('sales').from('skus')
+      .update({ flavour_id: null, pack_format_id: null })
+      .in('id', ids);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, deleted: ids.length });
+    return NextResponse.json({ ok: true, unlinked: ids.length });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
