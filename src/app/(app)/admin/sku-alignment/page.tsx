@@ -58,7 +58,7 @@ export default function SkuAlignmentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [showOnly, setShowOnly] = useState<'all' | 'unlinked' | 'linked'>('unlinked');
+  const [showOnly, setShowOnly] = useState<'all' | 'unlinked' | 'linked' | 'mismatch'>('all');
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -93,6 +93,7 @@ export default function SkuAlignmentPage() {
   const filtered = (data?.rows || []).filter(row => {
     if (showOnly === 'unlinked' && row.linked) return false;
     if (showOnly === 'linked' && !row.linked) return false;
+    if (showOnly === 'mismatch' && row.flavour_matches_product !== false) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       if (
@@ -295,14 +296,15 @@ export default function SkuAlignmentPage() {
           {view === 'table' && (
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between flex-wrap">
               <div className="flex gap-2 flex-wrap items-center">
-                {(['unlinked', 'linked', 'all'] as const).map(key => (
+                {([
+                  { key: 'all', label: `All (${data.total})`, cls: 'bg-gray-100 text-gray-700 hover:bg-gray-200' },
+                  { key: 'linked', label: `Linked (${data.linked})`, cls: 'bg-green-100 text-green-700 hover:bg-green-200' },
+                  { key: 'unlinked', label: `Unlinked (${data.unlinked})`, cls: 'bg-red-100 text-red-700 hover:bg-red-200' },
+                  { key: 'mismatch', label: `Mismatch (${data.mismatched})`, cls: 'bg-amber-100 text-amber-700 hover:bg-amber-200' },
+                ] as const).map(({ key, label, cls }) => (
                   <button key={key} onClick={() => setShowOnly(key)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${showOnly === key ? 'ring-2 ring-offset-1 ring-gray-400' : ''} ${
-                      key === 'unlinked' ? 'bg-red-100 text-red-700 hover:bg-red-200' :
-                      key === 'linked' ? 'bg-green-100 text-green-700 hover:bg-green-200' :
-                      'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                    {key === 'unlinked' ? `Unlinked (${data.unlinked})` :
-                     key === 'linked' ? `Linked (${data.linked})` : `All (${data.total})`}
+                    className={`text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${cls} ${showOnly === key ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}>
+                    {label}
                   </button>
                 ))}
                 {selected.size > 0 && (
