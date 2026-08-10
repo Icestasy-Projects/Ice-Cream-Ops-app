@@ -423,9 +423,35 @@ export default function SkuAlignmentPage() {
                       type="text"
                       value={editing.name}
                       onChange={e => setEditing(s => s ? { ...s, name: e.target.value } : s)}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
                       placeholder={`SKU #${editing.sku_id}`}
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 mb-1">FG Product (Production)</label>
+                    <select
+                      value={data?.fg_stock?.find(s => s.fg_sku_id === editing.sku_id)?.product_name ?? ''}
+                      onChange={e => {
+                        const selected = e.target.value;
+                        if (!selected) return;
+                        // Auto-suggest matching flavour
+                        const matchedFlavour = flavours.find(f =>
+                          selected.toLowerCase().includes(f.name.toLowerCase().replace(/ mix$/, '').replace(/ \(.*\)/, '')) ||
+                          f.name.toLowerCase().replace(/ mix$/, '').replace(/ \(.*\)/, '').split(' ').some((w: string) => w.length > 3 && selected.toLowerCase().includes(w))
+                        );
+                        setEditing(s => s ? { ...s, flavour_id: matchedFlavour?.id || s.flavour_id } : s);
+                      }}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"
+                    >
+                      <option value="">— select FG product —</option>
+                      {(data?.fg_stock || []).slice().sort((a: any, b: any) => a.product_name.localeCompare(b.product_name)).map((s: any) => (
+                        <option key={s.fg_sku_id} value={s.product_name}>
+                          #{s.fg_sku_id} — {s.product_name} ({s.unit})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-gray-400 mt-1">Selecting a product will suggest the matching flavour below.</p>
                   </div>
 
                   <div>
@@ -433,7 +459,7 @@ export default function SkuAlignmentPage() {
                     <select
                       value={editing.flavour_id}
                       onChange={e => setEditing(s => s ? { ...s, flavour_id: Number(e.target.value) || '' } : s)}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"
                     >
                       <option value="">— select flavour —</option>
                       {flavours.sort((a, b) => a.name.localeCompare(b.name)).map(f => (
@@ -447,7 +473,7 @@ export default function SkuAlignmentPage() {
                     <select
                       value={editing.pack_format_id}
                       onChange={e => setEditing(s => s ? { ...s, pack_format_id: Number(e.target.value) || '' } : s)}
-                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"
                     >
                       <option value="">— select format —</option>
                       {packFormats.sort((a, b) => a.name.localeCompare(b.name)).map(p => (
