@@ -1,6 +1,5 @@
 'use client';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
@@ -65,14 +64,16 @@ export default function NavBar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-brand-800 shadow-md">
+      <header className="sticky top-0 z-40 shadow-md" style={{background: 'linear-gradient(to right, #1a3fa8, #2563eb, #3b8ef0)'}}>
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
-            <Image src="/logo.svg" alt="Icestasy" width={28} height={28} className="brightness-0 invert" />
+          <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
+            <div className="bg-white rounded-lg p-1 flex items-center justify-center">
+              <img src="/logo1.jpeg" alt="Icestasy" className="h-7 w-auto" />
+            </div>
             <div className="leading-none">
-              <span className="font-bold text-white text-base tracking-wide">ICESTASY</span>
-              <span className="text-brand-300 font-medium text-xs block tracking-widest">OPS PORTAL</span>
+              <span className="font-bold text-white text-base tracking-wide">Icestasy</span>
+              <span className="text-blue-200 font-medium text-xs block tracking-widest">HR PORTAL</span>
             </div>
           </Link>
 
@@ -165,7 +166,7 @@ export default function NavBar() {
             className="relative ml-auto w-72 bg-white h-full shadow-2xl overflow-y-auto flex flex-col"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 h-14 border-b border-slate-100 bg-brand-800 shrink-0">
+            <div className="flex items-center justify-between px-4 h-14 border-b border-blue-700 shrink-0" style={{background: 'linear-gradient(to right, #1a3fa8, #2563eb)'}}>
               <div>
                 <p className="font-semibold text-white text-sm">{displayName}</p>
                 <p className="text-xs text-brand-300">{role ? ROLE_LABELS[role] : ''}</p>
