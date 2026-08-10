@@ -52,14 +52,14 @@ export default function CleanupPage() {
     }
   }
 
-  async function handleResetStock() {
+  async function handleResetStock(scope: string) {
     setResettingStock(true);
     setStockResetResult(null);
     try {
-      const res = await fetch('/api/admin/reset-stock', { method: 'POST' });
+      const res = await fetch(`/api/admin/reset-stock?scope=${scope}`, { method: 'POST' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
-      setStockResetResult('All RM stock reset to 0. Ready for initial data entry.');
+      if (!res.ok) throw new Error((data.errors || [data.error]).join('; '));
+      setStockResetResult(`Cleared: ${(data.cleared as string[]).join(', ')}`);
       setStockResetConfirm(false);
     } catch (e: unknown) {
       setStockResetResult('Error: ' + (e instanceof Error ? e.message : String(e)));
@@ -91,33 +91,45 @@ export default function CleanupPage() {
         description="Permanently delete B2B Add-On and Extras SKUs from the database."
       />
 
-      {/* Reset RM Stock section */}
+      {/* Reset Stock section */}
       <div className="card space-y-3 border border-red-100 bg-red-50/40">
-        <p className="text-sm font-bold text-red-800">Reset All RM Stock to Zero</p>
-        <p className="text-xs text-red-600">Clears all raw material ledger entries and purchase orders. Use before entering initial stock for test launch. <strong>This cannot be undone.</strong></p>
+        <p className="text-sm font-bold text-red-800">Reset Stock to Zero</p>
+        <p className="text-xs text-red-600">Clears ledger entries and production records for the selected stock type. Use before entering initial data for test launch. <strong>Cannot be undone.</strong></p>
 
         {!stockResetConfirm ? (
-          <button
-            onClick={() => setStockResetConfirm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl touch-manipulation"
-          >
-            <RotateCcw size={15} />
-            Reset All RM Stock to 0
-          </button>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { scope: 'rm',   label: 'Reset RM Stock' },
+              { scope: 'prep', label: 'Reset Prep Stock' },
+              { scope: 'fg',   label: 'Reset FG Stock' },
+              { scope: 'all',  label: 'Reset ALL Stock' },
+            ].map(({ scope, label }) => (
+              <button
+                key={scope}
+                onClick={() => { setStockResetConfirm(true); setStockResetResult(scope); }}
+                className={`flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl touch-manipulation ${scope === 'all' ? 'bg-red-700 hover:bg-red-800' : 'bg-red-500 hover:bg-red-600'}`}
+              >
+                <RotateCcw size={14} />
+                {label}
+              </button>
+            ))}
+          </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-xs font-bold text-red-700">Are you sure? All stock history will be permanently deleted.</p>
+            <p className="text-xs font-bold text-red-700">
+              Confirm: reset <strong>{stockResetResult === 'all' ? 'ALL (RM + Prep + FG)' : stockResetResult?.toUpperCase()}</strong> stock to 0? All history will be permanently deleted.
+            </p>
             <div className="flex gap-2">
               <button
-                onClick={handleResetStock}
+                onClick={() => { const s = stockResetResult || 'all'; setStockResetResult(null); handleResetStock(s); }}
                 disabled={resettingStock}
                 className="flex items-center gap-2 px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white text-sm font-bold rounded-xl disabled:opacity-50 touch-manipulation"
               >
                 <RotateCcw size={15} className={resettingStock ? 'animate-spin' : ''} />
-                {resettingStock ? 'Resetting...' : 'Yes, clear everything'}
+                {resettingStock ? 'Resetting...' : 'Yes, clear it'}
               </button>
               <button
-                onClick={() => setStockResetConfirm(false)}
+                onClick={() => { setStockResetConfirm(false); setStockResetResult(null); }}
                 className="px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 touch-manipulation"
               >
                 Cancel
@@ -126,7 +138,7 @@ export default function CleanupPage() {
           </div>
         )}
 
-        {stockResetResult && (
+        {stockResetResult && !stockResetConfirm && (
           <p className={`text-sm px-3 py-2 rounded-xl ${stockResetResult.startsWith('Error') ? 'bg-red-100 text-red-800' : 'bg-green-50 text-green-700'}`}>
             {stockResetResult}
           </p>
