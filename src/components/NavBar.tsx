@@ -71,9 +71,9 @@ export default function NavBar() {
             <div className="bg-white rounded-lg p-1 flex items-center justify-center">
               <img src="/logo1.jpeg" alt="Icestasy" className="h-7 w-auto" />
             </div>
-            <div className="leading-none">
+            <div className="leading-none font-poppins">
               <span className="font-bold text-white text-base tracking-wide">Icestasy</span>
-              <span className="text-blue-200 font-medium text-xs block tracking-widest">HR PORTAL</span>
+              <span className="text-blue-200 font-semibold text-[10px] block tracking-[0.2em] uppercase">HR PORTAL</span>
             </div>
           </Link>
 
