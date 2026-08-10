@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import ScreenHeader from '@/components/ScreenHeader';
-import { Trash2, AlertTriangle, CheckCircle, Eye, RefreshCw } from 'lucide-react';
+import { Trash2, AlertTriangle, CheckCircle, Eye, RefreshCw, RotateCcw } from 'lucide-react';
 
 interface PreviewData {
   fg_skus: { fg_sku_id: number; product_name: string; unit: string }[];
@@ -17,6 +17,9 @@ export default function CleanupPage() {
   const [error, setError] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [seedResult, setSeedResult] = useState<string | null>(null);
+  const [resettingStock, setResettingStock] = useState(false);
+  const [stockResetResult, setStockResetResult] = useState<string | null>(null);
+  const [stockResetConfirm, setStockResetConfirm] = useState(false);
 
   async function handlePreview() {
     setPreviewing(true);
@@ -49,6 +52,22 @@ export default function CleanupPage() {
     }
   }
 
+  async function handleResetStock() {
+    setResettingStock(true);
+    setStockResetResult(null);
+    try {
+      const res = await fetch('/api/admin/reset-stock', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setStockResetResult('All RM stock reset to 0. Ready for initial data entry.');
+      setStockResetConfirm(false);
+    } catch (e: unknown) {
+      setStockResetResult('Error: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setResettingStock(false);
+    }
+  }
+
   async function handleSeed() {
     setSeeding(true);
     setSeedResult(null);
@@ -71,6 +90,48 @@ export default function CleanupPage() {
         title="DB Cleanup"
         description="Permanently delete B2B Add-On and Extras SKUs from the database."
       />
+
+      {/* Reset RM Stock section */}
+      <div className="card space-y-3 border border-red-100 bg-red-50/40">
+        <p className="text-sm font-bold text-red-800">Reset All RM Stock to Zero</p>
+        <p className="text-xs text-red-600">Clears all raw material ledger entries and purchase orders. Use before entering initial stock for test launch. <strong>This cannot be undone.</strong></p>
+
+        {!stockResetConfirm ? (
+          <button
+            onClick={() => setStockResetConfirm(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl touch-manipulation"
+          >
+            <RotateCcw size={15} />
+            Reset All RM Stock to 0
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-red-700">Are you sure? All stock history will be permanently deleted.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleResetStock}
+                disabled={resettingStock}
+                className="flex items-center gap-2 px-4 py-2.5 bg-red-700 hover:bg-red-800 text-white text-sm font-bold rounded-xl disabled:opacity-50 touch-manipulation"
+              >
+                <RotateCcw size={15} className={resettingStock ? 'animate-spin' : ''} />
+                {resettingStock ? 'Resetting...' : 'Yes, clear everything'}
+              </button>
+              <button
+                onClick={() => setStockResetConfirm(false)}
+                className="px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 touch-manipulation"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {stockResetResult && (
+          <p className={`text-sm px-3 py-2 rounded-xl ${stockResetResult.startsWith('Error') ? 'bg-red-100 text-red-800' : 'bg-green-50 text-green-700'}`}>
+            {stockResetResult}
+          </p>
+        )}
+      </div>
 
       {/* Seed recent orders section */}
       <div className="card space-y-3 border border-blue-100 bg-blue-50/40">
