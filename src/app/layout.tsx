@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   title: 'Icestasy Ops',
   description: 'Kitchen and factory operations for Icestasy',
   icons: {
-    icon: '/logo.svg',
-    shortcut: '/logo.svg',
-    apple: '/logo.svg',
+    icon: '/logo1.jpeg',
+    shortcut: '/logo1.jpeg',
+    apple: '/logo1.jpeg',
   },
 };
 
