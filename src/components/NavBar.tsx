@@ -73,7 +73,7 @@ export default function NavBar() {
             </div>
             <div className="leading-none font-poppins">
               <span className="font-bold text-white text-base tracking-wide">Icestasy</span>
-              <span className="text-blue-200 font-semibold text-[10px] block tracking-[0.2em] uppercase">HR PORTAL</span>
+              <span className="text-blue-200 font-semibold text-[10px] block tracking-[0.2em] uppercase">OPS PORTAL</span>
             </div>
           </Link>
 
