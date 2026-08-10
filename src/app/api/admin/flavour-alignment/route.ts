@@ -352,7 +352,12 @@ export async function POST(req: NextRequest) {
             });
             if (!error) inserted.push(fid);
           } else {
-            missing.push(fid);
+            // No fg_sku with this id — insert a new sales.sku row with auto-generated id
+            const { error } = await admin.schema('sales').from('skus').insert({
+              sku_code: flavour.name, flavour_id: fid, pack_format_id: null,
+            });
+            if (!error) inserted.push(fid);
+            else missing.push(fid);
           }
         }
       }
