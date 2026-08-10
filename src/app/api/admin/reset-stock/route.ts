@@ -25,11 +25,11 @@ export async function POST(req: NextRequest) {
     const cleared: string[] = [];
     const errors: string[] = [];
 
-    async function del(schema: string, table: string, label: string) {
+    const del = async (schema: string, table: string, label: string) => {
       const { error } = await admin.schema(schema).from(table).delete().neq('id', 0);
       if (error) errors.push(`${label}: ${error.message}`);
       else cleared.push(label);
-    }
+    };
 
     if (scope === 'rm' || scope === 'all') {
       await del('production', 'rm_ledger', 'RM ledger');
