@@ -18,12 +18,14 @@ interface FlavourRow {
   status: 'ok' | 'no_sales_sku' | 'no_prep' | 'orphan';
 }
 interface PackFormat { id: number; name: string; unit_volume_ml: number; units_per_pack: number; }
+interface FgStockItem { fg_sku_id: number; product_name: string; unit: string; }
 interface AlignData {
   flavour_rows: FlavourRow[];
   unlinked_preps: PrepProduct[];
   orphan_sales_skus: { id: number; name: string | null; flavour_id: number | null; pack_format_id: number | null; in_order_lines: boolean; }[];
   unlinked_order_line_skus: number[];
   pack_formats: PackFormat[];
+  fg_stock: FgStockItem[];
   summary: {
     total_flavours: number; ok: number; no_sales_sku: number;
     no_prep: number; orphan: number; unlinked_preps: number; unlinked_order_line_skus: number;
@@ -49,24 +51,42 @@ function StatusChip({ status }: { status: FlavourRow['status'] }) {
 
 // Modal for creating a sales.skus entry for a flavour
 function CreateSkuModal({
-  flavourId, flavourName, packFormats,
+  flavourId, flavourName, packFormats, fgStock,
   onSave, onClose,
 }: {
-  flavourId: number; flavourName: string; packFormats: PackFormat[];
+  flavourId: number; flavourName: string; packFormats: PackFormat[]; fgStock: FgStockItem[];
   onSave: (skuId: number, packFormatId: number, name: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const [skuId, setSkuId] = useState('');
+  const [selectedFgSkuId, setSelectedFgSkuId] = useState('');
   const [packFormatId, setPackFormatId] = useState('');
-  const [name, setName] = useState(flavourName);
+  const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
 
+  function handleFgSelect(fgSkuId: string) {
+    setSelectedFgSkuId(fgSkuId);
+    if (fgSkuId) {
+      const fg = fgStock.find(s => String(s.fg_sku_id) === fgSkuId);
+      if (fg && !name) setName(fg.product_name);
+      // Auto-select pack format by matching unit string
+      if (fg) {
+        const unit = fg.unit.toLowerCase();
+        const matched = packFormats.find(p =>
+          unit.includes(p.name.toLowerCase()) ||
+          p.name.toLowerCase().split(' ').some(w => unit.includes(w))
+        );
+        if (matched) setPackFormatId(String(matched.id));
+      }
+    }
+  }
+
   async function submit() {
-    if (!skuId || !packFormatId) { setErr('SKU ID and pack format are required.'); return; }
+    if (!selectedFgSkuId || !packFormatId) { setErr('FG product and pack format are required.'); return; }
     setSaving(true);
     try {
-      await onSave(Number(skuId), Number(packFormatId), name || flavourName);
+      const fg = fgStock.find(s => String(s.fg_sku_id) === selectedFgSkuId);
+      await onSave(Number(selectedFgSkuId), Number(packFormatId), name || fg?.product_name || flavourName);
       onClose();
     } catch (e) { setErr(String(e)); }
     setSaving(false);
@@ -77,40 +97,48 @@ function CreateSkuModal({
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4 space-y-4" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-bold text-gray-900">Add Sales SKU for <span className="text-indigo-600">{flavourName}</span></h2>
+          <h2 className="font-bold text-gray-900">Add SKU for <span className="text-indigo-600">{flavourName}</span></h2>
           <button onClick={onClose}><X size={20} className="text-gray-400" /></button>
         </div>
-        <p className="text-xs text-gray-500">
-          Enter the SKU ID that appears in your order system (Order Desk / sales.order_lines) for this flavour + format.
-        </p>
+
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1">SKU ID (from order system)</label>
-            <input type="number" value={skuId} onChange={e => setSkuId(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
-              placeholder="e.g. 48" autoFocus />
+            <label className="block text-xs font-semibold text-gray-500 mb-1">FG Product</label>
+            <select value={selectedFgSkuId} onChange={e => handleFgSelect(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white" autoFocus>
+              <option value="">— select FG product —</option>
+              {fgStock.slice().sort((a, b) => a.product_name.localeCompare(b.product_name)).map(s => (
+                <option key={s.fg_sku_id} value={s.fg_sku_id}>
+                  #{s.fg_sku_id} — {s.product_name} ({s.unit})
+                </option>
+              ))}
+            </select>
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Pack Format</label>
             <select value={packFormatId} onChange={e => setPackFormatId(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white">
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white">
               <option value="">— select format —</option>
-              {packFormats.sort((a, b) => a.name.localeCompare(b.name)).map(p => (
+              {packFormats.slice().sort((a, b) => a.name.localeCompare(b.name)).map(p => (
                 <option key={p.id} value={p.id}>{p.name} ({p.unit_volume_ml}ml × {p.units_per_pack})</option>
               ))}
             </select>
           </div>
+
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Display Name</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300"
               placeholder={flavourName} />
           </div>
+
           {err && <p className="text-xs text-red-600 bg-red-50 rounded-xl px-3 py-2">{err}</p>}
         </div>
+
         <div className="flex gap-2">
           <button onClick={submit} disabled={saving}
-            className="flex-1 bg-brand-500 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-brand-600 disabled:opacity-50">
+            className="flex-1 bg-brand-600 text-white font-semibold py-2.5 rounded-xl text-sm hover:bg-brand-700 disabled:opacity-50">
             {saving ? 'Saving...' : 'Create SKU'}
           </button>
           <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
@@ -191,7 +219,7 @@ export default function FlavourAlignmentPage() {
   if (error) return <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-700 text-sm">{error}</div>;
   if (!data) return null;
 
-  const { summary, flavour_rows, unlinked_preps, orphan_sales_skus, unlinked_order_line_skus, pack_formats } = data;
+  const { summary, flavour_rows, unlinked_preps, orphan_sales_skus, unlinked_order_line_skus, pack_formats, fg_stock } = data;
 
   const visibleRows = filter === 'issues'
     ? flavour_rows.filter(r => r.status !== 'ok')
@@ -387,6 +415,7 @@ export default function FlavourAlignmentPage() {
           flavourId={modal.flavourId}
           flavourName={modal.flavourName}
           packFormats={pack_formats}
+          fgStock={fg_stock || []}
           onSave={(skuId, packFormatId, name) => createSalesSku(modal.flavourId, skuId, packFormatId, name)}
           onClose={() => setModal(null)}
         />
