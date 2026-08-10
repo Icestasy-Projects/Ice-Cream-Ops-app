@@ -218,8 +218,9 @@ export default function FlavourAlignmentPage() {
       if (json.error) {
         setCreateSkusResult(`Error: ${json.error}`);
       } else {
+        const count = json.updated ?? json.created ?? 0;
         const skipped = json.skipped?.length ? ` (${json.skipped.length} could not be matched)` : '';
-        setCreateSkusResult(`Done — ${json.created} SKU${json.created !== 1 ? 's' : ''} created${skipped}.`);
+        setCreateSkusResult(`Done — ${count} SKU${count !== 1 ? 's' : ''} linked${skipped}.`);
         await load();
       }
     } catch (e) { setCreateSkusResult(String(e)); }

@@ -184,42 +184,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, inserted: toInsert.length, flavours: toInsert });
     }
 
-    // create_missing_skus: match each unlinked flavour to ALL its fg_skus by name,
-    // creating one sales.sku per fg_sku found (one per pack format variant).
-    // Strips volume/format suffixes from fg_sku names to get the flavour core first.
+    // create_missing_skus: all fg_skus already exist in sales.skus (same id), but those
+    // rows have NULL flavour_id. Strategy: for each unlinked flavour, find the fg_sku
+    // whose name matches, then UPDATE sales.skus SET flavour_id = flavour.id WHERE id = fg_sku_id.
     if (body.action === 'create_missing_skus') {
-      const [prepProdsRes3, salesSkusRes3, fgSkusRes3, packFormatsRes3] = await Promise.all([
+      const [prepProdsRes3, salesSkusRes3, fgSkusRes3] = await Promise.all([
         admin.schema('production').from('prep_products').select('id, name'),
-        admin.schema('sales').from('skus').select('id, flavour_id'),
+        admin.schema('sales').from('skus').select('id, flavour_id, sku_code'),
         admin.schema('production').from('fg_skus').select('fg_sku_id, product_name, unit'),
-        admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
       ]);
 
       type R2 = Record<string, unknown>;
       const prepProds3 = (prepProdsRes3.data || []) as R2[];
       const salesSkus3 = (salesSkusRes3.data || []) as R2[];
       const fgSkus3 = (fgSkusRes3.data || []) as R2[];
-      const packFormats3 = (packFormatsRes3.data || []) as R2[];
 
+      // Flavours already linked
       const linkedFlavourIds = new Set<number>(
         salesSkus3.filter((s: R2) => s.flavour_id).map((s: R2) => s.flavour_id as number)
       );
-      const usedFgSkuIds = new Set<number>(salesSkus3.map((s: R2) => s.id as number));
       const unlinkedFlavours = prepProds3.filter(p => !linkedFlavourIds.has(p.id as number));
 
       if (unlinkedFlavours.length === 0) {
-        return NextResponse.json({ ok: true, created: 0, message: 'All flavours already have sales SKUs.' });
+        return NextResponse.json({ ok: true, updated: 0, message: 'All flavours already have sales SKUs.' });
       }
 
-      const availableFgSkus = fgSkus3.filter(f => !usedFgSkuIds.has(f.fg_sku_id as number));
+      // sales.skus with no flavour_id — keyed by id
+      const unlinkedSalesSkus = salesSkus3.filter((s: R2) => !s.flavour_id);
+      const salesSkuById = new Map<number, R2>(salesSkus3.map((s: R2) => [s.id as number, s]));
 
-      // Normalise: lowercase, strip common category words, strip non-alphanumeric
+      // fg_skus keyed by fg_sku_id (same as sales.skus.id)
+      const fgSkuById = new Map<number, R2>(fgSkus3.map((f: R2) => [f.fg_sku_id as number, f]));
+
+      // Normalise name: lowercase, strip category words + non-alphanumeric
       const norm = (s: string) => s.toLowerCase()
         .replace(/\b(mix|ice\s*cream|gelato|sorbet|kulfi|frozen|dessert)\b/g, '')
         .replace(/[^a-z0-9]/g, '');
 
-      // Strip volume/format suffix from fg_sku product_name to get flavour core
-      // e.g. "Banarasi Meetha Paan 500ml Cup" → "Banarasi Meetha Paan"
+      // Strip volume/format suffix from fg_sku product_name to get the flavour core
       const fgFlavourCore = (productName: string): string => {
         const stripped = productName
           .replace(/\s+\d+\s*(ml|l|litre|liter|kg|g)\b.*/i, '')
@@ -228,110 +230,84 @@ export async function POST(req: NextRequest) {
         return norm(stripped);
       };
 
-      // Infer pack_format_id from fg_sku unit + product name
-      const inferPackFormatId = (unit: string, productName: string): number | null => {
-        const combined = (unit + ' ' + productName).toLowerCase();
-        for (const pf of packFormats3) {
-          const pfName = (pf.name as string).toLowerCase();
-          if (pfName && combined.includes(pfName)) return pf.id as number;
-        }
-        const mlMatch = combined.match(/(\d+)\s*ml/);
-        if (mlMatch) {
-          const ml = parseInt(mlMatch[1]);
-          const found = packFormats3.find(pf => (pf.unit_volume_ml as number) === ml);
-          if (found) return found.id as number;
-        }
-        const lMatch = combined.match(/(\d+(?:\.\d+)?)\s*l(?:itre|iter)?\b/);
-        if (lMatch) {
-          const ml = Math.round(parseFloat(lMatch[1]) * 1000);
-          const found = packFormats3.find(pf => (pf.unit_volume_ml as number) === ml);
-          if (found) return found.id as number;
-        }
-        return null;
-      };
-
-      // Build map: normalised flavour core → list of fg_skus
-      const fgByCore = new Map<string, R2[]>();
-      for (const fg of availableFgSkus) {
-        const core = fgFlavourCore(fg.product_name as string);
-        if (!fgByCore.has(core)) fgByCore.set(core, []);
-        fgByCore.get(core)!.push(fg);
+      // Build map: fg core → list of sales.skus (via fg_sku name lookup) that have no flavour_id
+      const unlinkedByCore = new Map<string, R2[]>();
+      for (const ss of unlinkedSalesSkus) {
+        const fg = fgSkuById.get(ss.id as number);
+        const core = fg ? fgFlavourCore(fg.product_name as string) : norm(ss.sku_code as string || '');
+        if (!unlinkedByCore.has(core)) unlinkedByCore.set(core, []);
+        unlinkedByCore.get(core)!.push(ss);
       }
 
-      const toInsert: R2[] = [];
+      // Track which sales.sku ids we've already claimed this run
+      const claimedSalesSkuIds = new Set<number>();
+      const toUpdate: { id: number; flavour_id: number }[] = [];
       const skipped: R2[] = [];
-      const matched: { flavour: string; skus: string[] }[] = [];
+      const matched: { flavour: string; sku_ids: number[] }[] = [];
 
       for (const flavour of unlinkedFlavours) {
         const flavourCore = norm(flavour.name as string);
 
         // 1. Exact core match
-        let fgMatches: R2[] = fgByCore.get(flavourCore) || [];
+        let ssMatches: R2[] = (unlinkedByCore.get(flavourCore) || []).filter(s => !claimedSalesSkuIds.has(s.id as number));
 
-        // 2. Partial/trigram match across all cores
-        if (fgMatches.length === 0) {
+        // 2. Partial / trigram match
+        if (ssMatches.length === 0) {
           let bestScore = 0;
           let bestCore = '';
-          for (const [core] of Array.from(fgByCore)) {
+          for (const [core] of Array.from(unlinkedByCore)) {
             let score = 0;
             if (core === flavourCore) score = 1000;
             else if (core.includes(flavourCore) || flavourCore.includes(core)) {
               score = 100 + Math.min(core.length, flavourCore.length);
             } else {
-              const tgm = (s: string) => {
-                const t = new Set<string>();
-                for (let i = 0; i <= s.length - 3; i++) t.add(s.slice(i, i + 3));
-                return t;
-              };
+              const tgm = (s: string) => { const t = new Set<string>(); for (let i = 0; i <= s.length - 3; i++) t.add(s.slice(i, i + 3)); return t; };
               const ft = tgm(flavourCore), gt = tgm(core);
-              let shared = 0;
-              ft.forEach(t => { if (gt.has(t)) shared++; });
+              let shared = 0; ft.forEach(t => { if (gt.has(t)) shared++; });
               score = ft.size >= 2 ? shared / ft.size : 0;
             }
             if (score > bestScore && score >= 0.5) { bestScore = score; bestCore = core; }
           }
-          if (bestCore) fgMatches = fgByCore.get(bestCore) || [];
+          if (bestCore) ssMatches = (unlinkedByCore.get(bestCore) || []).filter(s => !claimedSalesSkuIds.has(s.id as number));
         }
 
-        if (fgMatches.length === 0) {
-          skipped.push({ flavour_id: flavour.id, flavour_name: flavour.name, reason: 'No matching FG SKU found' });
+        if (ssMatches.length === 0) {
+          skipped.push({ flavour_id: flavour.id, flavour_name: flavour.name, reason: 'No matching unlinked sales.sku found' });
           continue;
         }
 
-        const addedNames: string[] = [];
-        for (const fg of fgMatches) {
-          if (usedFgSkuIds.has(fg.fg_sku_id as number)) continue;
-          const packFormatId = inferPackFormatId(fg.unit as string, fg.product_name as string);
-          toInsert.push({
-            id: fg.fg_sku_id,
-            sku_code: fg.product_name,
-            flavour_id: flavour.id,
-            pack_format_id: packFormatId,
-          });
-          usedFgSkuIds.add(fg.fg_sku_id as number);
-          addedNames.push(fg.product_name as string);
+        const ids: number[] = [];
+        for (const ss of ssMatches) {
+          if (claimedSalesSkuIds.has(ss.id as number)) continue;
+          toUpdate.push({ id: ss.id as number, flavour_id: flavour.id as number });
+          claimedSalesSkuIds.add(ss.id as number);
+          ids.push(ss.id as number);
         }
-        if (addedNames.length > 0) matched.push({ flavour: flavour.name as string, skus: addedNames });
+        if (ids.length > 0) matched.push({ flavour: flavour.name as string, sku_ids: ids });
       }
 
-      // Debug: return what cores were extracted so we can diagnose mismatches
-      const debugCores = {
-        flavour_cores: unlinkedFlavours.map(f => ({ id: f.id, name: f.name, core: norm(f.name as string) })),
-        fg_cores: availableFgSkus.slice(0, 30).map(f => ({
-          id: f.fg_sku_id, name: f.product_name, unit: f.unit,
-          core: fgFlavourCore(f.product_name as string),
-        })),
-        available_fg_count: availableFgSkus.length,
-      };
-
-      if (toInsert.length === 0) {
-        return NextResponse.json({ ok: true, created: 0, skipped, message: 'No SKUs could be auto-created.', debug: debugCores });
+      if (toUpdate.length === 0) {
+        // Return debug info so we can diagnose
+        const debugInfo = {
+          unlinked_flavours: unlinkedFlavours.map(f => ({ id: f.id, name: f.name, core: norm(f.name as string) })),
+          unlinked_sales_skus: unlinkedSalesSkus.slice(0, 30).map(ss => {
+            const fg = fgSkuById.get(ss.id as number);
+            return { id: ss.id, sku_code: ss.sku_code, fg_name: fg?.product_name ?? null, core: fg ? fgFlavourCore(fg.product_name as string) : null };
+          }),
+          unlinked_sales_count: unlinkedSalesSkus.length,
+        };
+        return NextResponse.json({ ok: true, updated: 0, skipped, message: 'No SKUs could be linked.', debug: debugInfo });
       }
 
-      const { error: insertErr2 } = await admin.schema('sales').from('skus').insert(toInsert);
-      if (insertErr2) return NextResponse.json({ error: insertErr2.message }, { status: 500 });
+      // Update each sales.sku row with its matched flavour_id
+      const errors: string[] = [];
+      for (const u of toUpdate) {
+        const { error: ue } = await admin.schema('sales').from('skus').update({ flavour_id: u.flavour_id }).eq('id', u.id);
+        if (ue) errors.push(`sku ${u.id}: ${ue.message}`);
+      }
+      if (errors.length > 0) return NextResponse.json({ error: errors.join('; ') }, { status: 500 });
 
-      return NextResponse.json({ ok: true, created: toInsert.length, skipped, matched });
+      return NextResponse.json({ ok: true, updated: toUpdate.length, skipped, matched });
     }
 
     // debug_data: returns raw prep_products and fg_skus names for inspection
