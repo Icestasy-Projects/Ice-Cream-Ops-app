@@ -335,6 +335,7 @@ export async function POST(req: NextRequest) {
       const updated: number[] = [];
       const inserted: number[] = [];
       const missing: number[] = [];
+      const errors: string[] = [];
 
       for (const flavour of unlinked) {
         const fid = flavour.id as number;
@@ -352,27 +353,31 @@ export async function POST(req: NextRequest) {
             });
             if (!error) inserted.push(fid);
           } else {
-            // No fg_sku with this id — first insert a fg_sku placeholder, then sales.sku
-            await admin.schema('production').from('fg_skus').upsert({
+            // No fg_sku with this id — insert a placeholder fg_sku, then upsert sales.sku
+            const { error: fgErr } = await admin.schema('production').from('fg_skus').upsert({
               fg_sku_id: fid, product_name: flavour.name as string, unit: 'Unknown',
-            }, { onConflict: 'fg_sku_id', ignoreDuplicates: true });
-            const { error: se } = await admin.schema('sales').from('skus').insert({
+            }, { onConflict: 'fg_sku_id' });
+            // Try upsert sales.sku with explicit id
+            const { error: se } = await admin.schema('sales').from('skus').upsert({
               id: fid, sku_code: flavour.name as string, flavour_id: fid, pack_format_id: null,
-            });
-            if (!se) inserted.push(fid);
-            else {
-              // Last resort: insert without a specific id (auto-increment)
+            }, { onConflict: 'id' });
+            if (!se) {
+              inserted.push(fid);
+            } else {
+              // Insert with auto-generated id as last resort
               const { error: se2 } = await admin.schema('sales').from('skus').insert({
                 sku_code: flavour.name as string, flavour_id: fid, pack_format_id: null,
               });
               if (!se2) inserted.push(fid);
               else missing.push(fid);
+              // Include error details in response for debugging
+              (errors as string[]).push(`fid=${fid} fgErr=${fgErr?.message ?? 'ok'} se=${se.message} se2=${se2?.message ?? 'ok'}`);
             }
           }
         }
       }
 
-      return NextResponse.json({ ok: true, updated: updated.length, inserted: inserted.length, missing, updated_ids: updated, inserted_ids: inserted });
+      return NextResponse.json({ ok: true, updated: updated.length, inserted: inserted.length, missing, errors, updated_ids: updated, inserted_ids: inserted });
     }
 
     // debug_data: returns raw prep_products and fg_skus names for inspection
