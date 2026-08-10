@@ -33,11 +33,12 @@ export async function GET() {
 
     const admin = adminClient();
 
-    const [prepProdsRes, salesSkusRes, packFormatsRes, orderLineSkuIdsRes] = await Promise.all([
+    const [prepProdsRes, salesSkusRes, packFormatsRes, orderLineSkuIdsRes, fgStockRes] = await Promise.all([
       admin.schema('production').from('prep_products').select('id, name, batch_yield_l, status'),
       admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
       admin.schema('sales').from('order_lines').select('sku_id'),
+      admin.schema('production').from('v_fg_stock').select('fg_sku_id, product_name, unit'),
     ]);
 
     type R = Record<string, unknown>;
@@ -99,11 +100,18 @@ export async function GET() {
     // ── Category C: order_line sku_ids not in sales.skus ─────────────────
     const unlinkedOrderLineSkus = orderLineSkuIds.filter(id => !salesSkuById.has(id));
 
+    // Find fg_sku_ids already used in sales.skus so we can mark them as taken
+    const usedSkuIds = new Set(salesSkus.map((s: R) => s.id as number));
+    const fgStock = ((fgStockRes.data || []) as R[])
+      .filter(s => !usedSkuIds.has(s.fg_sku_id as number))
+      .map(s => ({ fg_sku_id: s.fg_sku_id, product_name: s.product_name, unit: s.unit }));
+
     return NextResponse.json({
       flavour_rows: flavourRows,
       unlinked_preps: [],
       orphan_sales_skus: orphanSalesSkus,
       unlinked_order_line_skus: unlinkedOrderLineSkus,
+      fg_stock: fgStock,
       pack_formats: packFormats.map(p => ({
         id: p.id, name: p.name, unit_volume_ml: p.unit_volume_ml, units_per_pack: p.units_per_pack,
       })),
