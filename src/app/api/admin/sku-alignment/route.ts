@@ -238,6 +238,8 @@ export async function POST(req: NextRequest) {
 
       let deleted = 0;
       if (toDelete.length > 0) {
+        // Clear dependent sku_prices rows first
+        await admin.schema('sales').from('sku_prices').delete().in('sku_id', toDelete);
         const { error } = await admin.schema('sales').from('skus').delete().in('id', toDelete);
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         deleted = toDelete.length;
