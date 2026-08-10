@@ -314,8 +314,18 @@ export async function POST(req: NextRequest) {
         if (addedNames.length > 0) matched.push({ flavour: flavour.name as string, skus: addedNames });
       }
 
+      // Debug: return what cores were extracted so we can diagnose mismatches
+      const debugCores = {
+        flavour_cores: unlinkedFlavours.map(f => ({ id: f.id, name: f.name, core: norm(f.name as string) })),
+        fg_cores: availableFgSkus.slice(0, 30).map(f => ({
+          id: f.fg_sku_id, name: f.product_name, unit: f.unit,
+          core: fgFlavourCore(f.product_name as string),
+        })),
+        available_fg_count: availableFgSkus.length,
+      };
+
       if (toInsert.length === 0) {
-        return NextResponse.json({ ok: true, created: 0, skipped, message: 'No SKUs could be auto-created.' });
+        return NextResponse.json({ ok: true, created: 0, skipped, message: 'No SKUs could be auto-created.', debug: debugCores });
       }
 
       const { error: insertErr2 } = await admin.schema('sales').from('skus').insert(toInsert);
