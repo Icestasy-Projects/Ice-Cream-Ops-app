@@ -26,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [supabase, router]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-orange-50">
+    <div className="min-h-screen flex flex-col bg-slate-100">
       <NavBar />
       <main className="flex-1 px-3 sm:px-4 py-4 sm:py-6 max-w-6xl mx-auto w-full">
         {children}
