@@ -220,6 +220,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, applied, unmatched_count: unmatched.length, unmatched });
     }
 
+    // ── delete_null_skus: remove sales.skus rows with no flavour AND no pack_format ──
+    if (body.action === 'delete_null_skus') {
+      // Find all null-null SKUs
+      const { data: nullSkus } = await admin.schema('sales').from('skus')
+        .select('id').is('flavour_id', null).is('pack_format_id', null);
+      const nullIds = (nullSkus || []).map((s: any) => s.id as number);
+      if (nullIds.length === 0) return NextResponse.json({ ok: true, deleted: 0, skipped: 0 });
+
+      // Check which ones are referenced in order_lines
+      const { data: referenced } = await admin.schema('sales').from('order_lines')
+        .select('sku_id').in('sku_id', nullIds);
+      const referencedSet = new Set((referenced || []).map((r: any) => r.sku_id as number));
+
+      const toDelete = nullIds.filter((id: number) => !referencedSet.has(id));
+      const skipped = nullIds.filter((id: number) => referencedSet.has(id));
+
+      let deleted = 0;
+      if (toDelete.length > 0) {
+        const { error } = await admin.schema('sales').from('skus').delete().in('id', toDelete);
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        deleted = toDelete.length;
+      }
+
+      return NextResponse.json({ ok: true, deleted, skipped: skipped.length, skipped_ids: skipped });
+    }
+
     // ── delete_pack_format ───────────────────────────────────────────────────
     if (body.action === 'delete_pack_format') {
       const { pack_format_id } = body as { pack_format_id: number };

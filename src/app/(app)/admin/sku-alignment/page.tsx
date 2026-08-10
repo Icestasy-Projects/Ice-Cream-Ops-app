@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Link2, RefreshCw, CheckCircle2, AlertCircle, Search, X, Wand2, Pencil } from 'lucide-react';
+import { Link2, RefreshCw, CheckCircle2, AlertCircle, Search, X, Wand2, Pencil, Trash2 } from 'lucide-react';
 
 interface AlignmentRow {
   sku_id: number;
@@ -67,6 +67,8 @@ export default function SkuAlignmentPage() {
   const [view, setView] = useState<'table' | 'map'>('table');
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkUnlinking, setBulkUnlinking] = useState(false);
+  const [deletingNulls, setDeletingNulls] = useState(false);
+  const [deleteNullsResult, setDeleteNullsResult] = useState<string | null>(null);
 
   // Flavour rename state
   const [renamingFlavour, setRenamingFlavour] = useState<{ id: number; name: string } | null>(null);
@@ -128,6 +130,27 @@ export default function SkuAlignmentPage() {
     await fetch(`/api/admin/sku-alignment?sku_ids=${ids}`, { method: 'DELETE' });
     setBulkUnlinking(false);
     await load();
+  }
+
+  async function deleteNullSkus() {
+    if (!confirm('Delete all SKUs with no flavour and no pack format? SKUs with order history will be skipped.')) return;
+    setDeletingNulls(true);
+    setDeleteNullsResult(null);
+    try {
+      const res = await fetch('/api/admin/sku-alignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_null_skus' }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      setDeleteNullsResult(`Deleted ${data.deleted} SKU(s).${data.skipped > 0 ? ` ${data.skipped} skipped (have order history).` : ''}`);
+      await load();
+    } catch (e: unknown) {
+      setDeleteNullsResult('Error: ' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setDeletingNulls(false);
+    }
   }
 
   async function deleteLink(skuId: number) {
@@ -288,16 +311,31 @@ export default function SkuAlignmentPage() {
             </div>
           </div>
 
-          {/* Auto-align */}
-          <div className="flex flex-col gap-2">
+          {/* Auto-align + Delete nulls */}
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={runAutoAlign}
               disabled={autoAligning}
-              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 w-fit touch-manipulation"
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 touch-manipulation"
             >
               <Wand2 size={16} />
               {autoAligning ? 'Aligning…' : 'Auto-Align Flavours by Product Name'}
             </button>
+            <button
+              onClick={deleteNullSkus}
+              disabled={deletingNulls}
+              className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 touch-manipulation"
+            >
+              <Trash2 size={16} />
+              {deletingNulls ? 'Deleting…' : 'Delete Unlinked (NULL) SKUs'}
+            </button>
+          </div>
+          {deleteNullsResult && (
+            <p className={`text-sm px-3 py-2 rounded-xl ${deleteNullsResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+              {deleteNullsResult}
+            </p>
+          )}
+          <div className="flex flex-col gap-2">
             {autoAlignResult && (
               <p className={`text-sm px-3 py-2 rounded-xl ${autoAlignResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                 {autoAlignResult}
