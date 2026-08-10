@@ -161,6 +161,8 @@ export default function FlavourAlignmentPage() {
   const [modal, setModal] = useState<{ flavourId: number; flavourName: string } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
+  const [creatingSkus, setCreatingSkus] = useState(false);
+  const [createSkusResult, setCreateSkusResult] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -202,6 +204,26 @@ export default function FlavourAlignmentPage() {
       await load();
     } catch (e) { setSyncResult(String(e)); }
     setSyncing(false);
+  }
+
+  async function createAllMissingSkus() {
+    setCreatingSkus(true); setCreateSkusResult(null);
+    try {
+      const res = await fetch('/api/admin/flavour-alignment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create_missing_skus' }),
+      });
+      const json = await res.json();
+      if (json.error) {
+        setCreateSkusResult(`Error: ${json.error}`);
+      } else {
+        const skipped = json.skipped?.length ? ` (${json.skipped.length} could not be matched)` : '';
+        setCreateSkusResult(`Done — ${json.created} SKU${json.created !== 1 ? 's' : ''} created${skipped}.`);
+        await load();
+      }
+    } catch (e) { setCreateSkusResult(String(e)); }
+    setCreatingSkus(false);
   }
 
   async function createSalesSku(flavourId: number, skuId: number, packFormatId: number, name: string) {
@@ -298,6 +320,25 @@ export default function FlavourAlignmentPage() {
           {syncResult && (
             <p className={`text-sm px-3 py-2 rounded-xl ${syncResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
               {syncResult}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Auto-create missing SKUs */}
+      {summary.no_sales_sku > 0 && (
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={createAllMissingSkus}
+            disabled={creatingSkus}
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl disabled:opacity-50 w-fit touch-manipulation"
+          >
+            <Wand2 size={16} />
+            {creatingSkus ? 'Creating SKUs…' : `Auto-Create ${summary.no_sales_sku} Missing SKU${summary.no_sales_sku !== 1 ? 's' : ''}`}
+          </button>
+          {createSkusResult && (
+            <p className={`text-sm px-3 py-2 rounded-xl ${createSkusResult.startsWith('Error') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+              {createSkusResult}
             </p>
           )}
         </div>

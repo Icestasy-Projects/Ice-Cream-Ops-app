@@ -184,6 +184,125 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, inserted: toInsert.length, flavours: toInsert });
     }
 
+    // create_missing_skus: auto-match each flavour with no sales SKU to an fg_sku by name,
+    // infer pack_format from the unit string, and bulk-insert sales.skus rows
+    if (body.action === 'create_missing_skus') {
+      const [prepProdsRes3, salesSkusRes3, fgSkusRes3, packFormatsRes3] = await Promise.all([
+        admin.schema('production').from('prep_products').select('id, name'),
+        admin.schema('sales').from('skus').select('id, flavour_id'),
+        admin.schema('production').from('fg_skus').select('fg_sku_id, product_name, unit'),
+        admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
+      ]);
+
+      type R2 = Record<string, unknown>;
+      const prepProds3 = (prepProdsRes3.data || []) as R2[];
+      const salesSkus3 = (salesSkusRes3.data || []) as R2[];
+      const fgSkus3 = (fgSkusRes3.data || []) as R2[];
+      const packFormats3 = (packFormatsRes3.data || []) as R2[];
+
+      // Flavours already linked
+      const linkedFlavourIds = new Set<number>(
+        salesSkus3.filter((s: R2) => s.flavour_id).map((s: R2) => s.flavour_id as number)
+      );
+      // FG SKU IDs already used as sales.skus ids
+      const usedFgSkuIds = new Set<number>(salesSkus3.map((s: R2) => s.id as number));
+
+      // Flavours needing a SKU
+      const unlinkedFlavours = prepProds3.filter(p => !linkedFlavourIds.has(p.id as number));
+
+      if (unlinkedFlavours.length === 0) {
+        return NextResponse.json({ ok: true, created: 0, message: 'All flavours already have sales SKUs.' });
+      }
+
+      // Available fg_skus (not yet used)
+      const availableFgSkus = fgSkus3.filter(f => !usedFgSkuIds.has(f.fg_sku_id as number));
+
+      // Helper: normalize a name for fuzzy matching
+      const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // Helper: parse pack_format_id from fg_sku.unit string (e.g. "500ml Cup", "1L Tub")
+      const inferPackFormatId = (unit: string): number | null => {
+        const u = unit.toLowerCase();
+        // Try to match by volume in unit string against pack_format name
+        for (const pf of packFormats3) {
+          const pfName = (pf.name as string).toLowerCase();
+          if (pfName && u.includes(pfName)) return pf.id as number;
+        }
+        // Extract ml from unit string and match unit_volume_ml
+        const mlMatch = u.match(/(\d+)\s*ml/);
+        if (mlMatch) {
+          const ml = parseInt(mlMatch[1]);
+          const found = packFormats3.find(pf => (pf.unit_volume_ml as number) === ml);
+          if (found) return found.id as number;
+        }
+        // Extract litre
+        const lMatch = u.match(/(\d+(?:\.\d+)?)\s*l\b/);
+        if (lMatch) {
+          const ml = Math.round(parseFloat(lMatch[1]) * 1000);
+          const found = packFormats3.find(pf => (pf.unit_volume_ml as number) === ml);
+          if (found) return found.id as number;
+        }
+        return null;
+      };
+
+      const toInsert: R2[] = [];
+      const skipped: R2[] = [];
+
+      for (const flavour of unlinkedFlavours) {
+        const flavourName = norm(flavour.name as string);
+        // Find best fg_sku match by longest common subsequence of normalised names
+        let bestFg: R2 | null = null;
+        let bestScore = -1;
+        for (const fg of availableFgSkus) {
+          const fgName = norm(fg.product_name as string);
+          // Score: fraction of flavour name chars that appear in fg name
+          let score = 0;
+          if (fgName === flavourName) {
+            score = 1000;
+          } else if (fgName.includes(flavourName) || flavourName.includes(fgName)) {
+            score = 100 + Math.min(flavourName.length, fgName.length);
+          } else {
+            // Count shared trigrams
+            const trigrams = (s: string) => {
+              const t = new Set<string>();
+              for (let i = 0; i <= s.length - 3; i++) t.add(s.slice(i, i + 3));
+              return t;
+            };
+            const ft = trigrams(flavourName);
+            const gt = trigrams(fgName);
+            let shared = 0;
+            ft.forEach(t => { if (gt.has(t)) shared++; });
+            score = ft.size > 0 ? shared / ft.size : 0;
+          }
+          if (score > bestScore) { bestScore = score; bestFg = fg; }
+        }
+
+        if (!bestFg || bestScore <= 0) {
+          skipped.push({ flavour_id: flavour.id, flavour_name: flavour.name, reason: 'No matching FG SKU found' });
+          continue;
+        }
+
+        const packFormatId = inferPackFormatId(bestFg.unit as string);
+        toInsert.push({
+          id: bestFg.fg_sku_id,
+          sku_code: bestFg.product_name,
+          flavour_id: flavour.id,
+          pack_format_id: packFormatId,
+        });
+        // Mark this fg_sku as used so it's not matched again
+        usedFgSkuIds.add(bestFg.fg_sku_id as number);
+      }
+
+      if (toInsert.length === 0) {
+        return NextResponse.json({ ok: true, created: 0, skipped, message: 'No SKUs could be auto-created.' });
+      }
+
+      const { error: insertErr2 } = await admin.schema('sales').from('skus').insert(toInsert);
+      if (insertErr2) return NextResponse.json({ error: insertErr2.message }, { status: 500 });
+
+      return NextResponse.json({ ok: true, created: toInsert.length, skipped, created_skus: toInsert });
+    }
+
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
