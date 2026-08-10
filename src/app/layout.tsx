@@ -8,12 +8,17 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Icestasy Ops',
   description: 'Kitchen and factory operations for Icestasy',
+  icons: {
+    icon: '/logo.svg',
+    shortcut: '/logo.svg',
+    apple: '/logo.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-orange-50 min-h-screen`}>
+      <body className={`${inter.className} bg-slate-100 min-h-screen`}>
         {children}
         <Toaster
           position="top-center"

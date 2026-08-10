@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
 import { getNavItemsForRole, ROLE_LABELS } from '@/lib/roles';
-import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors, IceCream, ClipboardList, Link2, GitMerge, Trash2 } from 'lucide-react';
+import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors, IceCream, ClipboardList, Link2, GitMerge, Trash2, Bell, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +29,9 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/admin/cleanup': Trash2,
 };
 
+// Top-level nav groups shown as tabs in the header
+const TOP_GROUPS = ['Operations', 'Dashboards', 'Admin'];
+
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -35,6 +39,7 @@ export default function NavBar() {
   const { role } = useRole();
   const supabase = createClient();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   const navItems = getNavItemsForRole(role);
 
@@ -49,49 +54,139 @@ export default function NavBar() {
     router.push('/login');
   };
 
+  // Initials for avatar
+  const initials = displayName
+    ? displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
+  // Is any item in a group currently active?
+  const groupActive = (groupName: string) =>
+    groups[groupName]?.some(item => pathname === item.href) || false;
+
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white border-b border-orange-100 px-4 h-14 flex items-center justify-between shadow-sm">
-        <Link href="/dashboard" className="flex items-center gap-2 shrink-0">
-          <IceCream size={24} className="text-gray-800" strokeWidth={1.5} />
-          <span className="font-bold text-gray-900 text-lg">Icestasy Ops</span>
-        </Link>
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="text-sm text-gray-500 hidden sm:block truncate">Hi, {displayName}</span>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-xl bg-orange-50 text-brand-600 hover:bg-orange-100 transition-colors touch-manipulation shrink-0"
-            aria-label="Menu"
-          >
-            <Menu size={22} />
-          </button>
+      <header className="sticky top-0 z-40 bg-brand-800 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+          {/* Logo */}
+          <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
+            <Image src="/logo.svg" alt="Icestasy" width={28} height={28} className="brightness-0 invert" />
+            <div className="leading-none">
+              <span className="font-bold text-white text-base tracking-wide">ICESTASY</span>
+              <span className="text-brand-300 font-medium text-xs block tracking-widest">OPS PORTAL</span>
+            </div>
+          </Link>
+
+          {/* Desktop nav tabs */}
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+            <Link
+              href="/dashboard"
+              className={cn(
+                'px-4 py-2 rounded-md text-sm font-semibold transition-colors',
+                pathname === '/dashboard'
+                  ? 'bg-white/20 text-white'
+                  : 'text-brand-200 hover:text-white hover:bg-white/10'
+              )}
+            >
+              Home
+            </Link>
+
+            {TOP_GROUPS.filter(g => groups[g]?.length).map(group => (
+              <div key={group} className="relative">
+                <button
+                  onMouseEnter={() => setActiveDropdown(group)}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                  className={cn(
+                    'flex items-center gap-1 px-4 py-2 rounded-md text-sm font-semibold transition-colors',
+                    groupActive(group)
+                      ? 'bg-white/20 text-white'
+                      : 'text-brand-200 hover:text-white hover:bg-white/10'
+                  )}
+                >
+                  {group}
+                  <ChevronDown size={14} />
+                </button>
+
+                {activeDropdown === group && (
+                  <div
+                    className="absolute left-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-100 py-1 z-50"
+                    onMouseEnter={() => setActiveDropdown(group)}
+                    onMouseLeave={() => setActiveDropdown(null)}
+                  >
+                    {groups[group].map(({ href, label }) => {
+                      const Icon = ICON_MAP[href] || BarChart3;
+                      return (
+                        <Link
+                          key={href}
+                          href={href}
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors',
+                            pathname === href
+                              ? 'bg-brand-50 text-brand-700'
+                              : 'text-gray-700 hover:bg-slate-50'
+                          )}
+                        >
+                          <Icon size={16} className={pathname === href ? 'text-brand-600' : 'text-gray-400'} />
+                          {label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
+
+          {/* Right side */}
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-brand-200 text-sm hidden sm:block">Hi, {displayName}</span>
+
+            {/* Avatar / profile */}
+            <div className="w-8 h-8 rounded-full bg-brand-600 border-2 border-brand-400 flex items-center justify-center text-white text-xs font-bold select-none">
+              {initials}
+            </div>
+
+            {/* Hamburger for mobile + full menu */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-2 rounded-lg text-brand-200 hover:text-white hover:bg-white/10 transition-colors touch-manipulation"
+              aria-label="Menu"
+            >
+              <Menu size={20} />
+            </button>
+          </div>
         </div>
       </header>
 
+      {/* Slide-out full nav menu */}
       {menuOpen && (
         <div className="fixed inset-0 z-30 flex" onClick={() => setMenuOpen(false)}>
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="relative ml-auto w-72 bg-white h-full shadow-xl overflow-y-auto flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 h-14 border-b border-orange-100 shrink-0">
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative ml-auto w-72 bg-white h-full shadow-2xl overflow-y-auto flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 h-14 border-b border-slate-100 bg-brand-800 shrink-0">
               <div>
-                <p className="font-semibold text-gray-900 text-sm">{displayName}</p>
-                <p className="text-xs text-gray-400">{role ? ROLE_LABELS[role] : ''}</p>
+                <p className="font-semibold text-white text-sm">{displayName}</p>
+                <p className="text-xs text-brand-300">{role ? ROLE_LABELS[role] : ''}</p>
               </div>
-              <button onClick={() => setMenuOpen(false)} className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 touch-manipulation">
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="p-1.5 rounded-lg text-brand-200 hover:text-white hover:bg-white/10 touch-manipulation"
+              >
                 <X size={20} />
               </button>
             </div>
 
             <nav className="p-3 flex-1 space-y-4 overflow-y-auto">
-              {/* Home always shown */}
               <Link
                 href="/dashboard"
                 onClick={() => setMenuOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium transition-colors touch-manipulation',
+                  'flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-colors touch-manipulation',
                   pathname === '/dashboard'
-                    ? 'bg-brand-500 text-white'
-                    : 'text-gray-700 hover:bg-orange-50'
+                    ? 'bg-brand-600 text-white'
+                    : 'text-gray-700 hover:bg-brand-50'
                 )}
               >
                 <Home size={20} />
@@ -101,7 +196,7 @@ export default function NavBar() {
               {Object.entries(groups).map(([group, items]) => (
                 <div key={group}>
                   <p className="px-4 pb-1 text-xs font-bold text-gray-400 uppercase tracking-wide">{group}</p>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {items.map(({ href, label }) => {
                       const Icon = ICON_MAP[href] || BarChart3;
                       return (
@@ -110,13 +205,13 @@ export default function NavBar() {
                           href={href}
                           onClick={() => setMenuOpen(false)}
                           className={cn(
-                            'flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium transition-colors touch-manipulation',
+                            'flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-colors touch-manipulation',
                             pathname === href
-                              ? 'bg-brand-500 text-white'
-                              : 'text-gray-700 hover:bg-orange-50'
+                              ? 'bg-brand-600 text-white'
+                              : 'text-gray-700 hover:bg-brand-50'
                           )}
                         >
-                          <Icon size={20} />
+                          <Icon size={20} className={pathname === href ? 'text-white' : 'text-brand-400'} />
                           {label}
                         </Link>
                       );
@@ -126,10 +221,10 @@ export default function NavBar() {
               ))}
             </nav>
 
-            <div className="p-3 border-t border-gray-100">
+            <div className="p-3 border-t border-slate-100">
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium text-red-600 hover:bg-red-50 w-full touch-manipulation"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-red-600 hover:bg-red-50 w-full touch-manipulation"
               >
                 <LogOut size={20} />
                 Sign Out
