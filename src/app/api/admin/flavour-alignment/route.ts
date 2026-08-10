@@ -272,7 +272,7 @@ export async function POST(req: NextRequest) {
         if (fgMatches.length === 0) {
           let bestScore = 0;
           let bestCore = '';
-          for (const [core] of fgByCore) {
+          for (const [core] of Array.from(fgByCore)) {
             let score = 0;
             if (core === flavourCore) score = 1000;
             else if (core.includes(flavourCore) || flavourCore.includes(core)) {
