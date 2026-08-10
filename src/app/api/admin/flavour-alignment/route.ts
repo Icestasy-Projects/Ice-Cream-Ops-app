@@ -38,7 +38,7 @@ export async function GET() {
       admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
       admin.schema('sales').from('order_lines').select('sku_id'),
-      admin.schema('production').from('v_fg_stock').select('fg_sku_id, product_name, unit'),
+      admin.schema('production').from('fg_skus').select('fg_sku_id, product_name, unit'),
     ]);
 
     type R = Record<string, unknown>;
