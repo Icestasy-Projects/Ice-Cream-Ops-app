@@ -352,12 +352,22 @@ export async function POST(req: NextRequest) {
             });
             if (!error) inserted.push(fid);
           } else {
-            // No fg_sku with this id — insert a new sales.sku row with auto-generated id
-            const { error } = await admin.schema('sales').from('skus').insert({
-              sku_code: flavour.name, flavour_id: fid, pack_format_id: null,
+            // No fg_sku with this id — first insert a fg_sku placeholder, then sales.sku
+            await admin.schema('production').from('fg_skus').upsert({
+              fg_sku_id: fid, product_name: flavour.name as string, unit: 'Unknown',
+            }, { onConflict: 'fg_sku_id', ignoreDuplicates: true });
+            const { error: se } = await admin.schema('sales').from('skus').insert({
+              id: fid, sku_code: flavour.name as string, flavour_id: fid, pack_format_id: null,
             });
-            if (!error) inserted.push(fid);
-            else missing.push(fid);
+            if (!se) inserted.push(fid);
+            else {
+              // Last resort: insert without a specific id (auto-increment)
+              const { error: se2 } = await admin.schema('sales').from('skus').insert({
+                sku_code: flavour.name as string, flavour_id: fid, pack_format_id: null,
+              });
+              if (!se2) inserted.push(fid);
+              else missing.push(fid);
+            }
           }
         }
       }
