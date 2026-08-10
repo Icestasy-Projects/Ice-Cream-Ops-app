@@ -310,6 +310,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, updated: toUpdate.length, skipped, matched });
     }
 
+    // link_by_id: for each unlinked flavour (prep_product id=X),
+    // set flavour_id=X on sales.skus row where id=X (fg_sku_id = prep_product id).
+    // If no sales.sku row exists for that id, inserts one using the fg_sku name.
+    if (body.action === 'link_by_id') {
+      const [prepRes, salesRes, fgRes] = await Promise.all([
+        admin.schema('production').from('prep_products').select('id, name'),
+        admin.schema('sales').from('skus').select('id, flavour_id, sku_code, pack_format_id'),
+        admin.schema('production').from('fg_skus').select('fg_sku_id, product_name'),
+      ]);
+
+      type R3 = Record<string, unknown>;
+      const preps = (prepRes.data || []) as R3[];
+      const sales = (salesRes.data || []) as R3[];
+      const fgSkus = (fgRes.data || []) as R3[];
+
+      const linkedFlavourIds = new Set<number>(sales.filter((s: R3) => s.flavour_id).map((s: R3) => s.flavour_id as number));
+      const salesById = new Map<number, R3>(sales.map((s: R3) => [s.id as number, s]));
+      const fgById = new Map<number, R3>(fgSkus.map((f: R3) => [f.fg_sku_id as number, f]));
+
+      const unlinked = preps.filter(p => !linkedFlavourIds.has(p.id as number));
+      if (unlinked.length === 0) return NextResponse.json({ ok: true, linked: 0, message: 'All flavours already linked.' });
+
+      const updated: number[] = [];
+      const inserted: number[] = [];
+      const missing: number[] = [];
+
+      for (const flavour of unlinked) {
+        const fid = flavour.id as number;
+        const existingSku = salesById.get(fid);
+        if (existingSku) {
+          // Row exists — just set flavour_id
+          const { error } = await admin.schema('sales').from('skus').update({ flavour_id: fid }).eq('id', fid);
+          if (!error) updated.push(fid);
+        } else {
+          // Row missing — insert using fg_sku name if available
+          const fg = fgById.get(fid);
+          if (fg) {
+            const { error } = await admin.schema('sales').from('skus').insert({
+              id: fid, sku_code: fg.product_name, flavour_id: fid, pack_format_id: null,
+            });
+            if (!error) inserted.push(fid);
+          } else {
+            missing.push(fid);
+          }
+        }
+      }
+
+      return NextResponse.json({ ok: true, updated: updated.length, inserted: inserted.length, missing, updated_ids: updated, inserted_ids: inserted });
+    }
+
     // debug_data: returns raw prep_products and fg_skus names for inspection
     if (body.action === 'debug_data') {
       const [pp, fg] = await Promise.all([
