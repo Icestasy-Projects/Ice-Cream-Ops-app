@@ -212,15 +212,15 @@ export default function FlavourAlignmentPage() {
       const res = await fetch('/api/admin/flavour-alignment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_missing_skus' }),
+        body: JSON.stringify({ action: 'link_by_id' }),
       });
       const json = await res.json();
       if (json.error) {
         setCreateSkusResult(`Error: ${json.error}`);
       } else {
-        const count = json.updated ?? json.created ?? 0;
-        const skipped = json.skipped?.length ? ` (${json.skipped.length} could not be matched)` : '';
-        setCreateSkusResult(`Done — ${count} SKU${count !== 1 ? 's' : ''} linked${skipped}.`);
+        const count = (json.updated ?? 0) + (json.inserted ?? 0);
+        const missing = json.missing?.length ? ` (${json.missing.length} had no fg_sku)` : '';
+        setCreateSkusResult(`Done — ${count} SKU${count !== 1 ? 's' : ''} linked${missing}.`);
         await load();
       }
     } catch (e) { setCreateSkusResult(String(e)); }
