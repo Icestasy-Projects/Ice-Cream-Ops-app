@@ -237,7 +237,7 @@ export default function FlavoursPage() {
     setSaving(true);
     try {
       const { data: flavour, error: flavErr } = await supabase.schema('production').from('prep_products')
-        .insert({ name: newName.trim(), batch_yield_l: parseFloat(newYield), unit: 'L', status: 'active' })
+        .insert({ name: newName.trim(), batch_yield_l: parseFloat(newYield), unit: 'l', status: 'active' })
         .select('id').single();
       if (flavErr || !flavour) throw new Error(flavErr?.message || 'Failed to create flavour');
 
