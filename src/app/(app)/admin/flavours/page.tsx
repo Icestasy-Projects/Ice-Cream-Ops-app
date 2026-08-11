@@ -236,8 +236,13 @@ export default function FlavoursPage() {
 
     setSaving(true);
     try {
+      const { data: salesFlavour, error: sfErr } = await supabase.schema('sales').from('flavours')
+        .insert({ name: newName.trim() })
+        .select('id').single();
+      if (sfErr || !salesFlavour) throw new Error(sfErr?.message || 'Failed to create sales flavour');
+
       const { data: flavour, error: flavErr } = await supabase.schema('production').from('prep_products')
-        .insert({ name: newName.trim(), batch_yield_l: parseFloat(newYield), unit: 'l', status: 'active' })
+        .insert({ name: newName.trim(), batch_yield_l: parseFloat(newYield), unit: 'l', status: 'active', flavour_id: salesFlavour.id })
         .select('id').single();
       if (flavErr || !flavour) throw new Error(flavErr?.message || 'Failed to create flavour');
 
