@@ -124,12 +124,13 @@ export default function RmItemsPage() {
 
     setSaving(true);
     try {
-      const { error } = await supabase.schema('production').from('rm_items').update({
-        name: trimName,
-        unit: finalUnit,
-        category_id: es.categoryId ? parseInt(es.categoryId) : null,
-      }).eq('id', id);
-      if (error) throw new Error(error.message);
+      const res = await fetch('/api/admin/rm-items', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name: trimName, unit: finalUnit, category_id: es.categoryId ? parseInt(es.categoryId) : null }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to update');
       toast.success('Ingredient updated!');
       await load();
     } catch (e: unknown) {
@@ -143,10 +144,9 @@ export default function RmItemsPage() {
     if (!confirm(`Delete "${name}"? This cannot be undone and will remove it from any recipes.`)) return;
     setDeleting(id);
     try {
-      await supabase.schema('production').from('prep_recipes').delete().eq('rm_item_id', id);
-      await supabase.schema('production').from('rm_costs').delete().eq('rm_item_id', id);
-      const { error } = await supabase.schema('production').from('rm_items').delete().eq('id', id);
-      if (error) throw new Error(error.message);
+      const res = await fetch(`/api/admin/rm-items?id=${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to delete');
       toast.success(`${name} deleted.`);
       await load();
     } catch (e: unknown) {
