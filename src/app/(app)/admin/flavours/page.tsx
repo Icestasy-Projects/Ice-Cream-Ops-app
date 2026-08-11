@@ -114,6 +114,10 @@ export default function FlavoursPage() {
         if (rErr) throw new Error(rErr.message);
       }
 
+      // Create sales.skus entry so it's immediately linked in SKU alignment
+      await supabase.schema('sales').from('skus')
+        .upsert({ sku_code: newSheet.name.trim(), flavour_id: sf.id }, { onConflict: 'sku_code' });
+
       toast.success(`${newSheet.name} mix sheet saved!`);
       setNewSheet(BLANK);
       setShowAdd(false);
