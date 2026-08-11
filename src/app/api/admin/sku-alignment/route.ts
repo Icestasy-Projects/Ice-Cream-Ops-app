@@ -26,13 +26,12 @@ export async function GET() {
 
     const admin = adminClient();
 
-    const [orderLinesRes, salesSkusRes, fgStockRes, packFormatsRes, prepProdsRes] = await Promise.all([
+    const [orderLinesRes, salesSkusRes, fgStockRes, packFormatsRes, salesFlavoursRes] = await Promise.all([
       admin.schema('sales').from('order_lines').select('sku_id'),
       admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       admin.schema('production').from('v_fg_stock').select('fg_sku_id, product_name, unit, qty_on_hand'),
       admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
-      // flavours = prep_products (flavour_id = prep_product id)
-      admin.schema('production').from('prep_products').select('id, name'),
+      admin.schema('sales').from('flavours').select('id, name'),
     ]);
 
     // Union all known SKU IDs: from order lines, sales.skus, and v_fg_stock
@@ -56,9 +55,8 @@ export async function GET() {
       id: number; name: string; unit_volume_ml: number; units_per_pack: number;
     }>;
 
-    // flavours = prep_products
-    const prepProds = (prepProdsRes.data || []) as Array<{ id: number; name: string }>;
-    const prepProdMap = new Map(prepProds.map(p => [p.id, p.name]));
+    const salesFlavours = (salesFlavoursRes.data || []) as Array<{ id: number; name: string }>;
+    const salesFlavourMap = new Map(salesFlavours.map(f => [f.id, f.name]));
 
     const rows = allSkuIds.map(skuId => {
       const existing = salesSkuMap.get(skuId);
@@ -66,7 +64,7 @@ export async function GET() {
       const packFmt = existing?.pack_format_id
         ? packFormats.find(p => p.id === existing.pack_format_id) : null;
       const flavourName = existing?.flavour_id
-        ? (prepProdMap.get(existing.flavour_id) ?? null)
+        ? (salesFlavourMap.get(existing.flavour_id) ?? null)
         : null;
 
       return {
@@ -89,7 +87,7 @@ export async function GET() {
       rows,
       fg_stock: fgStock,
       pack_formats: packFormats,
-      flavours: prepProds, // prep_products exposed as flavours
+      flavours: salesFlavours,
       total: allSkuIds.length,
       linked: rows.filter(r => r.linked).length,
       unlinked: rows.filter(r => !r.linked).length,
@@ -111,10 +109,10 @@ export async function POST(req: NextRequest) {
 
     // ── auto_align: match each SKU's product_name to a prep_product by name ──
     if (body.action === 'auto_align') {
-      const [salesSkusRes, fgStockRes, prepProdsRes] = await Promise.all([
+      const [salesSkusRes, fgStockRes, salesFlavoursRes] = await Promise.all([
         admin.schema('sales').from('skus').select('id, sku_code, pack_format_id'),
         admin.schema('production').from('v_fg_stock').select('fg_sku_id, product_name'),
-        admin.schema('production').from('prep_products').select('id, name'),
+        admin.schema('sales').from('flavours').select('id, name'),
       ]);
 
       let salesSkus = (salesSkusRes.data || []) as Array<{ id: number; sku_code: string | null; pack_format_id: number | null }>;
@@ -124,16 +122,16 @@ export async function POST(req: NextRequest) {
         salesSkus = salesSkus.filter(s => idSet.has(s.id));
       }
       const fgStockMap = new Map((fgStockRes.data || []).map((s: any) => [s.fg_sku_id as number, s.product_name as string]));
-      const prepProds = (prepProdsRes.data || []) as Array<{ id: number; name: string }>;
+      const salesFlavours = (salesFlavoursRes.data || []) as Array<{ id: number; name: string }>;
 
-      // For each SKU find the best matching prep_product by name
+      // For each SKU find the best matching sales.flavour by name
       const bestMatch = (productName: string): number | null => {
         const nameLower = productName.toLowerCase();
-        let match = prepProds.find(p => p.name.toLowerCase() === nameLower);
+        let match = salesFlavours.find(f => f.name.toLowerCase() === nameLower);
         if (match) return match.id;
-        match = prepProds.find(p =>
-          nameLower.includes(p.name.toLowerCase()) ||
-          p.name.toLowerCase().includes(nameLower)
+        match = salesFlavours.find(f =>
+          nameLower.includes(f.name.toLowerCase()) ||
+          f.name.toLowerCase().includes(nameLower)
         );
         return match?.id ?? null;
       };
@@ -148,8 +146,8 @@ export async function POST(req: NextRequest) {
         const newFlavourId = bestMatch(productName);
         if (!newFlavourId) { unmatched.push({ id: sku.id, product_name: productName }); continue; }
 
-        const prepName = prepProds.find(p => p.id === newFlavourId)?.name ?? '';
-        updates.push({ id: sku.id, flavour_id: newFlavourId, old_name: productName, new_flavour: prepName });
+        const flavourName = salesFlavours.find(f => f.id === newFlavourId)?.name ?? '';
+        updates.push({ id: sku.id, flavour_id: newFlavourId, old_name: productName, new_flavour: flavourName });
       }
 
       if (body.preview) {
