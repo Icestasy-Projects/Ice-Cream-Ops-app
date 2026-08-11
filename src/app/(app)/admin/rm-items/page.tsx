@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Plus, ChevronDown, ChevronUp, Package, Search, Pencil, Trash2, Check, X } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Package, Search, Pencil, Trash2, Check, X, Milk, Apple, Wheat, FlaskConical, Cookie, Leaf, Candy, Nut, Droplets, Flame, Bean, Grape, Fish, Sprout, Citrus, type LucideIcon } from 'lucide-react';
 
 interface Category { id: number; name: string; }
 interface RmItem {
@@ -20,6 +20,37 @@ interface RmItem {
 }
 
 const COMMON_UNITS = ['kg', 'g', 'l', 'ml', 'pcs', 'box', 'pack', 'dozen'];
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  'Dairy':                  Milk,
+  'Base & Dairy':           Milk,
+  'Fruits':                 Apple,
+  'Fruits & Pulp':          Citrus,
+  'Grains & Flour':         Wheat,
+  'Extracts & Essences':    FlaskConical,
+  'Concentrates':           FlaskConical,
+  'Biscuits & Bakery':      Cookie,
+  'Bakery':                 Cookie,
+  'Spices & Flavours':      Leaf,
+  'Sweeteners':             Candy,
+  'Sweetners':              Candy,
+  'Nuts & Pastes':          Nut,
+  'Nuts':                   Nut,
+  'Chocolates':             Bean,
+  'Toppings & Garnish':     Grape,
+  'Sauces & Compotes':      Droplets,
+  'Condiments':             Droplets,
+  'Traditional':            Flame,
+  'Stabilizers & Additives':Sprout,
+  'Additives':              Sprout,
+  'Manufacturing':          Fish,
+  'Prep':                   FlaskConical,
+};
+
+function CategoryIcon({ category, size = 14 }: { category: string; size?: number }) {
+  const Icon = CATEGORY_ICONS[category] ?? Package;
+  return <Icon size={size} className="text-orange-600" />;
+}
 
 const BLANK_FORM = { name: '', unit: 'kg', customUnit: '', categoryId: '', newCatName: '' };
 
@@ -243,7 +274,7 @@ export default function RmItemsPage() {
                   <div className="px-5 py-3.5 flex items-center gap-3">
                     <button onClick={() => toggle(item.id)} className="flex items-center gap-3 flex-1 text-left touch-manipulation hover:opacity-80">
                       <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-                        <Package size={14} className="text-orange-600" />
+                        <CategoryIcon category={item.category_name} size={14} />
                       </div>
                       <div className="min-w-0">
                         <p className="font-semibold text-gray-900 text-sm truncate">{item.name}</p>
