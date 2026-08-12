@@ -27,6 +27,61 @@ export async function POST(req: NextRequest) {
     }
 
     const admin = adminClient();
+
+    // Pre-check: fetch recipe for this prep_product and verify RM stock is sufficient
+    const [recipeRes, stockRes] = await Promise.all([
+      admin.schema('production').from('prep_recipes')
+        .select('rm_item_id, qty_per_batch, rm_items(name, unit)')
+        .eq('prep_product_id', prep_product_id),
+      admin.schema('production').from('v_rm_stock')
+        .select('rm_item_id, qty_on_hand'),
+    ]);
+
+    const recipe = (recipeRes.data || []) as Array<{
+      rm_item_id: number; qty_per_batch: number;
+      rm_items: { name: string; unit: string } | null;
+    }>;
+    const stockMap = new Map<number, number>(
+      ((stockRes.data || []) as Array<{ rm_item_id: number; qty_on_hand: number }>)
+        .map(s => [s.rm_item_id, s.qty_on_hand])
+    );
+
+    // Calculate how many batches we can make
+    const batchesNeeded = qty_produced; // qty_produced is already total litres, not batches
+    // Actually qty_produced = batches × batch_yield — check each RM
+    const shortfalls: string[] = [];
+    for (const line of recipe) {
+      const needed = line.qty_per_batch * (qty_produced / (qty_produced)); // per-recipe line × batches
+      // qty_produced is total yield; batch_yield_l comes from prep_products
+      // We need to derive batches: get batch_yield_l
+      break; // will re-derive below after fetching batch_yield_l
+    }
+
+    // Fetch batch_yield_l to convert qty_produced → batch count
+    const { data: ppData } = await admin.schema('production').from('prep_products')
+      .select('batch_yield_l').eq('id', prep_product_id).single();
+    const batchYield = (ppData?.batch_yield_l as number) || 1;
+    const numBatches = qty_produced / batchYield;
+
+    for (const line of recipe) {
+      const needed = line.qty_per_batch * numBatches;
+      const have = stockMap.get(line.rm_item_id) ?? 0;
+      if (have < needed) {
+        const name = line.rm_items?.name ?? `RM #${line.rm_item_id}`;
+        const unit = line.rm_items?.unit ?? '';
+        shortfalls.push(
+          `${name}: need ${needed.toFixed(2)} ${unit}, have ${have.toFixed(2)} ${unit} (short by ${(needed - have).toFixed(2)} ${unit})`
+        );
+      }
+    }
+
+    if (shortfalls.length > 0) {
+      return NextResponse.json({
+        error: `Not enough raw materials for this batch:\n• ${shortfalls.join('\n• ')}`,
+        shortfalls,
+      }, { status: 422 });
+    }
+
     const { error } = await admin.schema('production').from('prep_units').insert({
       prep_product_id,
       qty_produced,
@@ -35,7 +90,23 @@ export async function POST(req: NextRequest) {
       note: note || null,
     });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      // If DB still rejects (race condition or trigger), try to humanise the rm_item_id
+      const idMatch = error.message.match(/rm_item_id\s+(\d+)/i);
+      if (idMatch) {
+        const rmId = parseInt(idMatch[1]);
+        const { data: rmRow } = await admin.schema('production').from('rm_items').select('name, unit').eq('id', rmId).single();
+        if (rmRow) {
+          const shortMatch = error.message.match(/would go to\s+([-\d.]+)/i);
+          const deficit = shortMatch ? Math.abs(parseFloat(shortMatch[1])).toFixed(2) : '?';
+          return NextResponse.json({
+            error: `Not enough ${rmRow.name} — short by ${deficit} ${rmRow.unit}. Receive more stock first.`,
+          }, { status: 422 });
+        }
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
