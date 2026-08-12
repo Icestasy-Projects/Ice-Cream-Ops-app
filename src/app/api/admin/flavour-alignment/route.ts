@@ -33,12 +33,13 @@ export async function GET() {
 
     const admin = adminClient();
 
-    const [prepProdsRes, salesSkusRes, packFormatsRes, orderLineSkuIdsRes, fgStockRes] = await Promise.all([
+    const [prepProdsRes, salesSkusRes, packFormatsRes, orderLineSkuIdsRes, fgStockRes, salesFlavoursRes] = await Promise.all([
       admin.schema('production').from('prep_products').select('id, name, batch_yield_l, status'),
       admin.schema('sales').from('skus').select('id, sku_code, flavour_id, pack_format_id'),
       admin.schema('sales').from('pack_formats').select('id, name, unit_volume_ml, units_per_pack'),
       admin.schema('sales').from('order_lines').select('sku_id'),
       admin.schema('production').from('fg_skus').select('fg_sku_id, product_name, unit'),
+      admin.schema('sales').from('flavours').select('id'),
     ]);
 
     type R = Record<string, unknown>;
@@ -52,6 +53,9 @@ export async function GET() {
 
     // prep_product id → prep_product row
     const prepById = new Map<number, R>(prepProds.map(p => [p.id as number, p]));
+
+    // sales.flavours valid ids (the real FK target for sales.skus.flavour_id)
+    const salesFlavoursById = new Set<number>(((salesFlavoursRes.data || []) as R[]).map(f => f.id as number));
 
     // flavour_id → list of sales.skus (flavour_id = prep_product id)
     const salesByFlavourId = new Map<number, R[]>();
@@ -88,9 +92,9 @@ export async function GET() {
       };
     });
 
-    // ── Category B: sales.skus with flavour_id that has no prep_product ──
+    // ── Category B: sales.skus with flavour_id that has no matching sales.flavours row ──
     const orphanSalesSkus = salesSkus
-      .filter(s => s.flavour_id && !prepById.has(s.flavour_id as number))
+      .filter(s => s.flavour_id && !salesFlavoursById.has(s.flavour_id as number))
       .map(s => ({
         id: s.id, name: s.sku_code, flavour_id: s.flavour_id,
         pack_format_id: s.pack_format_id,
@@ -151,19 +155,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // sync_all: create placeholder prep_products for any orphan flavour_ids in sales.skus
+    // sync_all: create missing sales.flavours rows for any orphan flavour_ids in sales.skus
     if (body.action === 'sync_all') {
-      const [prepProdsRes2, salesSkusRes2] = await Promise.all([
-        admin.schema('production').from('prep_products').select('id, name'),
+      const [salesFlavoursRes2, salesSkusRes2] = await Promise.all([
+        admin.schema('sales').from('flavours').select('id, name'),
         admin.schema('sales').from('skus').select('id, flavour_id'),
       ]);
 
-      const existingPrepIds = new Set<number>((prepProdsRes2.data || []).map((r: any) => r.id as number));
+      const existingFlavourIds = new Set<number>((salesFlavoursRes2.data || []).map((r: any) => r.id as number));
 
-      // Collect all flavour_ids in sales.skus with no matching prep_product
+      // Collect all flavour_ids in sales.skus with no matching sales.flavours row
       const missingIds = Array.from(
         new Set<number>((salesSkusRes2.data || [])
-          .filter((s: any) => s.flavour_id && !existingPrepIds.has(s.flavour_id as number))
+          .filter((s: any) => s.flavour_id && !existingFlavourIds.has(s.flavour_id as number))
           .map((s: any) => s.flavour_id as number))
       );
 
@@ -171,15 +175,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, inserted: 0 });
       }
 
-      // Insert placeholder prep_products with matching IDs
-      const toInsert = missingIds.map(id => ({
-        id,
-        name: `Flavour #${id}`,
-        status: 'active',
-        batch_yield_l: null,
-      }));
-
-      const { error: insertErr } = await admin.schema('production').from('prep_products').insert(toInsert);
+      // Insert placeholder sales.flavours rows with matching IDs
+      const toInsert = missingIds.map(id => ({ id, name: `Flavour #${id}` }));
+      const { error: insertErr } = await admin.schema('sales').from('flavours').insert(toInsert);
       if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 });
       return NextResponse.json({ ok: true, inserted: toInsert.length, flavours: toInsert });
     }
