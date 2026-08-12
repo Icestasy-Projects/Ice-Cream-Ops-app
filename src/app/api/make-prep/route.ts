@@ -19,22 +19,18 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
-    const { prep_product_id, qty_produced, note } = await req.json() as {
-      prep_product_id: number; qty_produced: number; note?: string | null;
+    const { prep_product_id, batch_yield_l, num_batches, note } = await req.json() as {
+      prep_product_id: number; batch_yield_l: number; num_batches: number; note?: string | null;
     };
 
-    if (!prep_product_id || !qty_produced || qty_produced <= 0) {
-      return NextResponse.json({ error: 'prep_product_id and qty_produced are required' }, { status: 400 });
+    if (!prep_product_id || !num_batches || num_batches <= 0 || !batch_yield_l || batch_yield_l <= 0) {
+      return NextResponse.json({ error: 'prep_product_id, batch_yield_l and num_batches are required' }, { status: 400 });
     }
 
     const admin = adminClient();
 
-    // Fetch batch_yield_l so we can convert qty_produced (total litres) → number of batches
-    const { data: ppData } = await admin.schema('production').from('prep_products')
-      .select('batch_yield_l').eq('id', prep_product_id).single();
-
-    const batchYieldL = (ppData?.batch_yield_l as number) || 1;
-    const numBatches = qty_produced / batchYieldL;
+    const numBatches = num_batches;
+    const qty_produced = num_batches * batch_yield_l;
 
     // Fetch this product's recipe lines (column is qty_per_unit = qty per batch)
     const { data: recipeData } = await admin.schema('production').from('prep_recipes')

@@ -68,12 +68,15 @@ export default function MakePrepPage() {
     setLastError(null);
     setShortfalls([]);
     try {
-      const qtyToInsert = batchCount * (selected.batch_yield_l ?? 1);
-
       const res = await fetch('/api/make-prep', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prep_product_id: selected.id, qty_produced: qtyToInsert, note: note || null }),
+        body: JSON.stringify({
+          prep_product_id: selected.id,
+          num_batches: batchCount,
+          batch_yield_l: selected.batch_yield_l ?? 1,
+          note: note || null,
+        }),
       });
       const json = await res.json();
       if (!res.ok) {
