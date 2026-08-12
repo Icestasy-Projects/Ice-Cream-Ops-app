@@ -8,25 +8,38 @@ export function cn(...inputs: ClassValue[]) {
 export function parseSupabaseError(error: string | null | undefined): string {
   if (!error) return 'Something went wrong. Please try again.';
 
-  const stockMatch = error.match(/Insufficient stock.*?(\w+_product_id|ingredient_id)\s+(\d+)\s+at\s+(\w+)\s+would go to\s+([-\d.]+)/i);
-  if (stockMatch) {
-    const location = stockMatch[3] === 'factory' ? 'factory' : 'kitchen';
-    return `Not enough stock at the ${location} to complete this action. Check the stock dashboard and either transfer more or make a new batch first.`;
+  const lower = error.toLowerCase();
+
+  // Insufficient stock — extract item name / qty if present
+  const stockMatch = error.match(/Insufficient stock[^:]*:\s*(.+)/i);
+  if (stockMatch) return `Not enough stock — ${stockMatch[1].trim()}`;
+
+  if (lower.includes('insufficient stock') || lower.includes('not enough stock')) {
+    return `Not enough RM stock to make this batch. Check raw material levels before proceeding.`;
   }
 
-  if (error.toLowerCase().includes('insufficient stock')) {
-    return 'Not enough stock to complete this action. Check the stock levels and try again.';
-  }
-
-  if (error.toLowerCase().includes('violates foreign key')) {
+  if (lower.includes('violates foreign key')) {
     return 'One of the items selected no longer exists. Please refresh and try again.';
   }
 
-  if (error.toLowerCase().includes('violates not-null')) {
+  if (lower.includes('violates not-null')) {
     return 'Some required information is missing. Please fill in all fields.';
   }
 
-  return 'Something went wrong. Please try again or contact support.';
+  if (lower.includes('does not exist') || lower.includes('relation') || lower.includes('undefined function')) {
+    return `Database error: ${error}`;
+  }
+
+  if (lower.includes('permission denied')) {
+    return `Permission denied: ${error}`;
+  }
+
+  if (lower.includes('duplicate key') || lower.includes('unique constraint')) {
+    return `Duplicate entry — ${error}`;
+  }
+
+  // Pass through the raw message so users/admins can see what actually failed
+  return error.length < 300 ? error : error.slice(0, 300) + '…';
 }
 
 export function formatNumber(n: number, decimals = 1): string {

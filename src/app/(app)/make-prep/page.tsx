@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, FlaskConical } from 'lucide-react';
+import { CheckCircle, FlaskConical, AlertCircle } from 'lucide-react';
 
 interface PrepProduct {
   id: number;
@@ -28,6 +28,7 @@ export default function MakePrepPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.schema('production').from('prep_products')
@@ -53,6 +54,7 @@ export default function MakePrepPage() {
       setBatches('');
       setNote('');
       setLastResult(null);
+      setLastError(null);
     }
   }
 
@@ -63,6 +65,7 @@ export default function MakePrepPage() {
   async function handleSubmit() {
     if (!selected || batchCount <= 0) return;
     setSubmitting(true);
+    setLastError(null);
     try {
       const qtyToInsert = batchCount * (selected.batch_yield_l ?? 1);
 
@@ -80,14 +83,17 @@ export default function MakePrepPage() {
       if (error) throw new Error(error.message);
 
       setLastResult(`Recorded ${batchCount} batch${batchCount !== 1 ? 'es' : ''} of ${selected.name} (${formatNumber(totalLitres)}L). Kitchen stock updated.`);
+      setLastError(null);
       toast.success(`${batchCount} batch${batchCount !== 1 ? 'es' : ''} of ${selected.name} added to kitchen stock!`);
       setShowConfirm(false);
       setSelected(null);
       setBatches('');
       setNote('');
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error(parseSupabaseError(msg));
+      const raw = e instanceof Error ? e.message : String(e);
+      const friendly = parseSupabaseError(raw);
+      setLastError(friendly);
+      toast.error(friendly, { duration: 6000 });
       setShowConfirm(false);
     } finally {
       setSubmitting(false);
@@ -108,6 +114,16 @@ export default function MakePrepPage() {
         <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
           <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
           <p className="text-green-800 font-medium">{lastResult}</p>
+        </div>
+      )}
+
+      {lastError && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
+          <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
+          <div>
+            <p className="text-red-800 font-semibold text-sm">Could not record batch</p>
+            <p className="text-red-700 text-sm mt-1">{lastError}</p>
+          </div>
         </div>
       )}
 
