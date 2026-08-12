@@ -299,7 +299,7 @@ export default function FlavourAlignmentPage() {
       {orphan_sales_skus.length > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3">
           <p className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            <AlertTriangle size={15} /> {orphan_sales_skus.length} sales SKU{orphan_sales_skus.length !== 1 ? 's' : ''} reference a flavour_id not in production.flavours
+            <AlertTriangle size={15} /> {orphan_sales_skus.length} sales SKU{orphan_sales_skus.length !== 1 ? 's' : ''} reference a flavour_id not in sales.flavours
           </p>
           <p className="text-xs text-gray-500 mt-1">
             SKU IDs: {orphan_sales_skus.map(s => s.id).join(', ')}
