@@ -161,21 +161,26 @@ export default function RmItemsPage() {
     if (!trimName) { toast.error('Enter ingredient name.'); return; }
     const finalUnit = form.unit === '__custom__' ? form.customUnit.trim() : form.unit;
     if (!finalUnit) { toast.error('Enter a unit.'); return; }
+    if (form.categoryId === '__new__' && !form.newCatName.trim()) {
+      toast.error('Enter new category name.'); return;
+    }
 
     setSaving(true);
     try {
-      let catId: number | null = form.categoryId ? parseInt(form.categoryId) : null;
-      if (form.categoryId === '__new__') {
-        if (!form.newCatName.trim()) { toast.error('Enter new category name.'); setSaving(false); return; }
-        const { data: newCat, error: catErr } = await supabase.schema('production').from('rm_categories')
-          .insert({ name: form.newCatName.trim() }).select('id').single();
-        if (catErr || !newCat) throw new Error(catErr?.message || 'Failed to create category');
-        catId = newCat.id;
-      }
-      const { error } = await supabase.schema('production').from('rm_items').insert({
-        name: trimName, unit: finalUnit, category_id: catId, is_stockable: true, reorder_level: 0, status: 'active',
+      const body: Record<string, unknown> = {
+        name: trimName,
+        unit: finalUnit,
+        category_id: form.categoryId && form.categoryId !== '__new__' ? parseInt(form.categoryId) : null,
+      };
+      if (form.categoryId === '__new__') body.new_category_name = form.newCatName.trim();
+
+      const res = await fetch('/api/admin/rm-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
-      if (error) throw new Error(error.message);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to add ingredient');
       toast.success(`${trimName} added!`);
       setForm(BLANK_FORM);
       setShowAdd(false);

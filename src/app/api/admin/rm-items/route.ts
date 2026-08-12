@@ -19,6 +19,40 @@ async function checkAuth() {
   return user;
 }
 
+// POST — create a new rm_item (and optionally a new category)
+export async function POST(req: NextRequest) {
+  try {
+    const user = await checkAuth();
+    if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
+
+    const { name, unit, category_id, new_category_name } = await req.json() as {
+      name: string; unit: string; category_id: number | null; new_category_name?: string;
+    };
+    if (!name?.trim() || !unit?.trim()) {
+      return NextResponse.json({ error: 'name and unit are required' }, { status: 400 });
+    }
+
+    const admin = adminClient();
+    let catId: number | null = category_id ?? null;
+
+    if (new_category_name?.trim()) {
+      const { data: newCat, error: catErr } = await admin.schema('production').from('rm_categories')
+        .insert({ name: new_category_name.trim() }).select('id').single();
+      if (catErr || !newCat) return NextResponse.json({ error: catErr?.message || 'Failed to create category' }, { status: 500 });
+      catId = newCat.id;
+    }
+
+    const { error } = await admin.schema('production').from('rm_items').insert({
+      name: name.trim(), unit: unit.trim(), category_id: catId, is_stockable: true, reorder_level: 0, status: 'active',
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
 // PATCH — update an rm_item
 export async function PATCH(req: NextRequest) {
   try {
