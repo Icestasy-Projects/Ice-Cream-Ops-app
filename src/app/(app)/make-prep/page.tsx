@@ -27,6 +27,7 @@ export default function MakePrepPage() {
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [shortfalls, setShortfalls] = useState<string[]>([]);
 
   useEffect(() => {
     supabase.schema('production').from('prep_products')
@@ -53,6 +54,7 @@ export default function MakePrepPage() {
       setNote('');
       setLastResult(null);
       setLastError(null);
+      setShortfalls([]);
     }
   }
 
@@ -64,6 +66,7 @@ export default function MakePrepPage() {
     if (!selected || batchCount <= 0) return;
     setSubmitting(true);
     setLastError(null);
+    setShortfalls([]);
     try {
       const qtyToInsert = batchCount * (selected.batch_yield_l ?? 1);
 
@@ -73,7 +76,16 @@ export default function MakePrepPage() {
         body: JSON.stringify({ prep_product_id: selected.id, qty_produced: qtyToInsert, note: note || null }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to record batch');
+      if (!res.ok) {
+        if (json.shortfalls) {
+          setShortfalls(json.shortfalls);
+          setLastError(json.error || 'Not enough raw materials');
+          setShowConfirm(false);
+          setSubmitting(false);
+          return;
+        }
+        throw new Error(json.error || 'Failed to record batch');
+      }
 
       setLastResult(`Recorded ${batchCount} batch${batchCount !== 1 ? 'es' : ''} of ${selected.name} (${formatNumber(totalLitres)}L). Kitchen stock updated.`);
       setLastError(null);
@@ -84,9 +96,17 @@ export default function MakePrepPage() {
       setNote('');
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : String(e);
-      const friendly = parseSupabaseError(raw);
+      let friendly = raw;
+      let sf: string[] = [];
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.shortfalls) sf = parsed.shortfalls;
+        if (parsed?.error) friendly = parsed.error;
+      } catch { /* not JSON */ }
+      if (!sf.length) friendly = parseSupabaseError(friendly);
       setLastError(friendly);
-      toast.error(friendly, { duration: 6000 });
+      setShortfalls(sf);
+      toast.error(sf.length ? `Not enough RM stock — see details below` : friendly, { duration: 6000 });
       setShowConfirm(false);
     } finally {
       setSubmitting(false);
@@ -113,9 +133,21 @@ export default function MakePrepPage() {
       {lastError && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
           <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={20} />
-          <div>
+          <div className="min-w-0">
             <p className="text-red-800 font-semibold text-sm">Could not record batch</p>
-            <p className="text-red-700 text-sm mt-1">{lastError}</p>
+            {shortfalls.length > 0 ? (
+              <ul className="mt-2 space-y-1">
+                {shortfalls.map((s, i) => (
+                  <li key={i} className="text-red-700 text-sm flex items-start gap-1.5">
+                    <span className="text-red-400 shrink-0 mt-0.5">•</span>
+                    <span>{s}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-red-700 text-sm mt-1">{lastError}</p>
+            )}
+            <p className="text-red-500 text-xs mt-2">Go to <strong>Receive Ingredients</strong> to restock the items above.</p>
           </div>
         </div>
       )}
