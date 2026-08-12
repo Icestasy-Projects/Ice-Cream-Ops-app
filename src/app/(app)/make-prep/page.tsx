@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase';
-import { useUser } from '@/hooks/useUser';
 import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -18,7 +17,6 @@ interface PrepProduct {
 
 export default function MakePrepPage() {
   const supabase = createClient();
-  const { user } = useUser();
 
   const [products, setProducts] = useState<PrepProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,18 +67,13 @@ export default function MakePrepPage() {
     try {
       const qtyToInsert = batchCount * (selected.batch_yield_l ?? 1);
 
-      const { error } = await supabase
-        .schema('production')
-        .from('prep_units')
-        .insert({
-          prep_product_id: selected.id,
-          qty_produced: qtyToInsert,
-          produced_by: user?.id,
-          status: 'posted',
-          note: note || null,
-        });
-
-      if (error) throw new Error(error.message);
+      const res = await fetch('/api/make-prep', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prep_product_id: selected.id, qty_produced: qtyToInsert, note: note || null }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to record batch');
 
       setLastResult(`Recorded ${batchCount} batch${batchCount !== 1 ? 'es' : ''} of ${selected.name} (${formatNumber(totalLitres)}L). Kitchen stock updated.`);
       setLastError(null);
