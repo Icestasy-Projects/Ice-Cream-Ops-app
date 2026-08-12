@@ -10,9 +10,9 @@ import { Trash2, CheckCircle, ChevronDown, ChevronUp, RefreshCw, Package, BarCha
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface RmItem { rm_item_id: number; name: string; unit: string; }
+interface RmItem { rm_item_id: number; name: string; unit: string; last_cost?: number | null; }
 interface Vendor { id: number; name: string; }
-interface OrderLine { rm_item_id: number; name: string; unit: string; qty_ordered: string; unit_cost: string; }
+interface OrderLine { rm_item_id: number; name: string; unit: string; qty_ordered: string; unit_cost: string; last_cost?: number | null; }
 interface PurchaseOrderLine {
   id: number; rm_item_id: number; ingredient_name: string; unit: string;
   qty_ordered: number; qty_received: number; status: string; qty_now: string; qty_spoilt: string;
@@ -89,12 +89,28 @@ export default function ReceivePage() {
 
   useEffect(() => {
     async function load() {
-      const [itemsRes, vendorsRes] = await Promise.all([
+      const [itemsRes, vendorsRes, lastCostsRes] = await Promise.all([
         supabase.schema('production').from('rm_items').select('id, name, unit').eq('is_stockable', true).order('name'),
         supabase.schema('production').from('vendors').select('id, name').eq('status', 'active').order('name'),
+        // Latest unit_cost per rm_item from purchase order lines
+        supabase.schema('production').from('rm_purchase_order_lines')
+          .select('rm_item_id, unit_cost, order:order_id(ordered_at)')
+          .not('unit_cost', 'is', null)
+          .order('order_id', { ascending: false }),
       ]);
+
+      // Build map: rm_item_id → most recent unit_cost
+      const lastCostMap = new Map<number, number>();
+      for (const r of (lastCostsRes.data || []) as Record<string, unknown>[]) {
+        const id = r.rm_item_id as number;
+        if (!lastCostMap.has(id) && r.unit_cost != null) {
+          lastCostMap.set(id, r.unit_cost as number);
+        }
+      }
+
       setItems((itemsRes.data || []).map((r: Record<string, unknown>) => ({
         rm_item_id: r.id as number, name: r.name as string, unit: r.unit as string,
+        last_cost: lastCostMap.get(r.id as number) ?? null,
       })));
       setVendors(vendorsRes.data || []);
       setLoading(false);
@@ -218,7 +234,11 @@ export default function ReceivePage() {
 
   function addLine(item: RmItem) {
     if (lines.some(l => l.rm_item_id === item.rm_item_id)) { toast.error(`${item.name} already added.`); return; }
-    setLines(prev => [...prev, { rm_item_id: item.rm_item_id, name: item.name, unit: item.unit, qty_ordered: '', unit_cost: '' }]);
+    setLines(prev => [...prev, {
+      rm_item_id: item.rm_item_id, name: item.name, unit: item.unit,
+      qty_ordered: '', unit_cost: item.last_cost != null ? String(item.last_cost) : '',
+      last_cost: item.last_cost,
+    }]);
     setSearch(''); setShowDropdown(false);
   }
   function removeLine(idx: number) { setLines(prev => prev.filter((_, i) => i !== idx)); }
@@ -414,8 +434,13 @@ export default function ReceivePage() {
                   ) : filtered.map(i => (
                     <button key={i.rm_item_id} onMouseDown={() => addLine(i)}
                       className="flex items-center justify-between w-full px-4 py-3 hover:bg-orange-50 text-left touch-manipulation border-b border-gray-50 last:border-0">
-                      <span className="font-medium text-gray-900 text-sm">{i.name}</span>
-                      <span className="text-gray-400 text-xs ml-2">{i.unit}</span>
+                      <div>
+                        <span className="font-medium text-gray-900 text-sm">{i.name}</span>
+                        <span className="text-gray-400 text-xs ml-2">{i.unit}</span>
+                      </div>
+                      {i.last_cost != null && (
+                        <span className="text-xs text-blue-500 ml-2 shrink-0">Last: ₹{i.last_cost}/{i.unit}</span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -441,7 +466,12 @@ export default function ReceivePage() {
                   <div key={line.rm_item_id} className="grid grid-cols-[1fr_90px_90px_32px] gap-2 items-center bg-orange-50 rounded-xl px-3 py-2.5">
                     <div>
                       <p className="font-semibold text-gray-900 text-sm leading-tight">{line.name}</p>
-                      <p className="text-xs text-gray-400">{line.unit}</p>
+                      <p className="text-xs text-gray-400">
+                        {line.unit}
+                        {line.last_cost != null && (
+                          <span className="ml-1 text-blue-400">· Last: ₹{line.last_cost}/{line.unit}</span>
+                        )}
+                      </p>
                     </div>
                     <input type="number" min="0" step="0.1" value={line.qty_ordered}
                       onChange={e => updateLine(idx, 'qty_ordered', e.target.value)}
