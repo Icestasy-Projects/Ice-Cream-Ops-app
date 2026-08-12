@@ -72,6 +72,7 @@ export default function ReceivePage() {
 
   // Place order state
   const [vendorId, setVendorId] = useState('');
+  const [otherVendorName, setOtherVendorName] = useState('');
   const [note, setNote] = useState('');
   const [lines, setLines] = useState<OrderLine[]>([]);
   const [search, setSearch] = useState('');
@@ -218,6 +219,9 @@ export default function ReceivePage() {
 
   async function handlePlaceOrder() {
     if (!vendorId) { toast.error('Please select a vendor.'); return; }
+    if (vendorId === '__other__' && !otherVendorName.trim()) {
+      toast.error('Please enter the vendor name.'); return;
+    }
     if (lines.length === 0) { toast.error('Add at least one ingredient.'); return; }
     for (const l of lines) {
       if (!l.qty_ordered || parseFloat(l.qty_ordered) <= 0) {
@@ -227,10 +231,27 @@ export default function ReceivePage() {
     }
     setSubmitting(true);
     try {
+      let resolvedVendorId = parseInt(vendorId);
+      if (vendorId === '__other__') {
+        const trimmedName = otherVendorName.trim();
+        // Reuse existing vendor with same name (case-insensitive), or create a new one
+        const { data: existing } = await supabase.schema('production').from('vendors')
+          .select('id').ilike('name', trimmedName).maybeSingle();
+        if (existing) {
+          resolvedVendorId = existing.id;
+        } else {
+          const { data: newVendor, error: vendorErr } = await supabase.schema('production').from('vendors')
+            .insert({ name: trimmedName, status: 'active' }).select('id').single();
+          if (vendorErr || !newVendor) throw new Error(vendorErr?.message || 'Failed to create vendor');
+          resolvedVendorId = newVendor.id;
+          setVendors(prev => [...prev, { id: newVendor.id, name: trimmedName }].sort((a, b) => a.name.localeCompare(b.name)));
+        }
+      }
+
       const { data: order, error: orderErr } = await supabase
         .schema('production')
         .from('rm_purchase_orders')
-        .insert({ vendor_id: parseInt(vendorId), ordered_by: user?.id, note: note || null, status: 'pending' })
+        .insert({ vendor_id: resolvedVendorId, ordered_by: user?.id, note: note || null, status: 'pending' })
         .select('id')
         .single();
 
@@ -253,6 +274,7 @@ export default function ReceivePage() {
       toast.success('Order placed! Switch to Confirm Receipt when the delivery arrives.');
       setLines([]);
       setVendorId('');
+      setOtherVendorName('');
       setNote('');
     } catch (e: unknown) {
       toast.error(parseSupabaseError(e instanceof Error ? e.message : String(e)));
@@ -400,10 +422,21 @@ export default function ReceivePage() {
             <h2 className="section-title">Order Details</h2>
             <div>
               <label className="label-text block mb-2">Vendor / Supplier</label>
-              <select value={vendorId} onChange={e => setVendorId(e.target.value)} className="input-field">
+              <select value={vendorId} onChange={e => { setVendorId(e.target.value); setOtherVendorName(''); }} className="input-field">
                 <option value="">Select vendor...</option>
                 {vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                <option value="__other__">Others (type name below)</option>
               </select>
+              {vendorId === '__other__' && (
+                <input
+                  type="text"
+                  value={otherVendorName}
+                  onChange={e => setOtherVendorName(e.target.value)}
+                  placeholder="Enter vendor name..."
+                  className="input-field mt-2"
+                  autoFocus
+                />
+              )}
             </div>
             <div>
               <label className="label-text block mb-2">Note (optional)</label>
