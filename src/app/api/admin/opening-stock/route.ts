@@ -12,38 +12,38 @@ function adminClient(): any {
   return createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 }
 
-// Opening stock values — name must match rm_items.name (case-insensitive)
-const OPENING_STOCK: { name: string; qty: number }[] = [
-  { name: 'Sugar',               qty: 24 },
-  { name: 'Base',                qty: 11 },
-  { name: 'White Butter',        qty: 8.6 },
-  { name: 'Khoa',                qty: 0.65 },
-  { name: 'Elaichi Powder',      qty: 0.1 },
-  { name: 'Sitaphal',            qty: 3.9 },
-  { name: 'Coffee Powder',       qty: 17 },
-  { name: 'Mango Pulp',          qty: 120.9 },
-  { name: 'Ghee',                qty: 37 },
-  { name: 'Besan',               qty: 8.1 },
-  { name: 'Maida',               qty: 0.35 },
-  { name: 'Jaggery',             qty: 59.5 },
-  { name: 'Coconut Butter',      qty: 40 },
-  { name: 'Shredded Coconut',    qty: 23 },
-  { name: 'Tender Coconut',      qty: 5 },
-  { name: 'CEC Vanilla',         qty: 7.5 },
-  { name: 'Vanilla Powder',      qty: 0.8 },
-  { name: 'Dark Chocolate Slab', qty: 21.5 },
-  { name: 'JB 800 Cocoa Powder', qty: 8.5 },
-  { name: 'Cream',               qty: 28 },
-  { name: 'Gulkand',             qty: 51 },
-  { name: 'Dried Rose Petals',   qty: 1.5 },
-  { name: 'Cashew Butter',       qty: 40.45 },
-  { name: 'Tukda Kaju',          qty: 11.5 },
-  { name: 'Fennel Seeds',        qty: 4 },
-  { name: 'Orange Paste',        qty: 0.2 },
-  { name: 'Saffron',             qty: 0.025 },
-  { name: 'Almonds',             qty: 13.8 },
-  { name: 'Black Sesame',        qty: 5.7 },
-  { name: 'Honey',               qty: 2.5 },
+// Opening stock values keyed by rm_item_id (matched from DB)
+const OPENING_STOCK: { id: number; qty: number }[] = [
+  { id: 1,  qty: 24 },       // Sugar (kg)
+  { id: 2,  qty: 11 },       // Base (l)
+  { id: 3,  qty: 8.6 },      // White Butter (kg)
+  { id: 4,  qty: 0.65 },     // Khoa (kg)
+  { id: 5,  qty: 100 },      // Elaichi Powder (g)
+  { id: 7,  qty: 3.9 },      // Sitaphal (kg)
+  { id: 11, qty: 17 },       // Coffee Powder (kg)
+  { id: 12, qty: 120.9 },    // Mango Pulp (kg)
+  { id: 13, qty: 37 },       // Ghee (l)
+  { id: 14, qty: 8.1 },      // Besan (kg)
+  { id: 15, qty: 0.35 },     // Maida (kg)
+  { id: 16, qty: 59.5 },     // Jaggery (kg)
+  { id: 17, qty: 40 },       // Coconut Butter (kg)
+  { id: 18, qty: 23 },       // Shredded Coconut (kg)
+  { id: 19, qty: 5 },        // Tender Coconut (kg)
+  { id: 21, qty: 7500 },     // CEC Vanilla (g)
+  { id: 22, qty: 800 },      // Vanilla Powder (g)
+  { id: 24, qty: 21.5 },     // Dark Chocolate Slab (kg)
+  { id: 25, qty: 8.5 },      // JB 800 Cocoa Powder (kg)
+  { id: 28, qty: 28 },       // Cream (l)
+  { id: 29, qty: 51 },       // Gulqand (kg)
+  { id: 30, qty: 1.5 },      // Dried Rose Petals (kg)
+  { id: 31, qty: 40.45 },    // Cashew Butter (kg)
+  { id: 32, qty: 11.5 },     // Tukda Kaju (kg)
+  { id: 34, qty: 4000 },     // Fennel Seeds (g)
+  { id: 36, qty: 0.2 },      // Orange Paste (kg)
+  { id: 38, qty: 25 },       // Saffron (g)
+  { id: 39, qty: 13.8 },     // Almonds (kg)
+  { id: 40, qty: 5.7 },      // Black Sesame (kg)
+  { id: 41, qty: 2.5 },      // Honey (kg)
 ];
 
 export async function POST() {
@@ -55,80 +55,59 @@ export async function POST() {
 
     const admin = adminClient();
 
-    // ── Step 1: Wipe all RM and prep/FG stock ledgers ──────────────────────
-    const wipeTables = [
-      ['production', 'rm_purchase_order_lines'],
-      ['production', 'rm_purchase_orders'],
-      ['production', 'prep_units'],
-      ['production', 'fg_units'],
+    // ── Step 1: Wipe ALL stock tables including ledgers ────────────────────
+    const tables = [
+      'rm_purchase_order_lines',
+      'rm_purchase_orders',
+      'rm_ledger',
+      'prep_units',
+      'prep_ledger',
+      'fg_units',
+      'fg_ledger',
     ];
-    // Also try ledger tables (may not exist, errors silently ignored)
-    const optionalTables = [
-      ['production', 'rm_ledger'],
-      ['production', 'prep_ledger'],
-      ['production', 'fg_ledger'],
-    ];
-    for (const [schema, table] of [...wipeTables, ...optionalTables]) {
-      await admin.schema(schema).from(table).delete().neq('id', 0);
+    for (const table of tables) {
+      await admin.schema('production').from(table).delete().neq('id', 0);
     }
 
-    // ── Step 2: Fetch all rm_items to match names → ids ───────────────────
-    const { data: rmItems, error: rmErr } = await admin.schema('production')
-      .from('rm_items').select('id, name');
-    if (rmErr) return NextResponse.json({ error: rmErr.message }, { status: 500 });
-
-    const nameToId = new Map<string, number>(
-      (rmItems as { id: number; name: string }[]).map(r => [r.name.toLowerCase().trim(), r.id])
-    );
-
-    // ── Step 3: Find or create "Opening Stock" vendor ─────────────────────
-    const vendorName = 'Opening Stock';
+    // ── Step 2: Find or create "Opening Stock" vendor ─────────────────────
     let { data: vendorRow } = await admin.schema('production').from('vendors')
-      .select('id').ilike('name', vendorName).single();
+      .select('id').ilike('name', 'Opening Stock').single();
     if (!vendorRow) {
       const { data: newVendor } = await admin.schema('production').from('vendors')
-        .insert({ name: vendorName, status: 'active' }).select('id').single();
+        .insert({ name: 'Opening Stock', is_registered: false, status: 'active' })
+        .select('id').single();
       vendorRow = newVendor;
     }
     const vendorId = vendorRow?.id;
     if (!vendorId) return NextResponse.json({ error: 'Could not find or create Opening Stock vendor' }, { status: 500 });
 
-    // ── Step 4: Create a single "received" purchase order ─────────────────
+    // ── Step 3: Create opening stock purchase order ────────────────────────
     const { data: poRow, error: poErr } = await admin.schema('production').from('rm_purchase_orders')
       .insert({
         vendor_id: vendorId,
         ordered_at: new Date().toISOString(),
         status: 'received',
         note: 'Opening stock — Aug 2026 physical count',
-        created_by: user.id,
       }).select('id').single();
     if (poErr) return NextResponse.json({ error: poErr.message }, { status: 500 });
 
     const orderId = poRow.id;
 
-    // ── Step 5: Insert lines for each item with stock > 0 ─────────────────
-    const notFound: string[] = [];
-    const inserted: string[] = [];
+    // ── Step 4: Insert lines (triggers will populate rm_ledger) ───────────
+    const lines = OPENING_STOCK.map(item => ({
+      order_id: orderId,
+      rm_item_id: item.id,
+      qty_ordered: item.qty,
+      qty_received: item.qty,
+      unit_cost: null,
+      status: 'received',
+    }));
 
-    for (const item of OPENING_STOCK) {
-      const rmId = nameToId.get(item.name.toLowerCase().trim());
-      if (!rmId) {
-        notFound.push(item.name);
-        continue;
-      }
-      const { error: lineErr } = await admin.schema('production').from('rm_purchase_order_lines').insert({
-        order_id: orderId,
-        rm_item_id: rmId,
-        qty_ordered: item.qty,
-        qty_received: item.qty,
-        unit_cost: null,
-        status: 'received',
-      });
-      if (lineErr) notFound.push(`${item.name}: ${lineErr.message}`);
-      else inserted.push(item.name);
-    }
+    const { error: linesErr } = await admin.schema('production')
+      .from('rm_purchase_order_lines').insert(lines);
+    if (linesErr) return NextResponse.json({ error: linesErr.message }, { status: 500 });
 
-    return NextResponse.json({ ok: true, inserted, notFound, orderId });
+    return NextResponse.json({ ok: true, itemsLoaded: lines.length, orderId });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
