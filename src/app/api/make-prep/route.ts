@@ -19,18 +19,43 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
-    const { prep_product_id, batch_yield_l, num_batches, note } = await req.json() as {
-      prep_product_id: number; batch_yield_l: number; num_batches: number; note?: string | null;
+    const body = await req.json() as {
+      prep_product_id: number;
+      batch_yield_l?: number;
+      num_batches?: number;
+      qty_produced?: number;
+      note?: string | null;
     };
 
-    if (!prep_product_id || !num_batches || num_batches <= 0 || !batch_yield_l || batch_yield_l <= 0) {
-      return NextResponse.json({ error: 'prep_product_id, batch_yield_l and num_batches are required' }, { status: 400 });
+    const { prep_product_id, note } = body;
+
+    if (!prep_product_id) {
+      return NextResponse.json({ error: 'prep_product_id is required' }, { status: 400 });
     }
 
     const admin = adminClient();
 
-    const numBatches = num_batches;
-    const qty_produced = num_batches * batch_yield_l;
+    // Accept either new format (num_batches + batch_yield_l) or old format (qty_produced)
+    let numBatches: number;
+    let qty_produced: number;
+
+    if (body.num_batches && body.batch_yield_l) {
+      numBatches = body.num_batches;
+      qty_produced = body.num_batches * body.batch_yield_l;
+    } else if (body.qty_produced) {
+      // Legacy: re-fetch batch_yield_l to derive numBatches
+      const { data: ppData } = await admin.schema('production').from('prep_products')
+        .select('batch_yield_l').eq('id', prep_product_id).single();
+      const batchYieldL = (ppData?.batch_yield_l as number) || 1;
+      qty_produced = body.qty_produced;
+      numBatches = qty_produced / batchYieldL;
+    } else {
+      return NextResponse.json({ error: 'Provide num_batches + batch_yield_l or qty_produced' }, { status: 400 });
+    }
+
+    if (numBatches <= 0) {
+      return NextResponse.json({ error: 'num_batches must be greater than 0' }, { status: 400 });
+    }
 
     // Fetch this product's recipe lines (column is qty_per_unit = qty per batch)
     const { data: recipeData } = await admin.schema('production').from('prep_recipes')
