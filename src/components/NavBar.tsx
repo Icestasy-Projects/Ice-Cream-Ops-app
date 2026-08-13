@@ -26,6 +26,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/admin/sku-alignment': Link2,
   '/admin/flavour-alignment': GitMerge,
   '/admin/cleanup': Trash2,
+  '/admin/opening-stock': Package,
 };
 
 // Top-level nav groups shown as tabs in the header
