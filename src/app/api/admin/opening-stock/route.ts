@@ -88,7 +88,6 @@ export async function POST() {
         ordered_at: new Date().toISOString(),
         status: 'received',
         note: 'Opening stock — Aug 2026 physical count',
-        ordered_by: user.id,
       }).select('id').single();
     if (poErr) return NextResponse.json({ error: poErr.message }, { status: 500 });
 
