@@ -65,8 +65,7 @@ export default function MakePrepPage() {
       setShortfalls([]);
       const { data } = await supabase.schema('production').from('prep_recipes')
         .select('qty_per_unit, rm_items(name, unit)')
-        .eq('prep_product_id', p.id)
-        .order('rm_items(name)' as 'qty_per_unit');
+        .eq('prep_product_id', p.id);
       setRecipe((data || []) as unknown as RecipeLine[]);
     }
   }
@@ -216,15 +215,17 @@ export default function MakePrepPage() {
                     </div>
                   )}
 
-                  {recipe.length > 0 && batchCount > 0 && (
+                  {recipe.length > 0 && (
                     <div className="mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide px-4 py-2 border-b border-gray-100">RM Ingredients Used</p>
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide px-4 py-2 border-b border-gray-100">
+                        RM Ingredients Used{batchCount > 0 ? ` — ${batchCount} batch${batchCount !== 1 ? 'es' : ''}` : ' — per batch'}
+                      </p>
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-gray-100 text-xs text-gray-400">
                             <th className="text-left px-4 py-1.5 font-medium">Ingredient</th>
                             <th className="text-right px-4 py-1.5 font-medium">Per Batch</th>
-                            <th className="text-right px-4 py-1.5 font-medium">Total ({batchCount} batch{batchCount !== 1 ? 'es' : ''})</th>
+                            {batchCount > 0 && <th className="text-right px-4 py-1.5 font-medium">Total</th>}
                           </tr>
                         </thead>
                         <tbody>
@@ -232,7 +233,9 @@ export default function MakePrepPage() {
                             <tr key={i} className="border-b border-gray-50 last:border-0">
                               <td className="px-4 py-2 text-gray-800 font-medium">{line.rm_items.name}</td>
                               <td className="px-4 py-2 text-right text-gray-500">{formatNumber(line.qty_per_unit)} {line.rm_items.unit}</td>
-                              <td className="px-4 py-2 text-right font-bold text-orange-700">{formatNumber(line.qty_per_unit * batchCount)} {line.rm_items.unit}</td>
+                              {batchCount > 0 && (
+                                <td className="px-4 py-2 text-right font-bold text-orange-700">{formatNumber(line.qty_per_unit * batchCount)} {line.rm_items.unit}</td>
+                              )}
                             </tr>
                           ))}
                         </tbody>
