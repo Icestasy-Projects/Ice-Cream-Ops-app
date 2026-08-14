@@ -129,7 +129,7 @@ export default function MakePrepPage() {
   if (loading) return <LoadingSpinner text="Loading flavours..." />;
 
   return (
-    <div className="space-y-4 max-w-xl">
+    <div className="space-y-4">
       <ScreenHeader
         icon={FlaskConical} iconColor="text-purple-500"
         title="Make Kitchen Mix"
