@@ -49,7 +49,7 @@ export default function MakeTubsPage() {
 
   // Unique sorted flavour names
   const flavours = useMemo(() =>
-    [...new Set(skus.map(s => s.product_name))].sort(),
+    Array.from(new Set(skus.map(s => s.product_name))).sort(),
     [skus]
   );
 
