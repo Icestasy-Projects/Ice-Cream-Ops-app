@@ -97,6 +97,59 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// PUT /api/admin/cost-sheet — insert a single new row
+export async function PUT(req: NextRequest) {
+  try {
+    const user = await getUser();
+    if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
+
+    const body = await req.json() as {
+      flavour_type: string;
+      flavour_name: string;
+      ingredient: string;
+      purpose: string;
+      rate?: number | null;
+      rate_unit?: string | null;
+      qty_per_batch?: number | null;
+    };
+
+    if (!body.flavour_name || !body.ingredient) {
+      return NextResponse.json({ error: 'flavour_name and ingredient required' }, { status: 400 });
+    }
+
+    const admin = adminClient();
+    const { error } = await admin.schema('production').from('cost_sheet').insert({
+      ...body,
+      updated_by: user.id,
+      updated_at: new Date().toISOString(),
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/cost-sheet — delete a single row
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await getUser();
+    if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
+
+    const { id } = await req.json() as { id: number };
+    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+    const admin = adminClient();
+    const { error } = await admin.schema('production').from('cost_sheet').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    return NextResponse.json({ ok: true });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
 // PATCH /api/admin/cost-sheet — update a single row's rate or qty
 export async function PATCH(req: NextRequest) {
   try {
