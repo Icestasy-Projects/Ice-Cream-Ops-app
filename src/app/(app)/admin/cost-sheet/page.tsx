@@ -182,7 +182,10 @@ export default function CostSheetPage() {
     });
     const json = await res.json();
     if (!res.ok) { toast.error(json.error || 'Import failed'); setImporting(false); return; }
-    toast.success(`Imported ${json.imported} rows`);
+    const skippedMsg = json.skipped?.length
+      ? ` (${json.skipped.length} unrecognised flavours skipped)`
+      : '';
+    toast.success(`Imported ${json.imported} rows${skippedMsg}`, { duration: 5000 });
     setPreview([]);
     setFileName('');
     await loadRows();

@@ -54,10 +54,35 @@ export async function POST(req: NextRequest) {
     if (!items?.length) return NextResponse.json({ error: 'No items provided' }, { status: 400 });
 
     const admin = adminClient();
-    // Delete all existing and re-insert
+
+    // Fetch all active prep_product names so we only import known flavours
+    const { data: prepProducts } = await admin.schema('production').from('prep_products')
+      .select('name').eq('status', 'active');
+    const knownFlavours = new Set<string>(
+      ((prepProducts || []) as Array<{ name: string }>).map(p => p.name.trim().toLowerCase())
+    );
+
+    const filtered = items.filter(item =>
+      knownFlavours.has(item.flavour_name.trim().toLowerCase())
+    );
+
+    const skippedNames = Array.from(
+      new Set(items
+        .filter(item => !knownFlavours.has(item.flavour_name.trim().toLowerCase()))
+        .map(item => item.flavour_name))
+    );
+
+    if (!filtered.length) {
+      return NextResponse.json({
+        error: 'No rows matched any active flavour in the system.',
+        skipped: skippedNames,
+      }, { status: 422 });
+    }
+
+    // Delete all existing and re-insert only matched rows
     await admin.schema('production').from('cost_sheet').delete().neq('id', 0);
 
-    const rows = items.map(item => ({
+    const rows = filtered.map(item => ({
       ...item,
       updated_by: user.id,
       updated_at: new Date().toISOString(),
@@ -66,7 +91,7 @@ export async function POST(req: NextRequest) {
     const { error } = await admin.schema('production').from('cost_sheet').insert(rows);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    return NextResponse.json({ ok: true, imported: rows.length });
+    return NextResponse.json({ ok: true, imported: rows.length, skipped: skippedNames });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
