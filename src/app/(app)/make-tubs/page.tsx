@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, Box, Search } from 'lucide-react';
+import { CheckCircle, Box } from 'lucide-react';
 
 interface FgSku {
   fg_sku_id: number;
@@ -22,8 +22,8 @@ export default function MakeTubsPage() {
 
   const [skus, setSkus] = useState<FgSku[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<FgSku | null>(null);
+  const [selectedFlavour, setSelectedFlavour] = useState('');
+  const [selectedSku, setSelectedSku] = useState<FgSku | null>(null);
   const [qty, setQty] = useState('');
   const [note, setNote] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
@@ -47,28 +47,41 @@ export default function MakeTubsPage() {
 
   useEffect(() => { loadSkus(); }, [loadSkus]);
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return skus;
-    const q = search.toLowerCase();
-    return skus.filter(s => s.product_name.toLowerCase().includes(q));
-  }, [skus, search]);
+  // Unique sorted flavour names
+  const flavours = useMemo(() =>
+    Array.from(new Set(skus.map(s => s.product_name))).sort(),
+    [skus]
+  );
 
-  function selectSku(s: FgSku) {
-    setSelected(prev => prev?.fg_sku_id === s.fg_sku_id ? null : s);
+  // SKUs for the selected flavour
+  const flavourSkus = useMemo(() =>
+    skus.filter(s => s.product_name === selectedFlavour),
+    [skus, selectedFlavour]
+  );
+
+  function handleFlavourChange(name: string) {
+    setSelectedFlavour(name);
+    setSelectedSku(null);
     setQty('');
     setNote('');
     setLastResult(null);
   }
 
+  function handleSkuSelect(s: FgSku) {
+    setSelectedSku(s);
+    setQty('');
+    setNote('');
+  }
+
   async function handleSubmit() {
-    if (!selected || !qty || parseFloat(qty) <= 0) return;
+    if (!selectedSku || !qty || parseFloat(qty) <= 0) return;
     setSubmitting(true);
     try {
       const { error } = await supabase
         .schema('production')
         .from('fg_units')
         .insert({
-          fg_sku_id: selected.fg_sku_id,
+          fg_sku_id: selectedSku.fg_sku_id,
           qty_produced: parseFloat(qty),
           produced_by: user?.id,
           status: 'posted',
@@ -78,10 +91,11 @@ export default function MakeTubsPage() {
       if (error) throw new Error(error.message);
 
       const qtyNum = parseFloat(qty);
-      setLastResult(`Produced ${formatNumber(qtyNum)} ${selected.unit} of ${selected.product_name}. Finished goods stock updated.`);
-      toast.success(`${formatNumber(qtyNum)} ${selected.unit} of ${selected.product_name} added to stock!`);
+      setLastResult(`Produced ${formatNumber(qtyNum)} ${selectedSku.unit} of ${selectedSku.product_name}. Finished goods stock updated.`);
+      toast.success(`${formatNumber(qtyNum)} ${selectedSku.unit} of ${selectedSku.product_name} added to stock!`);
       setShowConfirm(false);
-      setSelected(null);
+      setSelectedFlavour('');
+      setSelectedSku(null);
       setQty('');
       setNote('');
       await loadSkus();
@@ -117,81 +131,93 @@ export default function MakeTubsPage() {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search flavour..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 bg-white"
-        />
-      </div>
+      <div className="card space-y-5">
+        {/* Step 1: Flavour dropdown */}
+        <div>
+          <label className="label-text block mb-1">Flavour</label>
+          <select
+            value={selectedFlavour}
+            onChange={e => handleFlavourChange(e.target.value)}
+            className="input-field"
+          >
+            <option value="">— Select a flavour —</option>
+            {flavours.map(f => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+        </div>
 
-      <div className="card space-y-2">
-        <h2 className="section-title mb-3">Pick a Flavour</h2>
-        {filtered.length === 0 ? (
-          <p className="text-center text-gray-400 py-6">
-            {skus.length === 0 ? 'No products found.' : 'No results match your search.'}
-          </p>
-        ) : (
-          filtered.map(s => {
-            const isSelected = selected?.fg_sku_id === s.fg_sku_id;
-            return (
-              <div key={s.fg_sku_id}>
+        {/* Step 2: Size variant chips */}
+        {selectedFlavour && flavourSkus.length > 0 && (
+          <div>
+            <label className="label-text block mb-2">Size / Format</label>
+            <div className="flex flex-wrap gap-2">
+              {flavourSkus.map(s => (
                 <button
-                  onClick={() => selectSku(s)}
-                  className={`w-full text-left px-5 py-4 transition-all touch-manipulation ${
-                    isSelected
-                      ? 'rounded-t-2xl border-2 border-b-0 border-brand-500 bg-orange-50'
-                      : 'rounded-2xl border-2 border-gray-100 bg-white hover:border-orange-200'
+                  key={s.fg_sku_id}
+                  onClick={() => handleSkuSelect(s)}
+                  className={`px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all touch-manipulation ${
+                    selectedSku?.fg_sku_id === s.fg_sku_id
+                      ? 'border-brand-500 bg-orange-50 text-brand-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-orange-300'
                   }`}
                 >
-                  <p className="font-bold text-gray-900">{s.product_name}</p>
-                  <p className="text-sm text-gray-500 mt-0.5">Currently in stock: {formatNumber(s.qty_on_hand)} {s.unit}</p>
+                  <span>{s.unit}</span>
+                  <span className="block text-xs font-normal text-gray-400 mt-0.5">
+                    In stock: {formatNumber(s.qty_on_hand)}
+                  </span>
                 </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-                {isSelected && (
-                  <div className="border-2 border-t-0 border-brand-500 bg-orange-50 rounded-b-2xl px-5 pb-5 pt-4 space-y-4">
-                    <div>
-                      <label className="label-text block mb-2">Quantity to produce ({s.unit})</label>
-                      <input
-                        type="number" min="1" step="1"
-                        value={qty}
-                        onChange={e => setQty(e.target.value)}
-                        placeholder="e.g. 50"
-                        className="input-field"
-                        autoFocus
-                      />
-                    </div>
+        {/* Step 3: Qty + note + submit */}
+        {selectedSku && (
+          <>
+            <div>
+              <label className="label-text block mb-1">Quantity to produce ({selectedSku.unit})</label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={qty}
+                onChange={e => setQty(e.target.value)}
+                onWheel={e => e.currentTarget.blur()}
+                placeholder="e.g. 50"
+                className="input-field"
+                autoFocus
+              />
+            </div>
 
-                    <div>
-                      <label className="label-text block mb-2">Note (optional)</label>
-                      <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Any notes..." className="input-field" rows={2} />
-                    </div>
+            <div>
+              <label className="label-text block mb-1">Note (optional)</label>
+              <textarea
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="Any notes..."
+                className="input-field"
+                rows={2}
+              />
+            </div>
 
-                    {qtyNum > 0 && (
-                      <button onClick={() => setShowConfirm(true)} className="btn-primary">
-                        Make {qty} {s.unit} of {s.product_name}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
+            {qtyNum > 0 && (
+              <button onClick={() => setShowConfirm(true)} className="btn-primary w-full">
+                Make {qty} {selectedSku.unit} of {selectedSku.product_name}
+              </button>
+            )}
+          </>
         )}
       </div>
 
-      {showConfirm && selected && (
+      {showConfirm && selectedSku && (
         <ConfirmModal
           title="Confirm Production"
           message={
             <div className="space-y-2">
               <p>Recording production of:</p>
               <p className="text-xl font-bold text-gray-900">
-                {qty} {selected.unit} of {selected.product_name}
+                {qty} {selectedSku.unit} of {selectedSku.product_name}
               </p>
               <p className="text-sm text-gray-500">Finished goods stock will increase by this amount.</p>
             </div>

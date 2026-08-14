@@ -27,6 +27,7 @@ const ALL_NAV: NavItem[] = [
   { href: '/admin/flavour-alignment', label: 'Flavour Alignment', group: 'Admin' },
   { href: '/admin/cleanup', label: 'DB Cleanup', group: 'Admin' },
   { href: '/admin/opening-stock', label: 'Opening Stock', group: 'Admin' },
+  { href: '/admin/cost-sheet', label: 'Cost Sheet', group: 'Admin' },
 ];
 
 const KITCHEN_HREFS = new Set([
@@ -44,7 +45,7 @@ const FACTORY_HREFS = new Set([
   '/dispatch',
 ]);
 
-const ADMIN_HREFS = new Set(['/admin/flavours', '/admin/rm-items', '/admin/users', '/dashboards/weekly-audit', '/admin/sku-alignment', '/admin/flavour-alignment', '/admin/cleanup', '/admin/opening-stock']);
+const ADMIN_HREFS = new Set(['/admin/flavours', '/admin/rm-items', '/admin/users', '/dashboards/weekly-audit', '/admin/sku-alignment', '/admin/flavour-alignment', '/admin/cleanup', '/admin/opening-stock', '/admin/cost-sheet']);
 
 export function getNavItemsForRole(role: AppRole | null): NavItem[] {
   if (!role) return [];
