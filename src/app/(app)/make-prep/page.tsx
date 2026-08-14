@@ -51,18 +51,16 @@ export default function MakePrepPage() {
       });
   }, [supabase]);
 
-  async function selectProduct(p: PrepProduct) {
-    if (selected?.id === p.id) {
-      setSelected(null);
-      setRecipe([]);
-    } else {
-      setSelected(p);
-      setRecipe([]);
-      setBatches('');
-      setNote('');
-      setLastResult(null);
-      setLastError(null);
-      setShortfalls([]);
+  async function handleSelectChange(id: string) {
+    setBatches('');
+    setNote('');
+    setLastError(null);
+    setShortfalls([]);
+    setRecipe([]);
+    if (!id) { setSelected(null); return; }
+    const p = products.find(x => x.id === parseInt(id)) ?? null;
+    setSelected(p);
+    if (p) {
       const { data } = await supabase.schema('production').from('prep_recipes')
         .select('qty_per_unit, rm_items(name, unit)')
         .eq('prep_product_id', p.id);
@@ -131,11 +129,11 @@ export default function MakePrepPage() {
   if (loading) return <LoadingSpinner text="Loading flavours..." />;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-xl">
       <ScreenHeader
         icon={FlaskConical} iconColor="text-purple-500"
         title="Make Kitchen Mix"
-        description="Record a new batch of flavour mix made in the kitchen. Adds the mix to kitchen stock."
+        description="Record a new batch of flavour mix made in the kitchen."
       />
 
       {lastResult && (
@@ -167,103 +165,103 @@ export default function MakePrepPage() {
         </div>
       )}
 
-      <div className="card space-y-2">
-        <h2 className="section-title mb-3">Pick a Flavour</h2>
+      <div className="card space-y-5">
+        {/* Flavour picker */}
+        <div>
+          <label className="label-text block mb-1">Flavour</label>
+          <select
+            value={selected?.id ?? ''}
+            onChange={e => handleSelectChange(e.target.value)}
+            className="input-field"
+          >
+            <option value="">— Select a flavour —</option>
+            {products.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          {selected?.batch_yield_l && (
+            <p className="text-xs text-gray-400 mt-1.5">
+              1 batch = {selected.batch_yield_l}L → {Math.floor(selected.batch_yield_l / 4)} × 4L Bulk tubs
+            </p>
+          )}
+        </div>
 
-        {products.map(p => (
-          <div key={p.id}>
-            <button
-              onClick={() => selectProduct(p)}
-              className={`w-full text-left px-5 py-4 transition-all touch-manipulation ${
-                selected?.id === p.id
-                  ? 'rounded-t-2xl border-2 border-b-0 border-brand-500 bg-orange-50'
-                  : 'rounded-2xl border-2 border-gray-100 bg-white hover:border-orange-200'
-              }`}
-            >
-              <p className="font-bold text-gray-900">{p.name}</p>
-              {p.batch_yield_l && (
-                <p className="text-sm text-gray-400 mt-0.5">
-                  1 batch = {p.batch_yield_l}L → {Math.floor(p.batch_yield_l / 4)} × 4L Bulk
-                </p>
-              )}
-            </button>
-
-            {selected?.id === p.id && (
-              <div className="border-2 border-t-0 border-brand-500 bg-orange-50 rounded-b-2xl px-5 pb-5 pt-4 space-y-4">
-                <div>
-                  <label className="label-text block mb-1">How many batches?</label>
-                  <p className="text-xs text-gray-400 mb-2">
-                    1 batch = {p.batch_yield_l}L of mix = {Math.floor((p.batch_yield_l ?? 0) / 4)} × 4L Bulk tubs
-                  </p>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={batches}
-                    onChange={e => setBatches(e.target.value)}
-                    placeholder="e.g. 3"
-                    className="input-field"
-                    autoFocus
-                  />
-                  {batchCount > 0 && (
-                    <div className="mt-2 bg-white border border-orange-200 rounded-xl px-4 py-2 flex flex-wrap gap-4 text-sm">
-                      <span className="text-gray-600">
-                        <span className="font-bold text-gray-900">{batchCount}</span> batch{batchCount !== 1 ? 'es' : ''}
-                        {' × '}{p.batch_yield_l}L = <span className="font-bold text-orange-600">{formatNumber(totalLitres)}L</span>
-                      </span>
-                      <span className="text-gray-500">→ <span className="font-bold text-gray-800">{bulkTubs} × 4L Bulk</span> possible</span>
-                    </div>
-                  )}
-
-                  {recipe.length > 0 && (
-                    <div className="mt-3 bg-white border border-gray-200 rounded-xl overflow-hidden">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide px-4 py-2 border-b border-gray-100">
-                        RM Ingredients Used{batchCount > 0 ? ` — ${batchCount} batch${batchCount !== 1 ? 'es' : ''}` : ' — per batch'}
-                      </p>
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-gray-100 text-xs text-gray-400">
-                            <th className="text-left px-4 py-1.5 font-medium">Ingredient</th>
-                            <th className="text-right px-4 py-1.5 font-medium">Per Batch</th>
-                            {batchCount > 0 && <th className="text-right px-4 py-1.5 font-medium">Total</th>}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {recipe.map((line, i) => (
-                            <tr key={i} className="border-b border-gray-50 last:border-0">
-                              <td className="px-4 py-2 text-gray-800 font-medium">{line.rm_items.name}</td>
-                              <td className="px-4 py-2 text-right text-gray-500">{formatNumber(line.qty_per_unit)} {line.rm_items.unit}</td>
-                              {batchCount > 0 && (
-                                <td className="px-4 py-2 text-right font-bold text-orange-700">{formatNumber(line.qty_per_unit * batchCount)} {line.rm_items.unit}</td>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="label-text block mb-1">Note (optional)</label>
-                  <textarea
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                    placeholder="Any notes about this batch..."
-                    className="input-field"
-                    rows={2}
-                  />
-                </div>
-
-                {batchCount > 0 && (
-                  <button onClick={() => setShowConfirm(true)} className="btn-primary">
-                    Record {batchCount} Batch{batchCount !== 1 ? 'es' : ''} of {p.name}
-                  </button>
-                )}
+        {/* Batch count */}
+        {selected && (
+          <div>
+            <label className="label-text block mb-1">Number of Batches</label>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={batches}
+              onChange={e => setBatches(e.target.value)}
+              onWheel={e => e.currentTarget.blur()}
+              placeholder="e.g. 3"
+              className="input-field"
+              autoFocus
+            />
+            {batchCount > 0 && (
+              <div className="mt-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5 flex flex-wrap gap-4 text-sm">
+                <span className="text-gray-700">
+                  <span className="font-bold text-gray-900">{batchCount}</span> batch{batchCount !== 1 ? 'es' : ''}
+                  {' × '}{selected.batch_yield_l}L = <span className="font-bold text-orange-600">{formatNumber(totalLitres)}L</span>
+                </span>
+                <span className="text-gray-500">→ <span className="font-bold text-gray-800">{bulkTubs} × 4L Bulk</span></span>
               </div>
             )}
           </div>
-        ))}
+        )}
+
+        {/* RM breakdown */}
+        {recipe.length > 0 && (
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide px-4 py-2 bg-gray-50 border-b border-gray-100">
+              RM Ingredients Used{batchCount > 0 ? ` — ${batchCount} batch${batchCount !== 1 ? 'es' : ''}` : ' — per batch'}
+            </p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-xs text-gray-400">
+                  <th className="text-left px-4 py-1.5 font-medium">Ingredient</th>
+                  <th className="text-right px-4 py-1.5 font-medium">Per Batch</th>
+                  {batchCount > 0 && <th className="text-right px-4 py-1.5 font-medium">Total</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {recipe.map((line, i) => (
+                  <tr key={i} className="border-b border-gray-50 last:border-0">
+                    <td className="px-4 py-2 text-gray-800 font-medium">{line.rm_items.name}</td>
+                    <td className="px-4 py-2 text-right text-gray-500">{formatNumber(line.qty_per_unit)} {line.rm_items.unit}</td>
+                    {batchCount > 0 && (
+                      <td className="px-4 py-2 text-right font-bold text-orange-700">{formatNumber(line.qty_per_unit * batchCount)} {line.rm_items.unit}</td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Note */}
+        {selected && (
+          <div>
+            <label className="label-text block mb-1">Note (optional)</label>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Any notes about this batch..."
+              className="input-field"
+              rows={2}
+            />
+          </div>
+        )}
+
+        {/* Submit */}
+        {selected && batchCount > 0 && (
+          <button onClick={() => setShowConfirm(true)} className="btn-primary w-full">
+            Record {batchCount} Batch{batchCount !== 1 ? 'es' : ''} of {selected.name}
+          </button>
+        )}
       </div>
 
       {showConfirm && selected && (
