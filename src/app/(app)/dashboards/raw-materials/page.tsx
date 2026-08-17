@@ -244,7 +244,14 @@ function CategorySection({
 
       {open && (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
+            <colgroup>
+              <col className="w-auto" />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '90px' }} />
+            </colgroup>
             <thead>
               <tr className="border-b border-gray-100 bg-white">
                 <SortTh col="name" label="Ingredient" sort={sort} onSort={toggleSort} align="left" />
