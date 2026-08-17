@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { createClient } from '@/lib/supabase';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Leaf, ChevronsUpDown } from 'lucide-react';
+import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Leaf, ChevronsUpDown, X, History } from 'lucide-react';
 
 interface RmItem {
   rm_item_id: number;
@@ -61,12 +61,140 @@ function SortTh({ col, label, sort, onSort, align = 'right' }: {
   );
 }
 
+interface LedgerRow {
+  id: number;
+  qty_delta: number;
+  movement: string;
+  ref_table: string | null;
+  created_at: string;
+  note: string | null;
+}
+
+const MOVEMENT_LABELS: Record<string, { label: string; color: string }> = {
+  opening:       { label: 'Opening Stock',   color: 'text-blue-600 bg-blue-50' },
+  purchase:      { label: 'Received',         color: 'text-green-600 bg-green-50' },
+  issue_to_prep: { label: 'Used in Prep',     color: 'text-orange-600 bg-orange-50' },
+  adjustment:    { label: 'Adjustment',       color: 'text-purple-600 bg-purple-50' },
+  transfer:      { label: 'Transfer',         color: 'text-indigo-600 bg-indigo-50' },
+  waste:         { label: 'Waste',            color: 'text-red-600 bg-red-50' },
+};
+
+function RmHistoryPanel({
+  item, onClose,
+}: {
+  item: RmItem;
+  onClose: () => void;
+}) {
+  const supabase = createClient();
+  const [rows, setRows] = useState<LedgerRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.schema('production').from('rm_ledger')
+      .select('id, qty_delta, movement, ref_table, created_at, note')
+      .eq('rm_item_id', item.rm_item_id)
+      .order('created_at', { ascending: false })
+      .limit(100)
+      .then(({ data }) => {
+        setRows((data || []) as LedgerRow[]);
+        setLoading(false);
+      });
+  }, [item.rm_item_id, supabase]);
+
+  // Running balance from oldest to newest, then reverse for display
+  const withBalance = useMemo(() => {
+    const sorted = [...rows].reverse();
+    let bal = 0;
+    const result = sorted.map(r => { bal += r.qty_delta; return { ...r, balance: bal }; });
+    return result.reverse();
+  }, [rows]);
+
+  function fmt(dt: string) {
+    return new Date(dt).toLocaleString('en-IN', {
+      day: '2-digit', month: 'short', year: '2-digit',
+      hour: '2-digit', minute: '2-digit', hour12: true,
+    });
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
+
+      {/* Panel */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl z-50 flex flex-col">
+        {/* Header */}
+        <div className="flex items-start justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2">
+              <History size={16} className="text-orange-500" />
+              <h2 className="font-bold text-gray-900">{item.ingredient_name}</h2>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Current stock: <span className="font-bold text-gray-700">{item.qty_on_hand} {item.unit}</span>
+            </p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500" />
+            </div>
+          ) : rows.length === 0 ? (
+            <p className="text-center text-gray-400 py-12 text-sm">No ledger entries yet.</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="text-left px-4 py-2.5 font-semibold text-gray-500">Date</th>
+                  <th className="text-left px-4 py-2.5 font-semibold text-gray-500">Type</th>
+                  <th className="text-right px-4 py-2.5 font-semibold text-gray-500">Qty</th>
+                  <th className="text-right px-4 py-2.5 font-semibold text-gray-500">Balance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {withBalance.map(row => {
+                  const mv = MOVEMENT_LABELS[row.movement] ?? { label: row.movement, color: 'text-gray-600 bg-gray-50' };
+                  const isPositive = row.qty_delta > 0;
+                  return (
+                    <tr key={row.id} className="hover:bg-orange-50/30">
+                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmt(row.created_at)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${mv.color}`}>
+                          {mv.label}
+                        </span>
+                        {row.note && <p className="text-gray-400 text-xs mt-0.5 truncate max-w-[120px]">{row.note}</p>}
+                      </td>
+                      <td className={`px-4 py-2.5 text-right font-bold whitespace-nowrap ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
+                        {isPositive ? '+' : ''}{row.qty_delta} {item.unit}
+                      </td>
+                      <td className="px-4 py-2.5 text-right text-gray-700 font-semibold whitespace-nowrap">
+                        {row.balance} {item.unit}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function CategorySection({
-  category, items, weeklyReq,
+  category, items, weeklyReq, onSelectItem,
 }: {
   category: string;
   items: RmItem[];
   weeklyReq: Record<number, number>;
+  onSelectItem: (item: RmItem) => void;
 }) {
   const [open, setOpen] = useState(true);
   const [sort, setSort] = useState<{ col: SortCol; asc: boolean }>({ col: 'status', asc: true });
@@ -128,10 +256,14 @@ function CategorySection({
             </thead>
             <tbody className="divide-y divide-gray-50">
               {withStatus.map(item => (
-                <tr key={item.rm_item_id} className={`hover:bg-orange-50 transition-colors ${
-                  item.status === 'critical' ? 'bg-red-50/40' :
-                  item.status === 'low' ? 'bg-amber-50/40' : ''
-                }`}>
+                <tr
+                  key={item.rm_item_id}
+                  onClick={() => onSelectItem(item)}
+                  className={`hover:bg-orange-50 transition-colors cursor-pointer ${
+                    item.status === 'critical' ? 'bg-red-50/40' :
+                    item.status === 'low' ? 'bg-amber-50/40' : ''
+                  }`}
+                >
                   <td className="px-4 py-2.5">
                     <span className="font-medium text-gray-900 text-xs">{item.ingredient_name}</span>
                   </td>
@@ -170,6 +302,7 @@ export default function RawMaterialsDashboard() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | StatusType>('all');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [selectedItem, setSelectedItem] = useState<RmItem | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -318,9 +451,14 @@ export default function RawMaterialsDashboard() {
               category={category}
               items={catItems}
               weeklyReq={weeklyReq}
+              onSelectItem={setSelectedItem}
             />
           ))}
         </div>
+      )}
+
+      {selectedItem && (
+        <RmHistoryPanel item={selectedItem} onClose={() => setSelectedItem(null)} />
       )}
     </div>
   );
