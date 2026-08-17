@@ -23,7 +23,10 @@ export function parseSupabaseError(error: string | null | undefined): string {
   }
 
   if (lower.includes('violates not-null')) {
-    return 'Some required information is missing. Please fill in all fields.';
+    const col = error.match(/column "([^"]+)"/)?.[1];
+    return col
+      ? `Database error: required field "${col}" is missing a value. Contact support.`
+      : `Database error: a required field has no value. ${error}`;
   }
 
   if (lower.includes('does not exist') || lower.includes('relation') || lower.includes('undefined function')) {
