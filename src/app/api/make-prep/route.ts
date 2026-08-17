@@ -68,6 +68,15 @@ export async function POST(req: NextRequest) {
       rm_items: { name: string; unit: string } | null;
     }>;
 
+    // Guard: recipe lines with null qty_per_unit would cause a DB not-null error
+    const nullQtyLines = recipe.filter(l => l.qty_per_unit == null);
+    if (nullQtyLines.length > 0) {
+      const names = nullQtyLines.map(l => l.rm_items?.name ?? `RM #${l.rm_item_id}`).join(', ');
+      return NextResponse.json({
+        error: `Recipe is incomplete — qty per batch is missing for: ${names}. Fix the recipe in Admin → Flavours before recording a batch.`,
+      }, { status: 422 });
+    }
+
     // Fetch current stock for only the RM items in this recipe
     const recipeRmIds = recipe.map(l => l.rm_item_id);
     const shortfalls: string[] = [];
