@@ -244,13 +244,13 @@ function CategorySection({
 
       {open && (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm table-fixed">
+          <table className="text-sm" style={{ width: '100%', minWidth: '520px' }}>
             <colgroup>
-              <col className="w-auto" />
-              <col style={{ width: '120px' }} />
-              <col style={{ width: '120px' }} />
-              <col style={{ width: '120px' }} />
-              <col style={{ width: '90px' }} />
+              <col style={{ width: 'auto' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '80px' }} />
             </colgroup>
             <thead>
               <tr className="border-b border-gray-100 bg-white">
