@@ -107,6 +107,7 @@ export default function MakePrepPage() {
       setSelected(null);
       setBatches('');
       setNote('');
+      setRecipe([]);
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : String(e);
       let friendly = raw;
