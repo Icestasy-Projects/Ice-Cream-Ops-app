@@ -271,7 +271,7 @@ function CategorySection({
                     item.status === 'low' ? 'bg-amber-50/40' : ''
                   }`}
                 >
-                  <td className="px-4 py-2.5">
+                  <td className="px-4 py-2.5 whitespace-nowrap">
                     <span className="font-medium text-gray-900 text-xs">{item.ingredient_name}</span>
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
