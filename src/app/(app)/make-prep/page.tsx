@@ -107,6 +107,7 @@ export default function MakePrepPage() {
       setSelected(null);
       setBatches('');
       setNote('');
+      setRecipe([]);
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : String(e);
       let friendly = raw;
@@ -231,9 +232,9 @@ export default function MakePrepPage() {
                 {recipe.map((line, i) => (
                   <tr key={i} className="border-b border-gray-50 last:border-0">
                     <td className="px-4 py-2 text-gray-800 font-medium">{line.rm_items.name}</td>
-                    <td className="px-4 py-2 text-right text-gray-500">{formatNumber(line.qty_per_unit)} {line.rm_items.unit}</td>
+                    <td className="px-4 py-2 text-right text-gray-500">{formatNumber(line.qty_per_unit, 3)} {line.rm_items.unit}</td>
                     {batchCount > 0 && (
-                      <td className="px-4 py-2 text-right font-bold text-orange-700">{formatNumber(line.qty_per_unit * batchCount)} {line.rm_items.unit}</td>
+                      <td className="px-4 py-2 text-right font-bold text-orange-700">{formatNumber(line.qty_per_unit * batchCount, 3)} {line.rm_items.unit}</td>
                     )}
                   </tr>
                 ))}
