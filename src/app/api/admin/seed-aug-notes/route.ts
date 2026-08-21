@@ -170,9 +170,7 @@ export async function POST() {
         continue;
       }
 
-      await db.rpc('set_config' as never, {
-        parameter: 'icestasy.ledger_write_allowed', value: '1', is_local: true
-      } as never).catch(() => null);
+      try { await db.rpc('set_config' as never, { parameter: 'icestasy.ledger_write_allowed', value: '1', is_local: true } as never); } catch { /* ok */ }
 
       const { error } = await s().from('rm_ledger').insert({
         rm_item_id: item.id,
