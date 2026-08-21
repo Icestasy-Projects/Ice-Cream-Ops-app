@@ -100,7 +100,12 @@ export async function POST(req: NextRequest) {
   else if (section === 'stock1' || section === 'stock2') {
     const list = section === 'stock1' ? PAGE1_STOCK : STOCK_COUNT_20AUG;
     const label = section === 'stock1' ? 'page 1 partial' : '20/08/26 full count';
-    log.push(`=== STOCK ADJUSTMENT: ${label} ===`);
+    log.push(`=== STOCK ADJUSTMENT via PO receipts: ${label} ===`);
+
+    // Find Initial entry vendor for receipt POs
+    const { data: vendors } = await s().from('vendors').select('id').ilike('name', 'Initial entry');
+    const vendorId = (vendors?.[0] as { id: number } | undefined)?.id;
+    if (!vendorId) { log.push('❌ No "Initial entry" vendor'); return NextResponse.json({ log }); }
 
     const { data: currentStock } = await s().from('v_rm_stock').select('rm_item_id, qty_on_hand');
     const stockMap = new Map<number, number>(
@@ -114,14 +119,33 @@ export async function POST(req: NextRequest) {
       const currentQty = stockMap.get(item.id) ?? 0;
       const delta = targetQty - currentQty;
       if (Math.abs(delta) < 0.0001) { log.push(`─  ${item.name}: already ${targetQty}`); continue; }
-      try { await db.rpc('set_config' as never, { parameter: 'icestasy.ledger_write_allowed', value: '1', is_local: true } as never); } catch { /* ok */ }
-      const { error } = await s().from('rm_ledger').insert({
-        rm_item_id: item.id, qty_delta: delta, movement: 'adjustment',
-        ref_table: null, ref_id: null, owner_id: null,
+
+      if (delta < 0) {
+        // Cannot reduce stock via receipt — note it for manual review
+        log.push(`⚠️  ${item.name}: stock is ${currentQty.toFixed(3)} but count says ${targetQty} — SKIP (needs manual write-off of ${Math.abs(delta).toFixed(3)} ${item.unit})`);
+        continue;
+      }
+
+      // Increase stock via a PO receipt
+      const { data: order, error: oErr } = await s().from('rm_purchase_orders').insert({
+        vendor_id: vendorId,
+        ordered_at: new Date().toISOString(),
+        status: 'received',
+        note: `Stock count adjustment — ${label}`,
+      }).select('id').single();
+
+      if (oErr || !order) { log.push(`❌ PO for ${item.name}: ${oErr?.message}`); continue; }
+
+      const { error } = await s().from('rm_purchase_order_lines').insert({
+        order_id: (order as { id: number }).id,
+        rm_item_id: item.id,
+        qty_ordered: delta,
+        qty_received: delta,
+        unit_cost: null,
       });
-      const sign = delta > 0 ? '+' : '';
+
       if (error) log.push(`❌ ${item.name}: ${error.message}`);
-      else log.push(`✅ ${item.name}: ${currentQty.toFixed(3)} → ${targetQty} ${item.unit} (${sign}${delta.toFixed(3)})`);
+      else log.push(`✅ ${item.name}: ${currentQty.toFixed(3)} → ${targetQty} ${item.unit} (+${delta.toFixed(3)} via receipt)`);
     }
   }
 
