@@ -84,9 +84,9 @@ export async function POST(req: NextRequest) {
     .lte('created_at', `${entry_date}T23:59:59`);
 
   // Build expected RM map: rm_item_id → expected qty
-  const expectedMap = new Map<number, number>();
+  const expectedMap: Record<number, number> = {};
 
-  for (const pu of (prepUnits || []) as Array<{
+  for (const pu of (prepUnits || []) as unknown as Array<{
     prep_product_id: number;
     qty_produced: number;
     prep_products: { batch_yield_l: number | null } | null;
@@ -100,13 +100,13 @@ export async function POST(req: NextRequest) {
       .eq('prep_product_id', pu.prep_product_id);
 
     for (const r of (recipe || []) as Array<{ rm_item_id: number; qty_per_unit: number }>) {
-      const prev = expectedMap.get(r.rm_item_id) ?? 0;
-      expectedMap.set(r.rm_item_id, prev + r.qty_per_unit * numBatches);
+      expectedMap[r.rm_item_id] = (expectedMap[r.rm_item_id] ?? 0) + r.qty_per_unit * numBatches;
     }
   }
 
   // 4. Build actual RM map from submitted lines
-  const actualMap = new Map<number, number>(lines.map(l => [l.rm_item_id, l.qty_used]));
+  const actualMap: Record<number, number> = {};
+  for (const l of lines) actualMap[l.rm_item_id] = l.qty_used;
 
   // 5. Compute variances
   const variances: Array<{
@@ -120,8 +120,10 @@ export async function POST(req: NextRequest) {
   }> = [];
 
   // Items in actual (check overuse / underuse vs expected)
-  for (const [rmId, actualQty] of actualMap) {
-    const expectedQty = expectedMap.get(rmId) ?? 0;
+  for (const rmIdStr of Object.keys(actualMap)) {
+    const rmId = Number(rmIdStr);
+    const actualQty = actualMap[rmId];
+    const expectedQty = expectedMap[rmId] ?? 0;
     const variance = actualQty - expectedQty;
     if (Math.abs(variance) < 0.0001) continue;
     variances.push({
@@ -136,8 +138,10 @@ export async function POST(req: NextRequest) {
   }
 
   // Items expected but not in actual (unaccounted prep)
-  for (const [rmId, expectedQty] of expectedMap) {
-    if (actualMap.has(rmId)) continue;
+  for (const rmIdStr of Object.keys(expectedMap)) {
+    const rmId = Number(rmIdStr);
+    if (actualMap[rmId] !== undefined) continue;
+    const expectedQty = expectedMap[rmId];
     if (expectedQty < 0.0001) continue;
     variances.push({
       entry_id: entryId,
