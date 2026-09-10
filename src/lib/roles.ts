@@ -11,6 +11,7 @@ const ALL_NAV: NavItem[] = [
   { href: '/dashboards/raw-materials', label: 'RM Stock', group: 'Kitchen' },
   { href: '/receive', label: 'Receive Ingredients', group: 'Kitchen' },
   { href: '/make-prep', label: 'Make Kitchen Mix', group: 'Kitchen' },
+  { href: '/kitchen/daily-rm', label: 'Daily RM Usage', group: 'Kitchen' },
   { href: '/transfer', label: 'Transfer to Factory', group: 'Kitchen' },
   // Factory
   { href: '/dashboards/prep', label: 'Prep Stock', group: 'Factory' },
@@ -28,12 +29,14 @@ const ALL_NAV: NavItem[] = [
   { href: '/admin/cleanup', label: 'DB Cleanup', group: 'Admin' },
   { href: '/admin/opening-stock', label: 'Opening Stock', group: 'Admin' },
   { href: '/admin/cost-sheet', label: 'Cost Sheet', group: 'Admin' },
+  { href: '/admin/rm-variances', label: 'RM Variances', group: 'Admin' },
 ];
 
 const KITCHEN_HREFS = new Set([
   '/dashboards/raw-materials',
   '/receive',
   '/make-prep',
+  '/kitchen/daily-rm',
   '/transfer',
 ]);
 
@@ -45,7 +48,7 @@ const FACTORY_HREFS = new Set([
   '/dispatch',
 ]);
 
-const ADMIN_HREFS = new Set(['/admin/flavours', '/admin/rm-items', '/admin/users', '/dashboards/weekly-audit', '/admin/sku-alignment', '/admin/flavour-alignment', '/admin/cleanup', '/admin/opening-stock', '/admin/cost-sheet']);
+const ADMIN_HREFS = new Set(['/admin/flavours', '/admin/rm-items', '/admin/users', '/dashboards/weekly-audit', '/admin/sku-alignment', '/admin/flavour-alignment', '/admin/cleanup', '/admin/opening-stock', '/admin/cost-sheet', '/admin/rm-variances']);
 
 export function getNavItemsForRole(role: AppRole | null): NavItem[] {
   if (!role) return [];
