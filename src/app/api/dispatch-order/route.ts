@@ -19,16 +19,14 @@ export async function GET() {
 
     const [ordersRes, stockRes] = await Promise.all([
       admin.schema('sales').from('order_lines')
-        .select('id, order_id, sku_id, quantity, orders!inner(*)')
+        .select('id, order_id, sku_id, quantity, orders!inner(id, status, order_no, created_at, client_id, clients(business_name))')
         .in('orders.status', ['approved', 'invoiced', 'in_production'])
         .order('id'),
       admin.schema('production').from('v_fg_stock')
         .select('fg_sku_id, product_name, unit, qty_on_hand'),
     ]);
 
-    // Log first order row to diagnose column names (only in dev)
     if (ordersRes.error) console.error('order_lines query error:', ordersRes.error.message);
-    if (ordersRes.data?.length) console.log('order row sample:', JSON.stringify(ordersRes.data[0]));
 
     // Build stock map: fg_sku_id → {product_name, unit, qty_on_hand}
     const stockMap: Record<number, { product_name: string; unit: string; qty_on_hand: number }> = {};
@@ -41,45 +39,32 @@ export async function GET() {
       };
     }
 
-    // Group lines by order — use * select so we pick up real column names
+    // Group lines by order
     const ordersMap: Record<number, {
       order_id: number;
       status: string;
       created_at: string;
       customer_name: string | null;
       order_ref: string | null;
-      raw_order: Record<string, unknown>;
       lines: { line_id: number; sku_id: number; quantity: number; product_name: string; unit: string; qty_on_hand: number; has_stock: boolean }[];
     }> = {};
 
     for (const row of ordersRes.data || []) {
       const r = row as Record<string, unknown>;
       const ord = r.orders as Record<string, unknown>;
-      const orderId = (ord.id ?? ord.order_id) as number;
+      const orderId = ord.id as number;
       const skuId = r.sku_id as number;
       const qty = (r.quantity as number) || 0;
       const stock = stockMap[skuId];
-
-      // Try common customer name columns
-      const customerName = (
-        ord.customer_name ?? ord.client_name ?? ord.account_name ??
-        ord.customer ?? ord.contact_name ?? ord.billing_name
-      ) as string | null ?? null;
-
-      // Try common order reference columns
-      const orderRef = (
-        ord.order_ref ?? ord.order_number ?? ord.reference ?? ord.ref ??
-        ord.invoice_number ?? ord.order_no ?? ord.number
-      ) as string | null ?? null;
+      const client = ord.clients as Record<string, unknown> | null;
 
       if (!ordersMap[orderId]) {
         ordersMap[orderId] = {
           order_id: orderId,
           status: ord.status as string,
-          created_at: (ord.created_at ?? ord.date ?? ord.order_date) as string,
-          customer_name: customerName,
-          order_ref: orderRef,
-          raw_order: ord,
+          created_at: ord.created_at as string,
+          customer_name: (client?.business_name as string) ?? null,
+          order_ref: (ord.order_no as string) ?? null,
           lines: [],
         };
       }
@@ -95,14 +80,10 @@ export async function GET() {
       });
     }
 
-    const orders = Object.values(ordersMap).sort(
+    const cleanOrders = Object.values(ordersMap).sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
-
-    // Include first raw_order for column discovery, then strip it
-    const debugSample = orders[0]?.raw_order ?? null;
-    const cleanOrders = orders.map(({ raw_order: _raw, ...o }) => o);
-    return NextResponse.json({ orders: cleanOrders, debug_order_columns: debugSample ? Object.keys(debugSample) : [] });
+    return NextResponse.json({ orders: cleanOrders });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
