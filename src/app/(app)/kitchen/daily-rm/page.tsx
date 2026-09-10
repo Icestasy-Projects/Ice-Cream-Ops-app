@@ -60,8 +60,8 @@ export default function DailyRmUsagePage() {
     const { data } = await supabase.schema('production').from('prep_units')
       .select('qty_produced, prep_products(name, unit)')
       .eq('status', 'posted')
-      .gte('created_at', `${d}T00:00:00`)
-      .lte('created_at', `${d}T23:59:59`);
+      .gte('produced_at', `${d}T00:00:00`)
+      .lte('produced_at', `${d}T23:59:59`);
     setPrepSummary((data || []).map((r: Record<string, unknown>) => ({
       name: (r.prep_products as { name: string } | null)?.name || '?',
       qty_produced: r.qty_produced as number,

@@ -80,8 +80,8 @@ export async function POST(req: NextRequest) {
     .from('prep_units')
     .select('id, prep_product_id, qty_produced, prep_products(batch_yield_l)')
     .eq('status', 'posted')
-    .gte('created_at', `${entry_date}T00:00:00`)
-    .lte('created_at', `${entry_date}T23:59:59`);
+    .gte('produced_at', `${entry_date}T00:00:00`)
+    .lte('produced_at', `${entry_date}T23:59:59`);
 
   // Build expected RM map: rm_item_id → expected qty
   const expectedMap: Record<number, number> = {};
