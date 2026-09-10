@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase';
 import { useUser } from '@/hooks/useUser';
 import { useRole } from '@/hooks/useRole';
 import { getNavItemsForRole, ROLE_LABELS } from '@/lib/roles';
-import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors, IceCream, ClipboardList, Link2, GitMerge, Trash2, Bell, ChevronDown, DollarSign } from 'lucide-react';
+import { Home, Package, Beaker, ArrowRight, Box, Truck, BarChart3, LogOut, Menu, X, Users, FlaskConical, Scissors, IceCream, ClipboardList, Link2, GitMerge, Trash2, Bell, ChevronDown, DollarSign, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -28,6 +28,8 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/admin/cleanup': Trash2,
   '/admin/opening-stock': Package,
   '/admin/cost-sheet': DollarSign,
+  '/kitchen/daily-rm': ClipboardList,
+  '/admin/rm-variances': AlertTriangle,
 };
 
 // Top-level nav groups shown as tabs in the header
