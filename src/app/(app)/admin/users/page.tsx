@@ -103,7 +103,9 @@ export default function AdminUsersPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to create user');
-      toast.success(`${fullName} added! They can log in with test@123.`);
+      toast.success(data.linked_existing
+        ? `${fullName} linked! They can use their existing password to log in.`
+        : `${fullName} added! They can log in with test@123.`);
       setShowForm(false);
       setFullName('');
       setEmail('');

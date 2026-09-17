@@ -48,29 +48,41 @@ export async function POST(req: NextRequest) {
     }
 
     const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://acngdpcpxburkzqxjpbf.supabase.co';
-
-    const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-        'apikey': SERVICE_ROLE_KEY,
-      },
-      body: JSON.stringify({ email, password: 'test@123', email_confirm: true }),
-    });
-
-    const createBody = await createRes.json();
-
-    if (!createRes.ok || !createBody.id) {
-      return NextResponse.json({
-        error: createBody.msg || createBody.message || createBody.error_description || JSON.stringify(createBody),
-        raw: JSON.stringify(createBody),
-        status_code: createRes.status,
-      }, { status: 400 });
-    }
-
-    const newUserId: string = createBody.id;
     const adminClient = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    // Check if auth user already exists (e.g. registered via sales app)
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+    const existingUser = existingUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+
+    let newUserId: string;
+
+    if (existingUser) {
+      // User already has an auth account — just link them to this ops profile
+      newUserId = existingUser.id;
+    } else {
+      // Create a new auth account
+      const createRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+          'apikey': SERVICE_ROLE_KEY,
+        },
+        body: JSON.stringify({ email, password: 'test@123', email_confirm: true }),
+      });
+
+      const createBody = await createRes.json();
+
+      if (!createRes.ok || !createBody.id) {
+        return NextResponse.json({
+          error: createBody.msg || createBody.message || createBody.error_description || JSON.stringify(createBody),
+          raw: JSON.stringify(createBody),
+          status_code: createRes.status,
+        }, { status: 400 });
+      }
+
+      newUserId = createBody.id;
+    }
 
     const { error: profileError } = await adminClient
       .schema('production')
@@ -84,14 +96,17 @@ export async function POST(req: NextRequest) {
       }, { onConflict: 'user_id' });
 
     if (profileError) {
-      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${newUserId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${SERVICE_ROLE_KEY}`, 'apikey': SERVICE_ROLE_KEY },
-      });
+      // Only roll back auth user deletion if we just created it
+      if (!existingUser) {
+        await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${newUserId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${SERVICE_ROLE_KEY}`, 'apikey': SERVICE_ROLE_KEY },
+        });
+      }
       return NextResponse.json({ error: errMsg(profileError) }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, user_id: newUserId });
+    return NextResponse.json({ success: true, user_id: newUserId, linked_existing: !!existingUser });
   } catch (e: unknown) {
     return NextResponse.json({ error: errMsg(e) }, { status: 500 });
   }
