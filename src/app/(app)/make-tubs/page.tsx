@@ -8,7 +8,8 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
 import { CheckCircle, Box, Info, Printer, QrCode } from 'lucide-react';
-import { makeLabelCode, labelToDataUrl } from '@/lib/qr';
+import { makeLabelCode } from '@/lib/qr';
+import QRCode from 'react-qr-code';
 
 interface FgSku {
   fg_sku_id: number;
@@ -20,7 +21,6 @@ interface FgSku {
 interface GeneratedLabel {
   labelCode: string;
   qty: number;
-  dataUrl: string;
 }
 
 export default function MakeTubsPage() {
@@ -37,6 +37,7 @@ export default function MakeTubsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [capacity, setCapacity] = useState<{ prep_stock_l: number; expected_tubs: number; litres_per_tub: number } | null>(null);
   const [labels, setLabels] = useState<GeneratedLabel[]>([]);
+  const [labelFlavour, setLabelFlavour] = useState('');
 
   const loadSkus = useCallback(async () => {
     const { data } = await supabase
@@ -107,8 +108,6 @@ export default function MakeTubsPage() {
 
       const fgUnitsId = (inserted as { id: number }).id;
       const qtyNum = parseFloat(qty);
-
-      // Generate one label per tub (capped at 50 for sanity)
       const labelCount = Math.min(Math.round(qtyNum), 50);
       const today = new Date();
       const generatedLabels: GeneratedLabel[] = [];
@@ -116,8 +115,7 @@ export default function MakeTubsPage() {
 
       for (let i = 1; i <= labelCount; i++) {
         const labelCode = makeLabelCode(fgUnitsId, i, today);
-        const dataUrl = await labelToDataUrl(labelCode);
-        generatedLabels.push({ labelCode, qty: 1, dataUrl });
+        generatedLabels.push({ labelCode, qty: 1 });
         labelRows.push({
           fg_units_id: fgUnitsId,
           fg_sku_id: selectedSku.fg_sku_id,
@@ -127,10 +125,11 @@ export default function MakeTubsPage() {
         });
       }
 
-      // Save labels to DB (best-effort, don't fail production if this fails)
+      // Save labels to DB (best-effort)
       await supabase.schema('production').from('fg_labels').insert(labelRows);
 
       setLabels(generatedLabels);
+      setLabelFlavour(`${selectedSku.product_name} (${selectedSku.unit})`);
       toast.success(`${formatNumber(qtyNum)} ${selectedSku.unit} of ${selectedSku.product_name} added to stock!`);
       setShowConfirm(false);
       setSelectedFlavour('');
@@ -169,7 +168,7 @@ export default function MakeTubsPage() {
           <div className="flex items-center justify-between px-4 py-3 bg-green-50 border-b border-green-100">
             <div className="flex items-center gap-2">
               <CheckCircle size={18} className="text-green-600" />
-              <p className="font-bold text-green-800">Production recorded — {labels.length} label{labels.length !== 1 ? 's' : ''} ready</p>
+              <p className="font-bold text-green-800">{labels.length} label{labels.length !== 1 ? 's' : ''} for {labelFlavour}</p>
             </div>
             <button
               onClick={() => window.print()}
@@ -178,11 +177,10 @@ export default function MakeTubsPage() {
               <Printer size={14} /> Print All
             </button>
           </div>
-          <div className="p-4 grid grid-cols-2 gap-3 print:grid-cols-3" id="label-grid">
+          <div className="p-4 grid grid-cols-2 gap-3" id="label-grid">
             {labels.map(l => (
-              <div key={l.labelCode} className="border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-2 print:border-black print:break-inside-avoid">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={l.dataUrl} alt={l.labelCode} className="w-24 h-24" />
+              <div key={l.labelCode} className="border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-2">
+                <QRCode value={l.labelCode} size={96} />
                 <p className="text-xs font-mono font-bold text-gray-700 text-center leading-tight">{l.labelCode}</p>
               </div>
             ))}
@@ -274,7 +272,7 @@ export default function MakeTubsPage() {
               />
               {qtyNum > 50 && (
                 <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                  <QrCode size={11} /> Labels will be generated for the first 50 tubs only.
+                  <QrCode size={11} /> Labels generated for first 50 tubs only.
                 </p>
               )}
             </div>
@@ -317,13 +315,6 @@ export default function MakeTubsPage() {
           loading={submitting}
         />
       )}
-
-      <style>{`
-        @media print {
-          body > *:not(#label-grid) { display: none !important; }
-          #label-grid { display: grid !important; }
-        }
-      `}</style>
     </div>
   );
 }
