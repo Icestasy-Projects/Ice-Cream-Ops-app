@@ -46,6 +46,18 @@ export default function TransferPage() {
 
   const effectiveQty = useCustomQty && customQty ? parseFloat(customQty) : selected?.qty_kitchen;
 
+  function handleSelect(s: PrepStock) {
+    if (selected?.prep_product_id === s.prep_product_id) {
+      setSelected(null);
+    } else {
+      setSelected(s);
+      setUseCustomQty(false);
+      setCustomQty('');
+      setLastResult(null);
+    }
+    setNote('');
+  }
+
   async function handleSubmit() {
     if (!selected) return;
     setSubmitting(true);
@@ -90,12 +102,19 @@ export default function TransferPage() {
   if (loading) return <LoadingSpinner text="Loading kitchen stock..." />;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <ScreenHeader
         icon={ArrowRight} iconColor="text-amber-500"
         title="Transfer to Factory"
         description="Move flavour mix from the kitchen to the factory floor so tubs can be filled."
       />
+
+      {lastResult && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
+          <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
+          <p className="text-green-800 font-medium">{lastResult}</p>
+        </div>
+      )}
 
       {stock.length === 0 ? (
         <div className="card text-center py-10">
@@ -104,78 +123,74 @@ export default function TransferPage() {
           <p className="text-gray-500 mt-2">Make a kitchen batch first, then come back here to transfer it.</p>
         </div>
       ) : (
-        <div className="card space-y-4">
-          <h2 className="section-title">Which flavour to transfer?</h2>
-          <div className="space-y-2">
-            {stock.map(s => (
-              <button
-                key={s.prep_product_id}
-                onClick={() => { setSelected(s); setUseCustomQty(false); setCustomQty(''); setLastResult(null); }}
-                className={`w-full text-left px-5 py-4 rounded-2xl border-2 transition-all touch-manipulation ${
-                  selected?.prep_product_id === s.prep_product_id
-                    ? 'border-brand-500 bg-orange-50'
-                    : 'border-gray-100 bg-white hover:border-orange-200'
-                }`}
-              >
-                <p className="font-bold text-gray-900">{s.product_name}</p>
-                <div className="flex gap-4 mt-1">
-                  <span className="text-sm text-blue-600 flex items-center gap-1"><FlaskConical size={13} /> Kitchen: {formatNumber(s.qty_kitchen)} {s.unit}</span>
-                  <span className="text-sm text-green-600 flex items-center gap-1"><Factory size={13} /> Factory: {formatNumber(s.qty_factory)} {s.unit}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {selected && (
-        <div className="card space-y-4">
-          <h2 className="section-title">Transfer Amount</h2>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
-            <p className="font-bold text-blue-800 text-lg">
-              Transfer all {formatNumber(selected.qty_kitchen)} {selected.unit}
-            </p>
-            <p className="text-blue-600 text-sm mt-1">Moves everything from kitchen to factory — the usual action.</p>
-          </div>
-
-          <button onClick={() => setShowConfirm(true)} className="btn-primary">
-            Transfer All {formatNumber(selected.qty_kitchen)} {selected.unit} to Factory
-          </button>
-
-          <details className="border border-gray-100 rounded-2xl overflow-hidden">
-            <summary className="px-4 py-3 cursor-pointer text-gray-500 text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
-              <ChevronDown size={16} />
-              Transfer a specific amount instead (Advanced)
-            </summary>
-            <div className="px-4 pb-4 space-y-3 bg-gray-50">
-              <p className="text-xs text-gray-500 pt-3">Available in kitchen: {formatNumber(selected.qty_kitchen)} {selected.unit}</p>
-              <input
-                type="number" min="0.1" max={selected.qty_kitchen} step="0.1"
-                value={customQty}
-                onChange={e => { setCustomQty(e.target.value); setUseCustomQty(true); }}
-                placeholder={`Amount in ${selected.unit}`}
-                className="input-field"
-              />
-              {customQty && parseFloat(customQty) > 0 && (
-                <button onClick={() => setShowConfirm(true)} className="btn-secondary">
-                  Transfer {customQty} {selected.unit}
+        <div className="space-y-2">
+          {stock.map(s => {
+            const isSelected = selected?.prep_product_id === s.prep_product_id;
+            return (
+              <div key={s.prep_product_id} className="overflow-hidden rounded-2xl border-2 transition-all"
+                style={{ borderColor: isSelected ? 'rgb(249 115 22)' : 'rgb(243 244 246)' }}>
+                {/* Flavour card row */}
+                <button
+                  onClick={() => handleSelect(s)}
+                  className={`w-full text-left px-5 py-4 transition-all touch-manipulation ${
+                    isSelected ? 'bg-orange-50' : 'bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <p className="font-bold text-gray-900">{s.product_name}</p>
+                  <div className="flex gap-4 mt-1">
+                    <span className="text-sm text-blue-600 flex items-center gap-1"><FlaskConical size={13} /> Kitchen: {formatNumber(s.qty_kitchen)} {s.unit}</span>
+                    <span className="text-sm text-green-600 flex items-center gap-1"><Factory size={13} /> Factory: {formatNumber(s.qty_factory)} {s.unit}</span>
+                  </div>
                 </button>
-              )}
-            </div>
-          </details>
 
-          <div>
-            <label className="label-text block mb-2">Note (optional)</label>
-            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Any notes..." className="input-field" rows={2} />
-          </div>
-        </div>
-      )}
+                {/* Inline transfer form — accordion */}
+                {isSelected && (
+                  <div className="border-t border-orange-100 bg-orange-50 px-5 py-4 space-y-4">
+                    {/* Transfer all banner */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                      <p className="font-bold text-blue-800 text-lg">
+                        Transfer all {formatNumber(s.qty_kitchen)} {s.unit}
+                      </p>
+                      <p className="text-blue-600 text-sm mt-1">Moves everything from kitchen to factory — the usual action.</p>
+                    </div>
 
-      {lastResult && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
-          <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
-          <p className="text-green-800 font-medium">{lastResult}</p>
+                    <button onClick={() => setShowConfirm(true)} className="btn-primary w-full">
+                      Transfer All {formatNumber(s.qty_kitchen)} {s.unit} to Factory
+                    </button>
+
+                    {/* Advanced: specific amount */}
+                    <details className="border border-orange-200 rounded-2xl overflow-hidden bg-white">
+                      <summary className="px-4 py-3 cursor-pointer text-gray-500 text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
+                        <ChevronDown size={16} />
+                        Transfer a specific amount instead (Advanced)
+                      </summary>
+                      <div className="px-4 pb-4 space-y-3 bg-gray-50">
+                        <p className="text-xs text-gray-500 pt-3">Available in kitchen: {formatNumber(s.qty_kitchen)} {s.unit}</p>
+                        <input
+                          type="number" min="0.1" max={s.qty_kitchen} step="0.1"
+                          value={customQty}
+                          onChange={e => { setCustomQty(e.target.value); setUseCustomQty(true); }}
+                          placeholder={`Amount in ${s.unit}`}
+                          className="input-field"
+                        />
+                        {customQty && parseFloat(customQty) > 0 && (
+                          <button onClick={() => setShowConfirm(true)} className="btn-secondary w-full">
+                            Transfer {customQty} {s.unit}
+                          </button>
+                        )}
+                      </div>
+                    </details>
+
+                    {/* Note */}
+                    <div>
+                      <label className="label-text block mb-2">Note (optional)</label>
+                      <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Any notes..." className="input-field" rows={2} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

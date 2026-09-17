@@ -20,6 +20,7 @@ const ALL_NAV: NavItem[] = [
   { href: '/break-bulk', label: 'Break Bulk', group: 'Factory' },
   { href: '/dashboards/finished-goods', label: 'FG Stock', group: 'Factory' },
   { href: '/dispatch', label: 'Dispatch Order', group: 'Factory' },
+  { href: '/scan', label: 'Scan Tub Label', group: 'Factory' },
   // Admin
   { href: '/admin/flavours', label: 'Manage Flavours', group: 'Admin' },
   { href: '/admin/rm-items', label: 'Manage Ingredients', group: 'Admin' },
@@ -42,6 +43,7 @@ const FACTORY_HREFS = new Set([
   '/break-bulk',
   '/dashboards/finished-goods',
   '/dispatch',
+  '/scan',
 ]);
 
 const ADMIN_HREFS = new Set(['/admin/flavours', '/admin/rm-items', '/admin/users', '/admin/cost-sheet', '/formulations']);
