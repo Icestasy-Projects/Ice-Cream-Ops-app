@@ -5,7 +5,7 @@ import { useRole } from '@/hooks/useRole';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { UserPlus, RefreshCw, Shield, ChefHat, Factory, Users } from 'lucide-react';
+import { UserPlus, RefreshCw, Shield, ChefHat, Factory, Users, Trash2 } from 'lucide-react';
 import { ROLE_LABELS, AppRole } from '@/lib/roles';
 import { useRouter } from 'next/navigation';
 
@@ -38,6 +38,8 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Form state
   const [fullName, setFullName] = useState('');
@@ -65,6 +67,26 @@ export default function AdminUsersPage() {
   }, [role, roleLoading, router]);
 
   useEffect(() => { load(); }, [load]);
+
+  async function handleDeleteEmployee(userId: string) {
+    setDeletingId(userId);
+    try {
+      const res = await fetch('/api/admin/delete-user', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      toast.success('Employee deleted.');
+      setConfirmDeleteId(null);
+      load();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   async function handleAddEmployee(e: React.FormEvent) {
     e.preventDefault();
@@ -216,6 +238,31 @@ export default function AdminUsersPage() {
                       <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700">
                         Awaiting first login
                       </span>
+                    )}
+                    {confirmDeleteId === emp.user_id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleDeleteEmployee(emp.user_id)}
+                          disabled={deletingId === emp.user_id}
+                          className="text-xs font-semibold px-2 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 touch-manipulation"
+                        >
+                          {deletingId === emp.user_id ? 'Deleting…' : 'Confirm'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 touch-manipulation"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(emp.user_id)}
+                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors touch-manipulation"
+                        title="Delete employee"
+                      >
+                        <Trash2 size={15} />
+                      </button>
                     )}
                   </div>
                 </div>
