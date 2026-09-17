@@ -16,6 +16,8 @@ interface OrderLine { rm_item_id: number; name: string; unit: string; qty_ordere
 interface PurchaseOrderLine {
   id: number; rm_item_id: number; ingredient_name: string; unit: string;
   qty_ordered: number; qty_received: number; status: string; qty_now: string; qty_spoilt: string;
+  actual_unit_cost: string;
+  quoted_unit_cost: number | null;
 }
 interface PurchaseOrder {
   id: number; vendor_name: string; ordered_at: string; status: string;
@@ -138,12 +140,15 @@ export default function ReceivePage() {
           const item = l.item as Record<string, unknown> | null;
           const qtyOrdered = l.qty_ordered as number;
           const qtyReceived = (l.qty_received as number) || 0;
+          const quotedCost = l.unit_cost as number | null;
           return {
             id: l.id as number, rm_item_id: l.rm_item_id as number,
             ingredient_name: (item?.name as string) || '', unit: (item?.unit as string) || '',
             qty_ordered: qtyOrdered, qty_received: qtyReceived, status: l.status as string,
             qty_now: String(qtyOrdered - qtyReceived > 0 ? qtyOrdered - qtyReceived : qtyOrdered),
             qty_spoilt: '0',
+            actual_unit_cost: quotedCost != null ? String(quotedCost) : '',
+            quoted_unit_cost: quotedCost,
           };
         }),
       };
@@ -295,7 +300,7 @@ export default function ReceivePage() {
   // ── Confirm receipt ──────────────────────────────────────────────────────
 
   function toggleOrder(id: number) { setOrders(prev => prev.map(o => o.id === id ? { ...o, expanded: !o.expanded } : o)); }
-  function updateLineField(orderId: number, lineId: number, field: 'qty_now' | 'qty_spoilt', value: string) {
+  function updateLineField(orderId: number, lineId: number, field: 'qty_now' | 'qty_spoilt' | 'actual_unit_cost', value: string) {
     setOrders(prev => prev.map(o =>
       o.id === orderId ? { ...o, lines: o.lines.map(l => l.id === lineId ? { ...l, [field]: value } : l) } : o
     ));
@@ -309,7 +314,12 @@ export default function ReceivePage() {
       if (spoilt > received) { toast.error(`Spoilt qty cannot exceed received for ${l.ingredient_name}.`); return; }
     }
     const receiptLines = order.lines
-      .map(l => ({ rm_item_id: l.rm_item_id, qty: (parseFloat(l.qty_now) || 0) - (parseFloat(l.qty_spoilt) || 0), unit_cost: null, lot_no: null }))
+      .map(l => ({
+        rm_item_id: l.rm_item_id,
+        qty: (parseFloat(l.qty_now) || 0) - (parseFloat(l.qty_spoilt) || 0),
+        unit_cost: l.actual_unit_cost ? parseFloat(l.actual_unit_cost) : null,
+        lot_no: null,
+      }))
       .filter(l => l.qty > 0);
     if (receiptLines.length === 0) { toast.error('No usable stock entered.'); return; }
     setConfirming(order.id);
@@ -327,7 +337,12 @@ export default function ReceivePage() {
       for (const l of order.lines) {
         const newQtyReceived = l.qty_received + (parseFloat(l.qty_now) || 0);
         const lineStatus = newQtyReceived >= l.qty_ordered ? 'received' : 'partial';
-        await supabase.schema('production').from('rm_purchase_order_lines').update({ qty_received: newQtyReceived, status: lineStatus }).eq('id', l.id);
+        const actualCost = l.actual_unit_cost ? parseFloat(l.actual_unit_cost) : null;
+        await supabase.schema('production').from('rm_purchase_order_lines').update({
+          qty_received: newQtyReceived,
+          status: lineStatus,
+          ...(actualCost != null ? { unit_cost: actualCost } : {}),
+        }).eq('id', l.id);
       }
       const allReceived = order.lines.every(l => l.qty_received + (parseFloat(l.qty_now) || 0) >= l.qty_ordered);
       await supabase.schema('production').from('rm_purchase_orders').update({ status: allReceived ? 'received' : 'partially_received' }).eq('id', order.id);
@@ -564,6 +579,23 @@ export default function ReceivePage() {
                                 onChange={e => updateLineField(order.id, line.id, 'qty_spoilt', e.target.value)}
                                 placeholder="0" className="input-field border-red-200" />
                             </div>
+                          </div>
+                          <div className="mt-2">
+                            <label className="label-text block mb-1">
+                              Actual price paid (₹/{line.unit})
+                              {line.quoted_unit_cost != null && (
+                                <span className="text-gray-400 font-normal ml-1">· Quoted: ₹{fmt(line.quoted_unit_cost)}</span>
+                              )}
+                            </label>
+                            <input type="number" min="0" step="0.01" value={line.actual_unit_cost}
+                              onChange={e => updateLineField(order.id, line.id, 'actual_unit_cost', e.target.value)}
+                              placeholder={line.quoted_unit_cost != null ? String(line.quoted_unit_cost) : 'Enter amount paid'}
+                              className="input-field" />
+                            {line.actual_unit_cost && parseFloat(line.qty_now) > 0 && (
+                              <p className="text-xs text-blue-600 mt-1">
+                                Total: {fmtCur((parseFloat(line.qty_now) || 0) * parseFloat(line.actual_unit_cost))}
+                              </p>
+                            )}
                           </div>
                           {parseFloat(line.qty_spoilt) > 0 && parseFloat(line.qty_now) > 0 && (
                             <p className="text-xs text-green-700 mt-1">

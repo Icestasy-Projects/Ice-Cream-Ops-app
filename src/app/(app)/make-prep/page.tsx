@@ -18,6 +18,9 @@ interface PrepProduct {
 interface RecipeLine {
   qty_per_unit: number;
   rm_items: { name: string; unit: string };
+  rm_item_id: number;
+  stock_on_hand: number;
+  max_batches_from_stock: number;
 }
 
 export default function MakePrepPage() {
@@ -61,16 +64,38 @@ export default function MakePrepPage() {
     const p = products.find(x => x.id === parseInt(id)) ?? null;
     setSelected(p);
     if (p) {
-      const { data } = await supabase.schema('production').from('prep_recipes')
-        .select('qty_per_unit, rm_items(name, unit)')
-        .eq('prep_product_id', p.id);
-      setRecipe((data || []) as unknown as RecipeLine[]);
+      const [recipesRes, stockRes] = await Promise.all([
+        supabase.schema('production').from('prep_recipes')
+          .select('rm_item_id, qty_per_unit, rm_items(name, unit)')
+          .eq('prep_product_id', p.id),
+        supabase.schema('production').from('v_rm_stock')
+          .select('rm_item_id, qty_on_hand'),
+      ]);
+      const stockMap = new Map<number, number>(
+        ((stockRes.data || []) as Record<string, unknown>[]).map(r => [r.rm_item_id as number, (r.qty_on_hand as number) || 0])
+      );
+      const lines = ((recipesRes.data || []) as Record<string, unknown>[]).map(r => {
+        const rmId = r.rm_item_id as number;
+        const qtyPerUnit = (r.qty_per_unit as number) || 0;
+        const onHand = stockMap.get(rmId) ?? 0;
+        return {
+          rm_item_id: rmId,
+          qty_per_unit: qtyPerUnit,
+          rm_items: r.rm_items as { name: string; unit: string },
+          stock_on_hand: onHand,
+          max_batches_from_stock: qtyPerUnit > 0 ? Math.floor(onHand / qtyPerUnit) : Infinity,
+        };
+      });
+      setRecipe(lines);
     }
   }
 
   const batchCount = parseFloat(batches) || 0;
   const totalLitres = batchCount * (selected?.batch_yield_l ?? 0);
   const bulkTubs = selected?.batch_yield_l ? Math.floor(totalLitres / 4) : 0;
+  const maxPossibleBatches = recipe.length > 0
+    ? Math.min(...recipe.filter(r => r.qty_per_unit > 0).map(r => r.max_batches_from_stock))
+    : null;
 
   async function handleSubmit() {
     if (!selected || batchCount <= 0) return;
@@ -217,27 +242,62 @@ export default function MakePrepPage() {
         {/* RM breakdown */}
         {recipe.length > 0 && (
           <div className="border border-gray-200 rounded-xl overflow-hidden">
+            {/* Capacity banner */}
+            {maxPossibleBatches !== null && (
+              <div className={`px-4 py-2.5 flex items-center justify-between text-sm border-b ${
+                maxPossibleBatches === 0
+                  ? 'bg-red-50 border-red-200'
+                  : batchCount > 0 && batchCount > maxPossibleBatches
+                    ? 'bg-amber-50 border-amber-200'
+                    : 'bg-green-50 border-green-200'
+              }`}>
+                <span className={`font-medium ${
+                  maxPossibleBatches === 0 ? 'text-red-700'
+                    : batchCount > 0 && batchCount > maxPossibleBatches ? 'text-amber-700'
+                    : 'text-green-700'
+                }`}>
+                  {maxPossibleBatches === 0
+                    ? 'Insufficient RM stock for even 1 batch'
+                    : `Stock allows up to ${maxPossibleBatches} batch${maxPossibleBatches !== 1 ? 'es' : ''}`}
+                </span>
+                {maxPossibleBatches > 0 && selected?.batch_yield_l && (
+                  <span className="text-gray-500 text-xs">
+                    = {formatNumber(maxPossibleBatches * selected.batch_yield_l)}L
+                  </span>
+                )}
+              </div>
+            )}
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide px-4 py-2 bg-gray-50 border-b border-gray-100">
-              RM Ingredients Used{batchCount > 0 ? ` — ${batchCount} batch${batchCount !== 1 ? 'es' : ''}` : ' — per batch'}
+              RM Ingredients{batchCount > 0 ? ` — ${batchCount} batch${batchCount !== 1 ? 'es' : ''}` : ' — per batch'}
             </p>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-xs text-gray-400">
                   <th className="text-left px-4 py-1.5 font-medium">Ingredient</th>
+                  <th className="text-right px-4 py-1.5 font-medium">In Stock</th>
                   <th className="text-right px-4 py-1.5 font-medium">Per Batch</th>
-                  {batchCount > 0 && <th className="text-right px-4 py-1.5 font-medium">Total</th>}
+                  {batchCount > 0 && <th className="text-right px-4 py-1.5 font-medium">Need</th>}
                 </tr>
               </thead>
               <tbody>
-                {recipe.map((line, i) => (
-                  <tr key={i} className="border-b border-gray-50 last:border-0">
-                    <td className="px-4 py-2 text-gray-800 font-medium">{line.rm_items.name}</td>
-                    <td className="px-4 py-2 text-right text-gray-500">{formatNumber(line.qty_per_unit, 3)} {line.rm_items.unit}</td>
-                    {batchCount > 0 && (
-                      <td className="px-4 py-2 text-right font-bold text-orange-700">{formatNumber(line.qty_per_unit * batchCount, 3)} {line.rm_items.unit}</td>
-                    )}
-                  </tr>
-                ))}
+                {recipe.map((line, i) => {
+                  const need = line.qty_per_unit * batchCount;
+                  const shortage = batchCount > 0 && need > line.stock_on_hand;
+                  return (
+                    <tr key={i} className={`border-b border-gray-50 last:border-0 ${shortage ? 'bg-red-50' : ''}`}>
+                      <td className={`px-4 py-2 font-medium ${shortage ? 'text-red-800' : 'text-gray-800'}`}>{line.rm_items.name}</td>
+                      <td className={`px-4 py-2 text-right ${shortage ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>
+                        {formatNumber(line.stock_on_hand, 3)} {line.rm_items.unit}
+                      </td>
+                      <td className="px-4 py-2 text-right text-gray-500">{formatNumber(line.qty_per_unit, 3)} {line.rm_items.unit}</td>
+                      {batchCount > 0 && (
+                        <td className={`px-4 py-2 text-right font-bold ${shortage ? 'text-red-700' : 'text-orange-700'}`}>
+                          {formatNumber(need, 3)} {line.rm_items.unit}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

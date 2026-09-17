@@ -30,6 +30,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   '/admin/cost-sheet': DollarSign,
   '/kitchen/daily-rm': ClipboardList,
   '/admin/rm-variances': AlertTriangle,
+  '/formulations': FlaskConical,
 };
 
 // Top-level nav groups shown as tabs in the header
