@@ -7,7 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, Box } from 'lucide-react';
+import { CheckCircle, Box, Info } from 'lucide-react';
 
 interface FgSku {
   fg_sku_id: number;
@@ -29,6 +29,7 @@ export default function MakeTubsPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
+  const [capacity, setCapacity] = useState<{ prep_stock_l: number; expected_tubs: number; litres_per_tub: number } | null>(null);
 
   const loadSkus = useCallback(async () => {
     const { data } = await supabase
@@ -65,12 +66,18 @@ export default function MakeTubsPage() {
     setQty('');
     setNote('');
     setLastResult(null);
+    setCapacity(null);
   }
 
-  function handleSkuSelect(s: FgSku) {
+  async function handleSkuSelect(s: FgSku) {
     setSelectedSku(s);
     setQty('');
     setNote('');
+    setCapacity(null);
+    try {
+      const res = await fetch(`/api/fg-capacity?sku_id=${s.fg_sku_id}`);
+      if (res.ok) setCapacity(await res.json());
+    } catch { /* ignore */ }
   }
 
   async function handleSubmit() {
@@ -168,6 +175,28 @@ export default function MakeTubsPage() {
                   </span>
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Prep stock capacity */}
+        {selectedSku && capacity && (
+          <div className={`rounded-xl px-4 py-3 flex items-start gap-3 text-sm ${
+            capacity.expected_tubs === 0
+              ? 'bg-red-50 border border-red-200'
+              : 'bg-blue-50 border border-blue-200'
+          }`}>
+            <Info size={16} className={`shrink-0 mt-0.5 ${capacity.expected_tubs === 0 ? 'text-red-500' : 'text-blue-500'}`} />
+            <div>
+              <p className={`font-semibold ${capacity.expected_tubs === 0 ? 'text-red-800' : 'text-blue-800'}`}>
+                {capacity.expected_tubs === 0
+                  ? 'No prep mix available in factory'
+                  : `~${capacity.expected_tubs} tubs possible from prep stock`}
+              </p>
+              <p className={`text-xs mt-0.5 ${capacity.expected_tubs === 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                {capacity.prep_stock_l.toFixed(1)}L prep available · {capacity.litres_per_tub.toFixed(3)}L per tub
+                {capacity.expected_tubs === 0 ? ' — request a transfer from the kitchen.' : ''}
+              </p>
             </div>
           </div>
         )}
