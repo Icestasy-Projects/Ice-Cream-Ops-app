@@ -7,13 +7,20 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, Box, Info } from 'lucide-react';
+import { CheckCircle, Box, Info, Printer, QrCode } from 'lucide-react';
+import { makeLabelCode, labelToDataUrl } from '@/lib/qr';
 
 interface FgSku {
   fg_sku_id: number;
   product_name: string;
   unit: string;
   qty_on_hand: number;
+}
+
+interface GeneratedLabel {
+  labelCode: string;
+  qty: number;
+  dataUrl: string;
 }
 
 export default function MakeTubsPage() {
@@ -28,8 +35,8 @@ export default function MakeTubsPage() {
   const [note, setNote] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [lastResult, setLastResult] = useState<string | null>(null);
   const [capacity, setCapacity] = useState<{ prep_stock_l: number; expected_tubs: number; litres_per_tub: number } | null>(null);
+  const [labels, setLabels] = useState<GeneratedLabel[]>([]);
 
   const loadSkus = useCallback(async () => {
     const { data } = await supabase
@@ -48,13 +55,11 @@ export default function MakeTubsPage() {
 
   useEffect(() => { loadSkus(); }, [loadSkus]);
 
-  // Unique sorted flavour names
   const flavours = useMemo(() =>
     Array.from(new Set(skus.map(s => s.product_name))).sort(),
     [skus]
   );
 
-  // SKUs for the selected flavour
   const flavourSkus = useMemo(() =>
     skus.filter(s => s.product_name === selectedFlavour),
     [skus, selectedFlavour]
@@ -65,7 +70,7 @@ export default function MakeTubsPage() {
     setSelectedSku(null);
     setQty('');
     setNote('');
-    setLastResult(null);
+    setLabels([]);
     setCapacity(null);
   }
 
@@ -74,6 +79,7 @@ export default function MakeTubsPage() {
     setQty('');
     setNote('');
     setCapacity(null);
+    setLabels([]);
     try {
       const res = await fetch(`/api/fg-capacity?sku_id=${s.fg_sku_id}`);
       if (res.ok) setCapacity(await res.json());
@@ -84,7 +90,7 @@ export default function MakeTubsPage() {
     if (!selectedSku || !qty || parseFloat(qty) <= 0) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .schema('production')
         .from('fg_units')
         .insert({
@@ -93,12 +99,38 @@ export default function MakeTubsPage() {
           produced_by: user?.id,
           status: 'posted',
           note: note || null,
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw new Error(error.message);
 
+      const fgUnitsId = (inserted as { id: number }).id;
       const qtyNum = parseFloat(qty);
-      setLastResult(`Produced ${formatNumber(qtyNum)} ${selectedSku.unit} of ${selectedSku.product_name}. Finished goods stock updated.`);
+
+      // Generate one label per tub (capped at 50 for sanity)
+      const labelCount = Math.min(Math.round(qtyNum), 50);
+      const today = new Date();
+      const generatedLabels: GeneratedLabel[] = [];
+      const labelRows: { fg_units_id: number; fg_sku_id: number; label_code: string; qty: number; created_by: string | undefined }[] = [];
+
+      for (let i = 1; i <= labelCount; i++) {
+        const labelCode = makeLabelCode(fgUnitsId, i, today);
+        const dataUrl = await labelToDataUrl(labelCode);
+        generatedLabels.push({ labelCode, qty: 1, dataUrl });
+        labelRows.push({
+          fg_units_id: fgUnitsId,
+          fg_sku_id: selectedSku.fg_sku_id,
+          label_code: labelCode,
+          qty: 1,
+          created_by: user?.id,
+        });
+      }
+
+      // Save labels to DB (best-effort, don't fail production if this fails)
+      await supabase.schema('production').from('fg_labels').insert(labelRows);
+
+      setLabels(generatedLabels);
       toast.success(`${formatNumber(qtyNum)} ${selectedSku.unit} of ${selectedSku.product_name} added to stock!`);
       setShowConfirm(false);
       setSelectedFlavour('');
@@ -131,10 +163,33 @@ export default function MakeTubsPage() {
         description="Fill tubs with ice cream from factory stock. This increases your finished goods count."
       />
 
-      {lastResult && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-start gap-3">
-          <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
-          <p className="text-green-800 font-medium">{lastResult}</p>
+      {/* QR Labels panel */}
+      {labels.length > 0 && (
+        <div className="bg-white rounded-2xl border border-green-200 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-green-50 border-b border-green-100">
+            <div className="flex items-center gap-2">
+              <CheckCircle size={18} className="text-green-600" />
+              <p className="font-bold text-green-800">Production recorded — {labels.length} label{labels.length !== 1 ? 's' : ''} ready</p>
+            </div>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 text-sm font-semibold text-green-700 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-xl transition-colors"
+            >
+              <Printer size={14} /> Print All
+            </button>
+          </div>
+          <div className="p-4 grid grid-cols-2 gap-3 print:grid-cols-3" id="label-grid">
+            {labels.map(l => (
+              <div key={l.labelCode} className="border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-2 print:border-black print:break-inside-avoid">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={l.dataUrl} alt={l.labelCode} className="w-24 h-24" />
+                <p className="text-xs font-mono font-bold text-gray-700 text-center leading-tight">{l.labelCode}</p>
+              </div>
+            ))}
+          </div>
+          <div className="px-4 pb-4">
+            <button onClick={() => setLabels([])} className="text-xs text-gray-400 hover:text-gray-600 underline">Dismiss labels</button>
+          </div>
         </div>
       )}
 
@@ -217,6 +272,11 @@ export default function MakeTubsPage() {
                 className="input-field"
                 autoFocus
               />
+              {qtyNum > 50 && (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <QrCode size={11} /> Labels will be generated for the first 50 tubs only.
+                </p>
+              )}
             </div>
 
             <div>
@@ -248,7 +308,7 @@ export default function MakeTubsPage() {
               <p className="text-xl font-bold text-gray-900">
                 {qty} {selectedSku.unit} of {selectedSku.product_name}
               </p>
-              <p className="text-sm text-gray-500">Finished goods stock will increase by this amount.</p>
+              <p className="text-sm text-gray-500">QR labels will be generated for each tub.</p>
             </div>
           }
           confirmLabel="Yes, Record Production"
@@ -257,6 +317,13 @@ export default function MakeTubsPage() {
           loading={submitting}
         />
       )}
+
+      <style>{`
+        @media print {
+          body > *:not(#label-grid) { display: none !important; }
+          #label-grid { display: grid !important; }
+        }
+      `}</style>
     </div>
   );
 }
