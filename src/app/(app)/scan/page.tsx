@@ -50,6 +50,7 @@ export default function ScanPage() {
 
   // Offline queue — persist to localStorage
   const [offlineQueue, setOfflineQueue] = useState<object[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       return JSON.parse(localStorage.getItem('fg_scan_queue') ?? '[]');
     } catch { return []; }
