@@ -44,27 +44,33 @@ export async function GET(req: NextRequest) {
 
     // Get prep product for this flavour
     const { data: prepData } = await admin.schema('production').from('prep_products')
-      .select('id').eq('flavour_id', flavourId).eq('status', 'active').maybeSingle();
+      .select('id, batch_yield_l').eq('flavour_id', flavourId).eq('status', 'active').maybeSingle();
 
     if (!prepData) {
-      return NextResponse.json({ prep_stock_l: 0, expected_tubs: 0, unit_volume_ml: unitVolMl });
+      return NextResponse.json({ prep_stock_batches: 0, expected_tubs: 0, unit_volume_ml: unitVolMl });
     }
 
-    const prepId = (prepData as Record<string, unknown>).id as number;
+    const prep = prepData as Record<string, unknown>;
+    const prepId = prep.id as number;
+    const batchYieldL = (prep.batch_yield_l as number) || 0;
 
-    // Get prep stock
+    // Get prep stock (qty_total = batch count)
     const { data: stockData } = await admin.schema('production').from('v_prep_stock')
-      .select('qty_total, unit').eq('prep_product_id', prepId).maybeSingle();
+      .select('qty_factory, qty_total, unit').eq('prep_product_id', prepId).maybeSingle();
 
-    const prepStockL = (stockData as Record<string, unknown> | null)?.qty_total as number || 0;
+    const stock = (stockData as Record<string, unknown> | null);
+    const factoryBatches = (stock?.qty_factory as number) || 0;
+    const prepStockL = factoryBatches * batchYieldL;
     const expectedTubs = litresPerTub > 0 ? Math.floor(prepStockL / litresPerTub) : 0;
 
     return NextResponse.json({
-      prep_stock_l: prepStockL,
-      prep_stock_unit: (stockData as Record<string, unknown> | null)?.unit as string || 'L',
-      litres_per_tub: litresPerTub,
-      expected_tubs: expectedTubs,
-      unit_volume_ml: unitVolMl,
+      prep_product_id:   prepId,
+      batch_yield_l:     batchYieldL,
+      factory_batches:   factoryBatches,
+      prep_stock_l:      prepStockL,
+      litres_per_tub:    litresPerTub,
+      expected_tubs:     expectedTubs,
+      unit_volume_ml:    unitVolMl,
     });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

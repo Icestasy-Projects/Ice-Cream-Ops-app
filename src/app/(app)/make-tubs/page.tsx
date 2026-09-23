@@ -7,9 +7,7 @@ import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
 import { parseSupabaseError, formatNumber } from '@/lib/utils';
-import { CheckCircle, Box, Info, Printer, QrCode } from 'lucide-react';
-import { makeLabelCode } from '@/lib/qr';
-import QRCode from 'react-qr-code';
+import { Box, Info, AlertTriangle, FlaskConical, Sparkles } from 'lucide-react';
 
 interface FgSku {
   fg_sku_id: number;
@@ -18,9 +16,13 @@ interface FgSku {
   qty_on_hand: number;
 }
 
-interface GeneratedLabel {
-  labelCode: string;
-  qty: number;
+interface Capacity {
+  prep_product_id: number;
+  batch_yield_l: number;
+  factory_batches: number;
+  prep_stock_l: number;
+  litres_per_tub: number;
+  expected_tubs: number;
 }
 
 export default function MakeTubsPage() {
@@ -31,13 +33,12 @@ export default function MakeTubsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedFlavour, setSelectedFlavour] = useState('');
   const [selectedSku, setSelectedSku] = useState<FgSku | null>(null);
-  const [qty, setQty] = useState('');
+  const [capacity, setCapacity] = useState<Capacity | null>(null);
+  const [fromPrepL, setFromPrepL] = useState('');
+  const [extraL, setExtraL] = useState('');
   const [note, setNote] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [capacity, setCapacity] = useState<{ prep_stock_l: number; expected_tubs: number; litres_per_tub: number } | null>(null);
-  const [labels, setLabels] = useState<GeneratedLabel[]>([]);
-  const [labelFlavour, setLabelFlavour] = useState('');
 
   const loadSkus = useCallback(async () => {
     const { data } = await supabase
@@ -57,90 +58,83 @@ export default function MakeTubsPage() {
   useEffect(() => { loadSkus(); }, [loadSkus]);
 
   const flavours = useMemo(() =>
-    Array.from(new Set(skus.map(s => s.product_name))).sort(),
-    [skus]
-  );
+    Array.from(new Set(skus.map(s => s.product_name))).sort(), [skus]);
 
   const flavourSkus = useMemo(() =>
-    skus.filter(s => s.product_name === selectedFlavour),
-    [skus, selectedFlavour]
-  );
+    skus.filter(s => s.product_name === selectedFlavour), [skus, selectedFlavour]);
+
+  function reset() {
+    setSelectedFlavour('');
+    setSelectedSku(null);
+    setCapacity(null);
+    setFromPrepL('');
+    setExtraL('');
+    setNote('');
+  }
 
   function handleFlavourChange(name: string) {
     setSelectedFlavour(name);
     setSelectedSku(null);
-    setQty('');
-    setNote('');
-    setLabels([]);
     setCapacity(null);
+    setFromPrepL('');
+    setExtraL('');
+    setNote('');
   }
 
   async function handleSkuSelect(s: FgSku) {
     setSelectedSku(s);
-    setQty('');
-    setNote('');
     setCapacity(null);
-    setLabels([]);
+    setFromPrepL('');
+    setExtraL('');
+    setNote('');
     try {
       const res = await fetch(`/api/fg-capacity?sku_id=${s.fg_sku_id}`);
       if (res.ok) setCapacity(await res.json());
     } catch { /* ignore */ }
   }
 
+  // Derived calculations shown in UI
+  const fromPrepNum = parseFloat(fromPrepL) || 0;
+  const extraNum = parseFloat(extraL) || 0;
+  const totalL = fromPrepNum + extraNum;
+
+  const batchYield = capacity?.batch_yield_l || 0;
+  const batchesNeeded = batchYield > 0 ? Math.round(fromPrepNum / batchYield) : 0;
+  const notEnoughPrep = capacity != null && batchesNeeded > (capacity.factory_batches || 0);
+
+  const canSubmit = totalL > 0 && !notEnoughPrep && (fromPrepNum === 0 || batchesNeeded >= 1);
+
   async function handleSubmit() {
-    if (!selectedSku || !qty || parseFloat(qty) <= 0) return;
+    if (!selectedSku || !capacity || !canSubmit) return;
     setSubmitting(true);
     try {
-      const { data: inserted, error } = await supabase
-        .schema('production')
-        .from('fg_units')
-        .insert({
-          fg_sku_id: selectedSku.fg_sku_id,
-          qty_produced: parseFloat(qty),
-          produced_by: user?.id,
-          status: 'posted',
-          note: note || null,
-        })
-        .select('id')
-        .single();
+      const res = await fetch('/api/make-fg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fg_sku_id:        selectedSku.fg_sku_id,
+          prep_product_id:  capacity.prep_product_id,
+          from_prep_l:      fromPrepNum,
+          extra_l:          extraNum,
+          note:             note || null,
+        }),
+      });
 
-      if (error) throw new Error(error.message);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Unknown error');
 
-      const fgUnitsId = (inserted as { id: number }).id;
-      const qtyNum = parseFloat(qty);
-      const labelCount = Math.min(Math.round(qtyNum), 50);
-      const today = new Date();
-      const generatedLabels: GeneratedLabel[] = [];
-      const labelRows: { fg_units_id: number; fg_sku_id: number; label_code: string; qty: number; created_by: string | undefined }[] = [];
-
-      for (let i = 1; i <= labelCount; i++) {
-        const labelCode = makeLabelCode(fgUnitsId, i, today);
-        generatedLabels.push({ labelCode, qty: 1 });
-        labelRows.push({
-          fg_units_id: fgUnitsId,
-          fg_sku_id: selectedSku.fg_sku_id,
-          label_code: labelCode,
-          qty: 1,
-          created_by: user?.id,
-        });
-      }
-
-      // Save labels to DB (best-effort)
-      await supabase.schema('production').from('fg_labels').insert(labelRows);
-
-      setLabels(generatedLabels);
-      setLabelFlavour(`${selectedSku.product_name} (${selectedSku.unit})`);
-      toast.success(`${formatNumber(qtyNum)} ${selectedSku.unit} of ${selectedSku.product_name} added to stock!`);
+      const result = json as { batches_consumed: number; total_fg_l: number };
+      toast.success(
+        `${formatNumber(result.total_fg_l)}L of ${selectedSku.product_name} added to stock` +
+        (result.batches_consumed ? ` · ${result.batches_consumed} prep batch${result.batches_consumed !== 1 ? 'es' : ''} consumed` : '')
+      );
       setShowConfirm(false);
-      setSelectedFlavour('');
-      setSelectedSku(null);
-      setQty('');
-      setNote('');
+      reset();
       await loadSkus();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      if (msg.toLowerCase().includes('insufficient') || msg.toLowerCase().includes('not enough')) {
-        toast.error(`Not enough prep mix at the factory. Transfer mix from the kitchen first.`);
+      if (msg.toLowerCase().includes('insufficient')) {
+        toast.error('Not enough prep mix at factory. Transfer mix from kitchen first.');
       } else {
         toast.error(parseSupabaseError(msg));
       }
@@ -152,62 +146,26 @@ export default function MakeTubsPage() {
 
   if (loading) return <LoadingSpinner text="Loading products..." />;
 
-  const qtyNum = parseFloat(qty) || 0;
-
   return (
     <div className="space-y-4">
       <ScreenHeader
         icon={Box} iconColor="text-pink-500"
-        title="Make Finished Tubs"
-        description="Fill tubs with ice cream from factory stock. This increases your finished goods count."
+        title="Make Finished Goods"
+        description="Record ice cream production. Prep stock is deducted automatically."
       />
 
-      {/* QR Labels panel */}
-      {labels.length > 0 && (
-        <div className="bg-white rounded-2xl border border-green-200 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-green-50 border-b border-green-100">
-            <div className="flex items-center gap-2">
-              <CheckCircle size={18} className="text-green-600" />
-              <p className="font-bold text-green-800">{labels.length} label{labels.length !== 1 ? 's' : ''} for {labelFlavour}</p>
-            </div>
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-1.5 text-sm font-semibold text-green-700 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-xl transition-colors"
-            >
-              <Printer size={14} /> Print All
-            </button>
-          </div>
-          <div className="p-4 grid grid-cols-2 gap-3" id="label-grid">
-            {labels.map(l => (
-              <div key={l.labelCode} className="border border-gray-200 rounded-xl p-3 flex flex-col items-center gap-2">
-                <QRCode value={l.labelCode} size={96} />
-                <p className="text-xs font-mono font-bold text-gray-700 text-center leading-tight">{l.labelCode}</p>
-              </div>
-            ))}
-          </div>
-          <div className="px-4 pb-4">
-            <button onClick={() => setLabels([])} className="text-xs text-gray-400 hover:text-gray-600 underline">Dismiss labels</button>
-          </div>
-        </div>
-      )}
-
       <div className="card space-y-5">
-        {/* Step 1: Flavour dropdown */}
+
+        {/* Step 1: Flavour */}
         <div>
           <label className="label-text block mb-1">Flavour</label>
-          <select
-            value={selectedFlavour}
-            onChange={e => handleFlavourChange(e.target.value)}
-            className="input-field"
-          >
+          <select value={selectedFlavour} onChange={e => handleFlavourChange(e.target.value)} className="input-field">
             <option value="">— Select a flavour —</option>
-            {flavours.map(f => (
-              <option key={f} value={f}>{f}</option>
-            ))}
+            {flavours.map(f => <option key={f} value={f}>{f}</option>)}
           </select>
         </div>
 
-        {/* Step 2: Size variant chips */}
+        {/* Step 2: SKU / size chips */}
         {selectedFlavour && flavourSkus.length > 0 && (
           <div>
             <label className="label-text block mb-2">Size / Format</label>
@@ -218,13 +176,13 @@ export default function MakeTubsPage() {
                   onClick={() => handleSkuSelect(s)}
                   className={`px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all touch-manipulation ${
                     selectedSku?.fg_sku_id === s.fg_sku_id
-                      ? 'border-brand-500 bg-orange-50 text-brand-700'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-orange-300'
+                      ? 'border-pink-500 bg-pink-50 text-pink-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-pink-300'
                   }`}
                 >
                   <span>{s.unit}</span>
                   <span className="block text-xs font-normal text-gray-400 mt-0.5">
-                    In stock: {formatNumber(s.qty_on_hand)}
+                    In stock: {formatNumber(s.qty_on_hand)} L
                   </span>
                 </button>
               ))}
@@ -232,53 +190,108 @@ export default function MakeTubsPage() {
           </div>
         )}
 
-        {/* Prep stock capacity */}
+        {/* Prep stock info banner */}
         {selectedSku && capacity && (
           <div className={`rounded-xl px-4 py-3 flex items-start gap-3 text-sm ${
-            capacity.expected_tubs === 0
+            capacity.factory_batches === 0
               ? 'bg-red-50 border border-red-200'
               : 'bg-blue-50 border border-blue-200'
           }`}>
-            <Info size={16} className={`shrink-0 mt-0.5 ${capacity.expected_tubs === 0 ? 'text-red-500' : 'text-blue-500'}`} />
+            <Info size={16} className={`shrink-0 mt-0.5 ${capacity.factory_batches === 0 ? 'text-red-500' : 'text-blue-500'}`} />
             <div>
-              <p className={`font-semibold ${capacity.expected_tubs === 0 ? 'text-red-800' : 'text-blue-800'}`}>
-                {capacity.expected_tubs === 0
-                  ? 'No prep mix available in factory'
-                  : `~${capacity.expected_tubs} tubs possible from prep stock`}
+              <p className={`font-semibold ${capacity.factory_batches === 0 ? 'text-red-800' : 'text-blue-800'}`}>
+                {capacity.factory_batches === 0
+                  ? 'No prep mix at factory — transfer from kitchen first'
+                  : `${capacity.factory_batches} prep batch${capacity.factory_batches !== 1 ? 'es' : ''} at factory`}
               </p>
-              <p className={`text-xs mt-0.5 ${capacity.expected_tubs === 0 ? 'text-red-600' : 'text-blue-600'}`}>
-                {capacity.prep_stock_l.toFixed(1)}L prep available · {capacity.litres_per_tub.toFixed(3)}L per tub
-                {capacity.expected_tubs === 0 ? ' — request a transfer from the kitchen.' : ''}
+              <p className={`text-xs mt-0.5 ${capacity.factory_batches === 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                {capacity.batch_yield_l}L per batch · {formatNumber(capacity.prep_stock_l)}L total available
+                {capacity.factory_batches > 0 ? ` · ~${capacity.expected_tubs} tubs possible` : ''}
               </p>
             </div>
           </div>
         )}
 
-        {/* Step 3: Qty + note + submit */}
-        {selectedSku && (
+        {/* Step 3: Quantities */}
+        {selectedSku && capacity && (
           <>
-            <div>
-              <label className="label-text block mb-1">Quantity to produce ({selectedSku.unit})</label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={qty}
-                onChange={e => setQty(e.target.value)}
-                onWheel={e => e.currentTarget.blur()}
-                placeholder="e.g. 50"
-                className="input-field"
-                autoFocus
-              />
-              {qtyNum > 50 && (
-                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                  <QrCode size={11} /> Labels generated for first 50 tubs only.
-                </p>
+            {/* FROM PREP */}
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <FlaskConical size={16} className="text-blue-600 shrink-0" />
+                <p className="text-sm font-bold text-blue-800">Created from prep batches</p>
+              </div>
+              <p className="text-xs text-blue-600">
+                Prep will be deducted automatically. Enter the litres produced from your prep stock.
+              </p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number" min="0" step="0.5"
+                  value={fromPrepL}
+                  onChange={e => setFromPrepL(e.target.value)}
+                  onWheel={e => e.currentTarget.blur()}
+                  placeholder={`e.g. ${capacity.batch_yield_l}`}
+                  className="input-field flex-1"
+                />
+                <span className="text-sm font-semibold text-blue-700 shrink-0">L</span>
+              </div>
+              {fromPrepNum > 0 && batchYield > 0 && (
+                <div className={`rounded-xl px-3 py-2 text-sm flex items-center gap-2 ${
+                  notEnoughPrep
+                    ? 'bg-red-100 text-red-700 border border-red-200'
+                    : 'bg-white text-blue-700 border border-blue-200'
+                }`}>
+                  {notEnoughPrep
+                    ? <AlertTriangle size={14} className="shrink-0" />
+                    : <FlaskConical size={14} className="shrink-0" />}
+                  <span>
+                    {notEnoughPrep
+                      ? `Only ${capacity.factory_batches} batch${capacity.factory_batches !== 1 ? 'es' : ''} available, need ${batchesNeeded}`
+                      : `= ${batchesNeeded} prep batch${batchesNeeded !== 1 ? 'es' : ''} (${batchYield}L × ${batchesNeeded}) will be deducted`}
+                  </span>
+                </div>
               )}
             </div>
 
+            {/* EXTRA */}
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-600 shrink-0" />
+                <p className="text-sm font-bold text-amber-800">Extra created <span className="font-normal">(optional)</span></p>
+              </div>
+              <p className="text-xs text-amber-600">
+                Surplus litres beyond full prep batches. Added to FG stock only — no prep deducted.
+              </p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number" min="0" step="0.5"
+                  value={extraL}
+                  onChange={e => setExtraL(e.target.value)}
+                  onWheel={e => e.currentTarget.blur()}
+                  placeholder="e.g. 6"
+                  className="input-field flex-1"
+                />
+                <span className="text-sm font-semibold text-amber-700 shrink-0">L</span>
+              </div>
+              {extraNum > 0 && (
+                <div className="rounded-xl px-3 py-2 text-sm flex items-center gap-2 bg-white text-amber-700 border border-amber-200">
+                  <Sparkles size={14} className="shrink-0" />
+                  <span>+{extraNum}L added to FG, no prep deducted</span>
+                </div>
+              )}
+            </div>
+
+            {/* Total summary */}
+            {totalL > 0 && (
+              <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
+                <p className="text-sm text-gray-600">Total FG to record</p>
+                <p className="text-xl font-bold text-gray-900">{formatNumber(totalL)} L</p>
+              </div>
+            )}
+
+            {/* Note */}
             <div>
-              <label className="label-text block mb-1">Note (optional)</label>
+              <label className="label-text block mb-1">Note <span className="text-gray-400 font-normal">(optional)</span></label>
               <textarea
                 value={note}
                 onChange={e => setNote(e.target.value)}
@@ -288,25 +301,35 @@ export default function MakeTubsPage() {
               />
             </div>
 
-            {qtyNum > 0 && (
+            {canSubmit && (
               <button onClick={() => setShowConfirm(true)} className="btn-primary w-full">
-                Make {qty} {selectedSku.unit} of {selectedSku.product_name}
+                Record {formatNumber(totalL)}L of {selectedSku.product_name}
               </button>
             )}
           </>
         )}
       </div>
 
-      {showConfirm && selectedSku && (
+      {showConfirm && selectedSku && capacity && (
         <ConfirmModal
           title="Confirm Production"
           message={
-            <div className="space-y-2">
-              <p>Recording production of:</p>
+            <div className="space-y-3">
               <p className="text-xl font-bold text-gray-900">
-                {qty} {selectedSku.unit} of {selectedSku.product_name}
+                {formatNumber(totalL)}L of {selectedSku.product_name}
               </p>
-              <p className="text-sm text-gray-500">QR labels will be generated for each tub.</p>
+              {fromPrepNum > 0 && (
+                <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800">
+                  <span className="font-semibold">{formatNumber(fromPrepNum)}L from prep</span>
+                  {' — '}{batchesNeeded} prep batch{batchesNeeded !== 1 ? 'es' : ''} will be deducted
+                </div>
+              )}
+              {extraNum > 0 && (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+                  <span className="font-semibold">{formatNumber(extraNum)}L extra</span>
+                  {' — '}added to FG only, no prep deducted
+                </div>
+              )}
             </div>
           }
           confirmLabel="Yes, Record Production"
