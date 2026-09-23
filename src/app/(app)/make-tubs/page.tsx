@@ -166,6 +166,14 @@ export default function MakeTubsPage() {
           </select>
         </div>
 
+        {/* Current FG stock */}
+        {selectedSku && (
+          <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
+            <p className="text-sm text-gray-500">Current FG stock — {selectedSku.product_name}</p>
+            <p className="text-lg font-bold text-gray-900">{formatNumber(selectedSku.qty_on_hand)} L</p>
+          </div>
+        )}
+
         {/* Prep stock info banner */}
         {selectedSku && capacity && (
           <div className={`rounded-xl px-4 py-3 flex items-start gap-3 text-sm ${
