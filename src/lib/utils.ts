@@ -45,7 +45,8 @@ export function parseSupabaseError(error: string | null | undefined): string {
   return error.length < 300 ? error : error.slice(0, 300) + '…';
 }
 
-export function formatNumber(n: number, decimals = 1): string {
+export function formatNumber(n: number | null | undefined, decimals = 1): string {
+  if (n == null || isNaN(n)) return '0';
   if (n === Math.floor(n)) return n.toString();
   return n.toFixed(decimals);
 }

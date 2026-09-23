@@ -29,7 +29,8 @@ export async function GET(req: NextRequest) {
       .eq('id', parseInt(skuId))
       .single();
 
-    if (!skuData) return NextResponse.json({ prep_stock_l: 0, expected_tubs: 0, unit_volume_ml: 0 });
+    const EMPTY = { prep_product_id: null, batch_yield_l: 0, factory_batches: 0, prep_stock_l: 0, litres_per_tub: 0, expected_tubs: 0 };
+    if (!skuData) return NextResponse.json(EMPTY);
 
     const s = skuData as Record<string, unknown>;
     const flavourId = s.flavour_id as number | null;
@@ -38,17 +39,13 @@ export async function GET(req: NextRequest) {
     const unitsPerPack = (pf?.units_per_pack as number) || 1;
     const litresPerTub = (unitVolMl * unitsPerPack) / 1000;
 
-    if (!flavourId || litresPerTub === 0) {
-      return NextResponse.json({ prep_stock_l: 0, expected_tubs: 0, unit_volume_ml: unitVolMl });
-    }
+    if (!flavourId) return NextResponse.json(EMPTY);
 
     // Get prep product for this flavour
     const { data: prepData } = await admin.schema('production').from('prep_products')
       .select('id, batch_yield_l').eq('flavour_id', flavourId).eq('status', 'active').maybeSingle();
 
-    if (!prepData) {
-      return NextResponse.json({ prep_stock_batches: 0, expected_tubs: 0, unit_volume_ml: unitVolMl });
-    }
+    if (!prepData) return NextResponse.json(EMPTY);
 
     const prep = prepData as Record<string, unknown>;
     const prepId = prep.id as number;
