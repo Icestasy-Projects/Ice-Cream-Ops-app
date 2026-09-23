@@ -61,7 +61,7 @@ export default function MakeTubsPage() {
     Array.from(new Set(skus.map(s => s.product_name))).sort(), [skus]);
 
   const flavourSkus = useMemo(() =>
-    skus.filter(s => s.product_name === selectedFlavour), [skus, selectedFlavour]);
+    skus.filter(s => s.product_name === selectedFlavour && s.unit === '4L Bulk'), [skus, selectedFlavour]);
 
   function reset() {
     setSelectedFlavour('');
