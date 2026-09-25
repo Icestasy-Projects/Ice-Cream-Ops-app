@@ -56,7 +56,7 @@ const LITRES_PER_UNIT: Record<string, number> = {
 export function litresToUnits(litres: number, unit: string): number {
   const lpu = LITRES_PER_UNIT[unit];
   if (!lpu || lpu <= 0) return litres;
-  return Math.floor(litres / lpu);
+  return Math.round((litres / lpu) * 100) / 100;
 }
 
 export function unitLabel(unit: string): string {
