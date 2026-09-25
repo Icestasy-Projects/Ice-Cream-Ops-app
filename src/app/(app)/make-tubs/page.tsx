@@ -62,7 +62,6 @@ export default function MakeTubsPage() {
   const flavours = useMemo(() =>
     Array.from(new Set(skus.map(s => s.product_name))).sort(), [skus]);
 
-  // Only the two formats produced on this page
   const flavourSkus = useMemo(() =>
     skus.filter(s => s.product_name === selectedFlavour && PRODUCTION_FORMATS.includes(s.unit)),
     [skus, selectedFlavour] // eslint-disable-line react-hooks/exhaustive-deps
@@ -98,16 +97,27 @@ export default function MakeTubsPage() {
     } catch { /* ignore */ }
   }
 
-  // Derived calculations shown in UI
-  const fromPrepNum = parseFloat(fromPrepL) || 0;
-  const extraNum = parseFloat(extraL) || 0;
-  const totalL = fromPrepNum + extraNum;
+  // Unit label for the selected SKU
+  const unitLabel = selectedSku?.unit === '4L Bulk' ? 'Bulk' : selectedSku?.unit === '12 Square' ? 'Square pack' : 'unit';
+
+  // Litres per individual SKU unit (from capacity API)
+  const litresPerUnit = capacity?.litres_per_tub || 0;
+
+  // Inputs are in UNIT COUNT (bulks / square packs), not litres
+  const fromPrepUnits = parseFloat(fromPrepL) || 0;
+  const extraUnits    = parseFloat(extraL)    || 0;
+  const totalUnits    = fromPrepUnits + extraUnits;
+
+  // Convert to litres for the API call
+  const fromPrepLitres = fromPrepUnits * litresPerUnit;
+  const extraLitres    = extraUnits    * litresPerUnit;
+  const totalLitres    = fromPrepLitres + extraLitres;
 
   const batchYield = capacity?.batch_yield_l || 0;
-  const batchesNeeded = batchYield > 0 ? Math.round(fromPrepNum / batchYield) : 0;
+  const batchesNeeded = batchYield > 0 ? Math.round(fromPrepLitres / batchYield) : 0;
   const notEnoughPrep = capacity != null && batchesNeeded > (capacity.factory_batches || 0);
 
-  const canSubmit = totalL > 0 && !notEnoughPrep && (fromPrepNum === 0 || batchesNeeded >= 1);
+  const canSubmit = totalUnits > 0 && !notEnoughPrep && (fromPrepUnits === 0 || batchesNeeded >= 1);
 
   async function handleSubmit() {
     if (!selectedSku || !capacity || !canSubmit) return;
@@ -119,8 +129,8 @@ export default function MakeTubsPage() {
         body: JSON.stringify({
           fg_sku_id:        selectedSku.fg_sku_id,
           prep_product_id:  capacity.prep_product_id,
-          from_prep_l:      fromPrepNum,
-          extra_l:          extraNum,
+          from_prep_l:      fromPrepLitres,
+          extra_l:          extraLitres,
           note:             note || null,
         }),
       });
@@ -130,7 +140,7 @@ export default function MakeTubsPage() {
 
       const result = json as { batches_consumed: number; total_fg_l: number };
       toast.success(
-        `${formatNumber(result.total_fg_l)}L of ${selectedSku.product_name} added to stock` +
+        `${totalUnits} ${unitLabel}${totalUnits !== 1 ? 's' : ''} of ${selectedSku.product_name} added to stock` +
         (result.batches_consumed ? ` · ${result.batches_consumed} prep batch${result.batches_consumed !== 1 ? 'es' : ''} consumed` : '')
       );
       setShowConfirm(false);
@@ -219,7 +229,7 @@ export default function MakeTubsPage() {
               </p>
               <p className={`text-xs mt-0.5 ${capacity.factory_batches === 0 ? 'text-red-600' : 'text-blue-600'}`}>
                 {capacity.batch_yield_l}L per batch · {formatNumber(capacity.prep_stock_l)}L total available
-                {capacity.factory_batches > 0 ? ` · ~${capacity.expected_tubs} tubs possible` : ''}
+                {capacity.factory_batches > 0 ? ` · ~${capacity.expected_tubs} ${unitLabel}s possible` : ''}
               </p>
             </div>
           </div>
@@ -235,20 +245,20 @@ export default function MakeTubsPage() {
                 <p className="text-sm font-bold text-blue-800">Created from prep batches</p>
               </div>
               <p className="text-xs text-blue-600">
-                Prep will be deducted automatically. Enter the litres produced from your prep stock.
+                Prep will be deducted automatically. Enter the number of {unitLabel}s produced from your prep stock.
               </p>
               <div className="flex items-center gap-3">
                 <input
-                  type="number" min="0" step="0.5"
+                  type="number" min="0" step="1"
                   value={fromPrepL}
                   onChange={e => setFromPrepL(e.target.value)}
                   onWheel={e => e.currentTarget.blur()}
-                  placeholder={`e.g. ${capacity.batch_yield_l}`}
+                  placeholder={litresPerUnit > 0 ? `e.g. ${Math.floor(batchYield / litresPerUnit)}` : '0'}
                   className="input-field flex-1"
                 />
-                <span className="text-sm font-semibold text-blue-700 shrink-0">L</span>
+                <span className="text-sm font-semibold text-blue-700 shrink-0">{unitLabel}s</span>
               </div>
-              {fromPrepNum > 0 && batchYield > 0 && (
+              {fromPrepUnits > 0 && batchYield > 0 && (
                 <div className={`rounded-xl px-3 py-2 text-sm flex items-center gap-2 ${
                   notEnoughPrep
                     ? 'bg-red-100 text-red-700 border border-red-200'
@@ -260,7 +270,7 @@ export default function MakeTubsPage() {
                   <span>
                     {notEnoughPrep
                       ? `Only ${capacity.factory_batches} batch${capacity.factory_batches !== 1 ? 'es' : ''} available, need ${batchesNeeded}`
-                      : `= ${batchesNeeded} prep batch${batchesNeeded !== 1 ? 'es' : ''} (${batchYield}L × ${batchesNeeded}) will be deducted`}
+                      : `= ${batchesNeeded} prep batch${batchesNeeded !== 1 ? 'es' : ''} (${formatNumber(fromPrepLitres)}L total) will be deducted`}
                   </span>
                 </div>
               )}
@@ -273,32 +283,35 @@ export default function MakeTubsPage() {
                 <p className="text-sm font-bold text-amber-800">Extra created <span className="font-normal">(optional)</span></p>
               </div>
               <p className="text-xs text-amber-600">
-                Surplus litres beyond full prep batches. Added to FG stock only — no prep deducted.
+                Surplus {unitLabel}s beyond full prep batches. Added to FG stock only — no prep deducted.
               </p>
               <div className="flex items-center gap-3">
                 <input
-                  type="number" min="0" step="0.5"
+                  type="number" min="0" step="1"
                   value={extraL}
                   onChange={e => setExtraL(e.target.value)}
                   onWheel={e => e.currentTarget.blur()}
-                  placeholder="e.g. 6"
+                  placeholder="e.g. 1"
                   className="input-field flex-1"
                 />
-                <span className="text-sm font-semibold text-amber-700 shrink-0">L</span>
+                <span className="text-sm font-semibold text-amber-700 shrink-0">{unitLabel}s</span>
               </div>
-              {extraNum > 0 && (
+              {extraUnits > 0 && (
                 <div className="rounded-xl px-3 py-2 text-sm flex items-center gap-2 bg-white text-amber-700 border border-amber-200">
                   <Sparkles size={14} className="shrink-0" />
-                  <span>+{extraNum}L added to FG, no prep deducted</span>
+                  <span>+{extraUnits} {unitLabel}{extraUnits !== 1 ? 's' : ''} ({formatNumber(extraLitres)}L) added to FG, no prep deducted</span>
                 </div>
               )}
             </div>
 
             {/* Total summary */}
-            {totalL > 0 && (
+            {totalUnits > 0 && (
               <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
                 <p className="text-sm text-gray-600">Total FG to record</p>
-                <p className="text-xl font-bold text-gray-900">{formatNumber(totalL)} L</p>
+                <p className="text-xl font-bold text-gray-900">
+                  {totalUnits} {unitLabel}{totalUnits !== 1 ? 's' : ''}
+                  <span className="text-sm font-normal text-gray-500 ml-2">({formatNumber(totalLitres)}L)</span>
+                </p>
               </div>
             )}
 
@@ -316,7 +329,7 @@ export default function MakeTubsPage() {
 
             {canSubmit && (
               <button onClick={() => setShowConfirm(true)} className="btn-primary w-full">
-                Record {formatNumber(totalL)}L of {selectedSku.product_name}
+                Record {totalUnits} {unitLabel}{totalUnits !== 1 ? 's' : ''} of {selectedSku.product_name}
               </button>
             )}
           </>
@@ -329,17 +342,17 @@ export default function MakeTubsPage() {
           message={
             <div className="space-y-3">
               <p className="text-xl font-bold text-gray-900">
-                {formatNumber(totalL)}L of {selectedSku.product_name}
+                {totalUnits} {unitLabel}{totalUnits !== 1 ? 's' : ''} of {selectedSku.product_name}
               </p>
-              {fromPrepNum > 0 && (
+              {fromPrepUnits > 0 && (
                 <div className="rounded-xl bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800">
-                  <span className="font-semibold">{formatNumber(fromPrepNum)}L from prep</span>
-                  {' — '}{batchesNeeded} prep batch{batchesNeeded !== 1 ? 'es' : ''} will be deducted
+                  <span className="font-semibold">{fromPrepUnits} {unitLabel}{fromPrepUnits !== 1 ? 's' : ''} from prep</span>
+                  {' — '}{batchesNeeded} prep batch{batchesNeeded !== 1 ? 'es' : ''} ({formatNumber(fromPrepLitres)}L) will be deducted
                 </div>
               )}
-              {extraNum > 0 && (
+              {extraUnits > 0 && (
                 <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
-                  <span className="font-semibold">{formatNumber(extraNum)}L extra</span>
+                  <span className="font-semibold">{extraUnits} {unitLabel}{extraUnits !== 1 ? 's' : ''} extra</span>
                   {' — '}added to FG only, no prep deducted
                 </div>
               )}
