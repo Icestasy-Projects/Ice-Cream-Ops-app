@@ -45,7 +45,8 @@ export async function GET() {
         .schema('sales')
         .from('order_lines')
         .select('sku_id, quantity')
-        .in('order_id', recentOrderIds);
+        .in('order_id', recentOrderIds)
+        .limit(100000);
 
       for (const line of orderLines || []) {
         const id = (line as Record<string, unknown>).sku_id as number;
