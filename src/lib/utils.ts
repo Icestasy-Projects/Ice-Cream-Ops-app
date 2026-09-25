@@ -45,6 +45,14 @@ export function parseSupabaseError(error: string | null | undefined): string {
   return error.length < 300 ? error : error.slice(0, 300) + '…';
 }
 
+export function unitLabel(unit: string): string {
+  if (unit === '4L Bulk') return 'Bulks';
+  if (unit === '12 Square') return 'Sq packs';
+  if (unit === '50ml Samples') return 'Samples';
+  if (unit === '500ml') return 'Units';
+  return unit;
+}
+
 export function formatNumber(n: number | null | undefined, decimals = 1): string {
   if (n == null || isNaN(n)) return '0';
   if (n === Math.floor(n)) return n.toString();
