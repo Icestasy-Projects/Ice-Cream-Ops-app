@@ -23,41 +23,22 @@ export async function GET() {
 
     const admin = createSupabaseClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // ── Step 1: FG demand from sales orders in last 90 days ──────────────────
-    // 90-day / 13-week window captures a full quarter of order history.
-    // Includes all statuses so dispatched/delivered orders count too.
+    // ── Step 1: FG demand from sales orders in last 42 days ──────────────────
     const since = new Date(Date.now() - 42 * 24 * 60 * 60 * 1000).toISOString();
     const WINDOW_WEEKS = 6;
 
-    const { data: recentOrders } = await admin
+    const { data: reqRows, error: reqErr } = await admin
       .schema('sales')
-      .from('orders')
-      .select('id')
-      .gte('created_at', since)
-      .limit(10000);
+      .rpc('get_fg_weekly_req', { since_ts: since, window_weeks: WINDOW_WEEKS });
 
-    const recentOrderIds = (recentOrders || []).map((o: Record<string, unknown>) => o.id as number);
+    if (reqErr) throw new Error(reqErr.message);
 
     const fgWeekly: Record<number, number> = {};
     const source: 'orders' | 'dispatches' = 'orders';
 
-    if (recentOrderIds.length > 0) {
-      const { data: orderLines } = await admin
-        .schema('sales')
-        .from('order_lines')
-        .select('sku_id, quantity')
-        .in('order_id', recentOrderIds)
-        .limit(100000);
-
-      for (const line of orderLines || []) {
-        const id = (line as Record<string, unknown>).sku_id as number;
-        fgWeekly[id] = (fgWeekly[id] || 0) + (((line as Record<string, unknown>).quantity as number) || 0);
-      }
-    }
-
-    // Weekly avg = total in window ÷ window weeks, rounded up
-    for (const id in fgWeekly) {
-      fgWeekly[id] = Math.ceil(fgWeekly[id] / WINDOW_WEEKS);
+    for (const row of reqRows || []) {
+      const r = row as Record<string, unknown>;
+      fgWeekly[r.sku_id as number] = r.weekly_req as number;
     }
 
     const skuIds = Object.keys(fgWeekly).map(Number);
