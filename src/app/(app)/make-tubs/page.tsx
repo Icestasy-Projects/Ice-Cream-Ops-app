@@ -57,8 +57,16 @@ export default function MakeTubsPage() {
 
   useEffect(() => { loadSkus(); }, [loadSkus]);
 
+  const PRODUCTION_FORMATS = ['4L Bulk', '12 Square'];
+
   const flavours = useMemo(() =>
     Array.from(new Set(skus.map(s => s.product_name))).sort(), [skus]);
+
+  // Only the two formats produced on this page
+  const flavourSkus = useMemo(() =>
+    skus.filter(s => s.product_name === selectedFlavour && PRODUCTION_FORMATS.includes(s.unit)),
+    [skus, selectedFlavour] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   function reset() {
     setSelectedFlavour('');
@@ -69,17 +77,13 @@ export default function MakeTubsPage() {
     setNote('');
   }
 
-  async function handleFlavourChange(name: string) {
+  function handleFlavourChange(name: string) {
     setSelectedFlavour(name);
     setSelectedSku(null);
     setCapacity(null);
     setFromPrepL('');
     setExtraL('');
     setNote('');
-    if (!name) return;
-    // Auto-select the first SKU for this flavour
-    const match = skus.find(s => s.product_name === name);
-    if (match) await handleSkuSelect(match);
   }
 
   async function handleSkuSelect(s: FgSku) {
@@ -166,10 +170,35 @@ export default function MakeTubsPage() {
           </select>
         </div>
 
+        {/* Step 2: Format chips — 4L Bulk or 12 Square */}
+        {selectedFlavour && flavourSkus.length > 0 && (
+          <div>
+            <label className="label-text block mb-2">Format</label>
+            <div className="flex flex-wrap gap-2">
+              {flavourSkus.map(s => (
+                <button
+                  key={s.fg_sku_id}
+                  onClick={() => handleSkuSelect(s)}
+                  className={`px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all touch-manipulation ${
+                    selectedSku?.fg_sku_id === s.fg_sku_id
+                      ? 'border-pink-500 bg-pink-50 text-pink-700'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-pink-300'
+                  }`}
+                >
+                  <span>{s.unit}</span>
+                  <span className="block text-xs font-normal text-gray-400 mt-0.5">
+                    In stock: {formatNumber(s.qty_on_hand)} L
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Current FG stock */}
         {selectedSku && (
           <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
-            <p className="text-sm text-gray-500">Current FG stock — {selectedSku.product_name}</p>
+            <p className="text-sm text-gray-500">Current FG stock — {selectedSku.unit}</p>
             <p className="text-lg font-bold text-gray-900">{formatNumber(selectedSku.qty_on_hand)} L</p>
           </div>
         )}
