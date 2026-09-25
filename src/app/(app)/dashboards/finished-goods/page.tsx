@@ -345,7 +345,9 @@ function PackSection({
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     <span className="font-bold text-gray-900 text-xs">{item.qty_on_hand}</span>
-                    <span className="text-gray-400 text-xs ml-1">{item.unit}</span>
+                    <span className="text-gray-400 text-xs ml-1">
+                      {item.unit === '4L Bulk' ? 'Bulks' : item.unit === '12 Square' ? 'Sq packs' : item.unit === '50ml Samples' ? 'Samples' : item.unit}
+                    </span>
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     {item.weekly ? (
