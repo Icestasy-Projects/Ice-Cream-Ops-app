@@ -5,6 +5,7 @@ import { useRole } from '@/hooks/useRole';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { RefreshCw, Search, Download, ChevronDown, ChevronUp, Box, ChevronsUpDown, X, Calculator, Info, Package } from 'lucide-react';
+import { litresToUnits, unitLabel as getUnitLabel } from '@/lib/utils';
 import { format } from 'date-fns';
 
 interface FgItem {
@@ -344,10 +345,8 @@ function PackSection({
                     <span className="font-medium text-gray-900 text-xs">{item.product_name}</span>
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                    <span className="font-bold text-gray-900 text-xs">{item.qty_on_hand}</span>
-                    <span className="text-gray-400 text-xs ml-1">
-                      {item.unit === '4L Bulk' ? 'Bulks' : item.unit === '12 Square' ? 'Sq packs' : item.unit === '50ml Samples' ? 'Samples' : item.unit}
-                    </span>
+                    <span className="font-bold text-gray-900 text-xs">{litresToUnits(item.qty_on_hand, item.unit)}</span>
+                    <span className="text-gray-400 text-xs ml-1">{getUnitLabel(item.unit)}</span>
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
                     {item.weekly ? (

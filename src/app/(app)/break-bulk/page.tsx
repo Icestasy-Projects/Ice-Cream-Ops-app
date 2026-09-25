@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { formatNumber } from '@/lib/utils';
+import { formatNumber, litresToUnits } from '@/lib/utils';
 import { Package, PackageOpen, Search, CheckCircle } from 'lucide-react';
 
 interface FgSku {
@@ -75,7 +75,7 @@ export default function BreakBulkPage() {
     if (!selected) { toast.error('Select a bulk SKU to break.'); return; }
     if (tubsNum <= 0) { toast.error('Enter number of tubs to break.'); return; }
     if (tubsNum > selected.qty_on_hand) {
-      toast.error(`Only ${formatNumber(selected.qty_on_hand)} Bulks in stock.`);
+      toast.error(`Only ${litresToUnits(selected.qty_on_hand, selected.unit)} Bulks in stock.`);
       return;
     }
     const pack = PACK_CONFIG[packType];
@@ -167,7 +167,7 @@ export default function BreakBulkPage() {
                     </p>
                   </div>
                   <span className="text-sm font-bold text-gray-700 shrink-0">
-                    {formatNumber(s.qty_on_hand)} Bulks
+                    {litresToUnits(s.qty_on_hand, s.unit)} Bulks
                   </span>
                 </button>
 
@@ -175,7 +175,7 @@ export default function BreakBulkPage() {
                   <div className="border-2 border-t-0 border-brand-500 bg-orange-50 rounded-b-2xl px-4 pb-4 pt-3 space-y-4">
                     <div>
                       <label className="label-text block mb-1">
-                        Number of Bulks to open (max {formatNumber(s.qty_on_hand)})
+                        Number of Bulks to open (max {litresToUnits(s.qty_on_hand, s.unit)})
                       </label>
                       <input
                         type="number" min="0.5" step="0.5"

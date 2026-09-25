@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import ScreenHeader from '@/components/ScreenHeader';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import ConfirmModal from '@/components/ConfirmModal';
-import { parseSupabaseError, formatNumber } from '@/lib/utils';
+import { parseSupabaseError, formatNumber, litresToUnits, unitLabel as getUnitLabel } from '@/lib/utils';
 import { Box, Info, AlertTriangle, FlaskConical, Sparkles } from 'lucide-react';
 
 interface FgSku {
@@ -197,7 +197,7 @@ export default function MakeTubsPage() {
                 >
                   <span>{s.unit}</span>
                   <span className="block text-xs font-normal text-gray-400 mt-0.5">
-                    In stock: {formatNumber(s.qty_on_hand)} {s.unit === '4L Bulk' ? 'Bulks' : s.unit === '12 Square' ? 'Sq packs' : s.unit}
+                    In stock: {litresToUnits(s.qty_on_hand, s.unit)} {getUnitLabel(s.unit)}
                   </span>
                 </button>
               ))}
@@ -209,7 +209,7 @@ export default function MakeTubsPage() {
         {selectedSku && (
           <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 flex items-center justify-between">
             <p className="text-sm text-gray-500">Current FG stock — {selectedSku.unit}</p>
-            <p className="text-lg font-bold text-gray-900">{formatNumber(selectedSku.qty_on_hand)} {unitLabel}s</p>
+            <p className="text-lg font-bold text-gray-900">{litresToUnits(selectedSku.qty_on_hand, selectedSku.unit)} {unitLabel}s</p>
           </div>
         )}
 
