@@ -114,10 +114,18 @@ export default function PrepDashboard() {
   }, [supabase, load]);
 
   const enriched = useMemo(() => data.map(item => {
-    const weekly = weeklyReq[item.prep_product_id];
-    const threshold = weekly ? Math.ceil(weekly * 2.5) : undefined;
-    const status = computeStatus(item.qty_total, weekly);
-    return { ...item, weekly, threshold, status };
+    // Convert litres → Bulks (1 Bulk = 4L)
+    const kitchenBulks = item.qty_kitchen / 4;
+    const factoryBulks = item.qty_factory / 4;
+    const totalBulks = item.qty_total / 4;
+    // weekly from API is in batches; convert to Bulks
+    const weeklyBatches = weeklyReq[item.prep_product_id];
+    const weeklyBulks = weeklyBatches && item.batch_yield_l
+      ? (weeklyBatches * item.batch_yield_l) / 4
+      : undefined;
+    const thresholdBulks = weeklyBulks ? Math.ceil(weeklyBulks * 2.5) : undefined;
+    const status = computeStatus(totalBulks, weeklyBulks);
+    return { ...item, kitchenBulks, factoryBulks, totalBulks, weeklyBulks, thresholdBulks, status };
   }), [data, weeklyReq]);
 
   const filtered = useMemo(() => {
@@ -130,11 +138,11 @@ export default function PrepDashboard() {
       const ord: Record<StatusType, number> = { critical: 0, low: 1, ok: 2, unknown: 3 };
       let cmp = 0;
       if (sort.col === 'name') cmp = a.product_name.localeCompare(b.product_name);
-      else if (sort.col === 'factory') cmp = a.qty_factory - b.qty_factory;
-      else if (sort.col === 'kitchen') cmp = a.qty_kitchen - b.qty_kitchen;
-      else if (sort.col === 'total') cmp = a.qty_total - b.qty_total;
-      else if (sort.col === 'weekly') cmp = (a.weekly ?? 0) - (b.weekly ?? 0);
-      else if (sort.col === 'threshold') cmp = (a.threshold ?? 0) - (b.threshold ?? 0);
+      else if (sort.col === 'factory') cmp = a.factoryBulks - b.factoryBulks;
+      else if (sort.col === 'kitchen') cmp = a.kitchenBulks - b.kitchenBulks;
+      else if (sort.col === 'total') cmp = a.totalBulks - b.totalBulks;
+      else if (sort.col === 'weekly') cmp = (a.weeklyBulks ?? 0) - (b.weeklyBulks ?? 0);
+      else if (sort.col === 'threshold') cmp = (a.thresholdBulks ?? 0) - (b.thresholdBulks ?? 0);
       else cmp = ord[a.status] - ord[b.status] || a.product_name.localeCompare(b.product_name);
       return sort.asc ? cmp : -cmp;
     });
@@ -216,11 +224,11 @@ export default function PrepDashboard() {
                 <tr className="bg-gray-50 border-b border-gray-100">
                   <SortTh col="name" label="Flavour" sort={sort} onSort={toggleSort} align="left" />
                   <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 whitespace-nowrap">Yield/Batch</th>
-                  <SortTh col="factory" label="Factory" sort={sort} onSort={toggleSort} />
-                  <SortTh col="kitchen" label="Kitchen" sort={sort} onSort={toggleSort} />
-                  <SortTh col="total" label="Total (units)" sort={sort} onSort={toggleSort} />
-                  <SortTh col="weekly" label="Wkly Req" sort={sort} onSort={toggleSort} />
-                  <SortTh col="threshold" label="Threshold" sort={sort} onSort={toggleSort} />
+                  <SortTh col="factory" label="Factory (Bulks)" sort={sort} onSort={toggleSort} />
+                  <SortTh col="kitchen" label="Kitchen (Bulks)" sort={sort} onSort={toggleSort} />
+                  <SortTh col="total" label="Total (Bulks)" sort={sort} onSort={toggleSort} />
+                  <SortTh col="weekly" label="Wkly Req (Bulks)" sort={sort} onSort={toggleSort} />
+                  <SortTh col="threshold" label="Threshold (Bulks)" sort={sort} onSort={toggleSort} />
                   <SortTh col="status" label="Status" sort={sort} onSort={toggleSort} align="center" />
                 </tr>
               </thead>
@@ -238,26 +246,26 @@ export default function PrepDashboard() {
                       <span className="font-medium text-gray-900 text-xs">{item.product_name}</span>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      <span className="text-gray-500 text-xs">{item.batch_yield_l}L</span>
+                      <span className="text-gray-500 text-xs">{item.batch_yield_l / 4} Bulks</span>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      <span className="font-semibold text-green-700 text-xs">{item.qty_factory}</span>
+                      <span className="font-semibold text-green-700 text-xs">{formatNumber(item.factoryBulks, 1)}</span>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      <span className="font-semibold text-blue-600 text-xs">{item.qty_kitchen}</span>
+                      <span className="font-semibold text-blue-600 text-xs">{formatNumber(item.kitchenBulks, 1)}</span>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      <span className="font-bold text-gray-900 text-xs">{item.qty_total}</span>
-                      <span className="text-gray-400 text-xs ml-1">unit</span>
+                      <span className="font-bold text-gray-900 text-xs">{formatNumber(item.totalBulks, 1)}</span>
+                      <span className="text-gray-400 text-xs ml-1">Bulks</span>
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      {item.weekly ? (
-                        <span className="text-indigo-600 font-semibold text-xs">{item.weekly}</span>
+                      {item.weeklyBulks ? (
+                        <span className="text-indigo-600 font-semibold text-xs">{formatNumber(item.weeklyBulks, 1)}</span>
                       ) : <span className="text-gray-300 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                      {item.threshold ? (
-                        <span className="text-orange-600 font-semibold text-xs">{item.threshold}</span>
+                      {item.thresholdBulks ? (
+                        <span className="text-orange-600 font-semibold text-xs">{item.thresholdBulks}</span>
                       ) : <span className="text-gray-300 text-xs">—</span>}
                     </td>
                     <td className="px-4 py-2.5 text-center">
