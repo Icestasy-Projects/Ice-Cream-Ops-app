@@ -77,8 +77,9 @@ export default function MakeTubsPage() {
     setExtraL('');
     setNote('');
     if (!name) return;
-    // Auto-select the first SKU for this flavour
-    const match = skus.find(s => s.product_name === name);
+    // Auto-select the 4L Bulk SKU (production format)
+    const flavourSkus = skus.filter(s => s.product_name === name);
+    const match = flavourSkus.find(s => s.unit === '4L Bulk') ?? flavourSkus[0];
     if (match) await handleSkuSelect(match);
   }
 
