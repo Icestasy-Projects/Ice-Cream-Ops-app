@@ -30,7 +30,7 @@ export default function MakePrepPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PrepProduct | null>(null);
   const [recipe, setRecipe] = useState<RecipeLine[]>([]);
-  const [batches, setBatches] = useState('');
+  const [bulksInput, setBulksInput] = useState('');
   const [note, setNote] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +55,7 @@ export default function MakePrepPage() {
   }, [supabase]);
 
   async function handleSelectChange(id: string) {
-    setBatches('');
+    setBulksInput('');
     setNote('');
     setLastError(null);
     setShortfalls([]);
@@ -90,11 +90,14 @@ export default function MakePrepPage() {
     }
   }
 
-  const batchCount = parseFloat(batches) || 0;
-  const totalLitres = batchCount * (selected?.batch_yield_l ?? 0);
-  const bulkTubs = selected?.batch_yield_l ? Math.floor(totalLitres / 4) : 0;
+  const bulkCount = parseFloat(bulksInput) || 0;
+  const totalLitres = bulkCount * 4;
+  const batchCount = selected?.batch_yield_l ? totalLitres / selected.batch_yield_l : 0;
   const maxPossibleBatches = recipe.length > 0
     ? Math.min(...recipe.filter(r => r.qty_per_unit > 0).map(r => r.max_batches_from_stock))
+    : null;
+  const maxPossibleBulks = maxPossibleBatches != null && selected?.batch_yield_l
+    ? Math.floor(maxPossibleBatches * selected.batch_yield_l / 4)
     : null;
 
   async function handleSubmit() {
@@ -125,12 +128,12 @@ export default function MakePrepPage() {
         throw new Error(json.error || 'Failed to record batch');
       }
 
-      setLastResult(`Recorded ${batchCount} batch${batchCount !== 1 ? 'es' : ''} of ${selected.name} (${formatNumber(totalLitres)}L). Kitchen stock updated.`);
+      setLastResult(`Recorded ${bulkCount} Bulk${bulkCount !== 1 ? 's' : ''} worth of ${selected.name} (${formatNumber(batchCount, 2)} batch${batchCount !== 1 ? 'es' : ''} · ${formatNumber(totalLitres)}L). Kitchen stock updated.`);
       setLastError(null);
-      toast.success(`${batchCount} batch${batchCount !== 1 ? 'es' : ''} of ${selected.name} added to kitchen stock!`);
+      toast.success(`${bulkCount} Bulks of ${selected.name} added to kitchen stock!`);
       setShowConfirm(false);
       setSelected(null);
-      setBatches('');
+      setBulksInput('');
       setNote('');
       setRecipe([]);
     } catch (e: unknown) {
@@ -207,33 +210,36 @@ export default function MakePrepPage() {
           </select>
           {selected?.batch_yield_l && (
             <p className="text-xs text-gray-400 mt-1.5">
-              1 batch = {selected.batch_yield_l}L → {Math.floor(selected.batch_yield_l / 4)} × 4L Bulk tubs
+              {selected.batch_yield_l / 4} Bulks = 1 batch ({selected.batch_yield_l}L)
             </p>
           )}
         </div>
 
-        {/* Batch count */}
+        {/* Bulk count input */}
         {selected && (
           <div>
-            <label className="label-text block mb-1">Number of Batches</label>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={batches}
-              onChange={e => setBatches(e.target.value)}
-              onWheel={e => e.currentTarget.blur()}
-              placeholder="e.g. 3"
-              className="input-field"
-              autoFocus
-            />
-            {batchCount > 0 && (
+            <label className="label-text block mb-1">Number of 4L Bulks to produce</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={bulksInput}
+                onChange={e => setBulksInput(e.target.value)}
+                onWheel={e => e.currentTarget.blur()}
+                placeholder={selected.batch_yield_l ? `e.g. ${selected.batch_yield_l / 4}` : 'e.g. 5'}
+                className="input-field flex-1"
+                autoFocus
+              />
+              <span className="text-sm font-semibold text-gray-600 shrink-0">Bulks</span>
+            </div>
+            {bulkCount > 0 && selected.batch_yield_l && (
               <div className="mt-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5 flex flex-wrap gap-4 text-sm">
                 <span className="text-gray-700">
-                  <span className="font-bold text-gray-900">{batchCount}</span> batch{batchCount !== 1 ? 'es' : ''}
-                  {' × '}{selected.batch_yield_l}L = <span className="font-bold text-orange-600">{formatNumber(totalLitres)}L</span>
+                  <span className="font-bold text-gray-900">{bulkCount}</span> Bulks
+                  {' = '}<span className="font-bold text-orange-600">{formatNumber(totalLitres)}L</span>
                 </span>
-                <span className="text-gray-500">→ <span className="font-bold text-gray-800">{bulkTubs} × 4L Bulk</span></span>
+                <span className="text-gray-500">= <span className="font-bold text-gray-800">{formatNumber(batchCount, 2)} batch{batchCount !== 1 ? 'es' : ''}</span></span>
               </div>
             )}
           </div>
@@ -245,30 +251,30 @@ export default function MakePrepPage() {
             {/* Capacity banner */}
             {maxPossibleBatches !== null && (
               <div className={`px-4 py-2.5 flex items-center justify-between text-sm border-b ${
-                maxPossibleBatches === 0
+                maxPossibleBulks === 0
                   ? 'bg-red-50 border-red-200'
-                  : batchCount > 0 && batchCount > maxPossibleBatches
+                  : bulkCount > 0 && maxPossibleBulks != null && bulkCount > maxPossibleBulks
                     ? 'bg-amber-50 border-amber-200'
                     : 'bg-green-50 border-green-200'
               }`}>
                 <span className={`font-medium ${
-                  maxPossibleBatches === 0 ? 'text-red-700'
-                    : batchCount > 0 && batchCount > maxPossibleBatches ? 'text-amber-700'
+                  maxPossibleBulks === 0 ? 'text-red-700'
+                    : bulkCount > 0 && maxPossibleBulks != null && bulkCount > maxPossibleBulks ? 'text-amber-700'
                     : 'text-green-700'
                 }`}>
-                  {maxPossibleBatches === 0
-                    ? 'Insufficient RM stock for even 1 batch'
-                    : `Stock allows up to ${maxPossibleBatches} batch${maxPossibleBatches !== 1 ? 'es' : ''}`}
+                  {maxPossibleBulks === 0
+                    ? 'Insufficient RM stock for even 1 Bulk'
+                    : `Stock allows up to ${maxPossibleBulks} Bulk${maxPossibleBulks !== 1 ? 's' : ''}`}
                 </span>
-                {maxPossibleBatches > 0 && selected?.batch_yield_l && (
+                {maxPossibleBulks != null && maxPossibleBulks > 0 && (
                   <span className="text-gray-500 text-xs">
-                    = {formatNumber(maxPossibleBatches * selected.batch_yield_l)}L
+                    = {maxPossibleBatches} batch{maxPossibleBatches !== 1 ? 'es' : ''} · {formatNumber(maxPossibleBatches! * (selected?.batch_yield_l ?? 0))}L
                   </span>
                 )}
               </div>
             )}
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide px-4 py-2 bg-gray-50 border-b border-gray-100">
-              RM Ingredients{batchCount > 0 ? ` — ${batchCount} batch${batchCount !== 1 ? 'es' : ''}` : ' — per batch'}
+              RM Ingredients{bulkCount > 0 ? ` — ${bulkCount} Bulk${bulkCount !== 1 ? 's' : ''} (${formatNumber(batchCount, 2)} batch${batchCount !== 1 ? 'es' : ''})` : ' — per batch'}
             </p>
             <table className="w-full text-sm">
               <thead>
@@ -318,9 +324,9 @@ export default function MakePrepPage() {
         )}
 
         {/* Submit */}
-        {selected && batchCount > 0 && (
+        {selected && bulkCount > 0 && batchCount > 0 && (
           <button onClick={() => setShowConfirm(true)} className="btn-primary w-full">
-            Record {batchCount} Batch{batchCount !== 1 ? 'es' : ''} of {selected.name}
+            Record {bulkCount} Bulk{bulkCount !== 1 ? 's' : ''} of {selected.name}
           </button>
         )}
       </div>
@@ -332,10 +338,10 @@ export default function MakePrepPage() {
             <div className="space-y-2">
               <p>Recording kitchen batch:</p>
               <p className="text-xl font-bold text-gray-900">
-                {batchCount} batch{batchCount !== 1 ? 'es' : ''} of {selected.name}
+                {bulkCount} Bulk{bulkCount !== 1 ? 's' : ''} of {selected.name}
               </p>
-              <p className="text-gray-600">{formatNumber(totalLitres)}L total → {bulkTubs} × 4L Bulk possible</p>
-              <p className="text-sm text-gray-500">Kitchen stock will increase by {formatNumber(totalLitres)}L.</p>
+              <p className="text-gray-600">{formatNumber(batchCount, 2)} batch{batchCount !== 1 ? 'es' : ''} · {formatNumber(totalLitres)}L total</p>
+              <p className="text-sm text-gray-500">Kitchen prep stock will increase by {formatNumber(totalLitres)}L.</p>
             </div>
           }
           confirmLabel="Yes, Record This Batch"
