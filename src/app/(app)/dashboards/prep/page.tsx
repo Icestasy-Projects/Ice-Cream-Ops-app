@@ -42,6 +42,10 @@ function StatusBadge({ status }: { status: StatusType }) {
   );
 }
 
+function formatNumber(n: number, decimals = 1): string {
+  return n % 1 === 0 ? String(n) : n.toFixed(decimals);
+}
+
 type PrepSortCol = 'name' | 'factory' | 'kitchen' | 'total' | 'weekly' | 'threshold' | 'status';
 
 function SortTh({ col, label, sort, onSort, align = 'right' }: {
