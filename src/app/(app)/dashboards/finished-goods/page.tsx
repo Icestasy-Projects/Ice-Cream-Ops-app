@@ -286,12 +286,16 @@ function PackSection({
   }
 
   const withStatus = useMemo(() => {
-    const rows = items.map(item => ({
-      ...item,
-      weekly: weeklyReq[item.fg_sku_id],
-      threshold: weeklyReq[item.fg_sku_id] ? Math.ceil(weeklyReq[item.fg_sku_id] * 2.5) : undefined,
-      status: computeStatus(item.qty_on_hand, weeklyReq[item.fg_sku_id]),
-    }));
+    const rows = items.map(item => {
+      const is50ml = item.unit === '50ml Samples';
+      const wkly = is50ml ? undefined : weeklyReq[item.fg_sku_id];
+      return {
+        ...item,
+        weekly: wkly,
+        threshold: wkly ? Math.ceil(wkly * 2.5) : undefined,
+        status: computeStatus(item.qty_on_hand, wkly),
+      };
+    });
     const ord: Record<StatusType, number> = { critical: 0, low: 1, ok: 2, unknown: 3 };
     return rows.sort((a, b) => {
       let cmp = 0;
@@ -439,7 +443,7 @@ export default function FinishedGoodsDashboard() {
 
   const enriched = useMemo(() => data.map(item => ({
     ...item,
-    status: computeStatus(item.qty_on_hand, weeklyReq[item.fg_sku_id]),
+    status: item.unit === '50ml Samples' ? 'unknown' as const : computeStatus(item.qty_on_hand, weeklyReq[item.fg_sku_id]),
   })), [data, weeklyReq]);
 
   const filtered = useMemo(() => {
@@ -460,7 +464,14 @@ export default function FinishedGoodsDashboard() {
       if (!g[item.unit]) g[item.unit] = [];
       g[item.unit].push(item);
     }
-    return Object.entries(g).sort(([a], [b]) => a.localeCompare(b));
+    const ORDER = ['4L Bulk', '12 Square', '50ml Samples'];
+    return Object.entries(g).sort(([a], [b]) => {
+      const ai = ORDER.indexOf(a), bi = ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
   }, [filtered]);
 
   const critCount = enriched.filter(i => i.status === 'critical').length;
