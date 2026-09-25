@@ -89,7 +89,8 @@ export async function GET(req: Request) {
 
   const { data: recentOrders } = await admin.schema('sales').from('orders')
     .select('id, client_id, order_no, created_at, status')
-    .gte('created_at', since);
+    .gte('created_at', since)
+    .limit(10000);
 
   const recentOrderIds = (recentOrders || []).map((o: Record<string, unknown>) => o.id as number);
   const orderMap = new Map<number, Record<string, unknown>>(
