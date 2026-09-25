@@ -45,20 +45,6 @@ export function parseSupabaseError(error: string | null | undefined): string {
   return error.length < 300 ? error : error.slice(0, 300) + '…';
 }
 
-// Litres per unit for each known pack format
-const LITRES_PER_UNIT: Record<string, number> = {
-  '4L Bulk':      4,
-  '12 Square':    1.8,   // 12 × 150ml
-  '50ml Samples': 0.05,
-  '500ml':        0.5,
-};
-
-export function litresToUnits(litres: number, unit: string): number {
-  const lpu = LITRES_PER_UNIT[unit];
-  if (!lpu || lpu <= 0) return litres;
-  return Math.round((litres / lpu) * 100) / 100;
-}
-
 export function unitLabel(unit: string): string {
   if (unit === '4L Bulk') return 'Bulks';
   if (unit === '12 Square') return 'Sq packs';
