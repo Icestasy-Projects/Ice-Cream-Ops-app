@@ -451,7 +451,7 @@ export default function FinishedGoodsDashboard() {
     });
   }, [enriched, search, filterStatus]);
 
-  const EXCLUDED_UNITS = new Set(['B2B Add-On', 'Extras']);
+  const EXCLUDED_UNITS = new Set(['B2B Add-On', 'Extras', '50 ml Samples']);
 
   const grouped = useMemo(() => {
     const g: Record<string, FgItem[]> = {};
