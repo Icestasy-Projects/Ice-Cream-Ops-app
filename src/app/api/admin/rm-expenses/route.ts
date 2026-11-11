@@ -61,9 +61,9 @@ export async function GET() {
       poTotals.set(l.rm_item_id, { sum: cur.sum + (l.unit_cost as number), count: cur.count + 1 });
     }
     const poAvgMap = new Map<number, number>();
-    for (const [id, { sum, count }] of poTotals) {
+    poTotals.forEach(({ sum, count }, id) => {
       poAvgMap.set(id, sum / count);
-    }
+    });
 
     // (2) cost_sheet rates as fallback (keyed by ingredient name)
     const { data: costSheet } = await admin
