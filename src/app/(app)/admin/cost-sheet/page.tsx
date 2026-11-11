@@ -31,6 +31,7 @@ interface RmExpenseRow {
   unit: string;
   rate: number | null;
   rate_unit: string | null;
+  rate_source: string | null;
   estimated_spend: number | null;
 }
 
@@ -641,7 +642,9 @@ export default function CostSheetPage() {
                             </div>
                           ) : r.rate != null ? (
                             <button onClick={() => setRmRateEditing(prev => ({ ...prev, [r.rm_item_id]: { rate: String(r.rate), unit: r.rate_unit || r.unit } }))} className="text-gray-500 hover:text-gray-700 flex items-center gap-1 ml-auto">
-                              ₹{r.rate}/{r.rate_unit}
+                              <span>₹{r.rate}/{r.rate_unit}</span>
+                              {r.rate_source === 'avg_po' && <span className="text-blue-400 text-[10px] font-medium">avg</span>}
+                              {r.rate_source === 'manual' && <span className="text-purple-400 text-[10px] font-medium">manual</span>}
                               <Pencil size={10} />
                             </button>
                           ) : (

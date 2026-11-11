@@ -10,12 +10,13 @@ function adminClient(): any {
 }
 
 // GET /api/admin/rm-expenses
-// Returns RM consumption (from rm_ledger issue_to_prep movements) cross-referenced with cost_sheet rates
+// Returns RM consumption cross-referenced with average PO receipt rates.
+// Rate priority: (1) average unit_cost from received PO lines, (2) cost_sheet rate, (3) rm_costs manual rate.
 export async function GET() {
   try {
     const admin = adminClient();
 
-    // Sum all RM consumed in prep (negative qty_delta = consumed)
+    // Sum all RM consumed in prep
     const { data: ledger, error: ledgerErr } = await admin
       .schema('production')
       .from('rm_ledger')
@@ -24,20 +25,16 @@ export async function GET() {
 
     if (ledgerErr) return NextResponse.json({ error: ledgerErr.message }, { status: 500 });
 
-    // Aggregate by rm_item_id
     const consumed = new Map<number, number>();
     for (const row of (ledger || [])) {
-      const current = consumed.get(row.rm_item_id) ?? 0;
-      // qty_delta is negative for consumption
-      consumed.set(row.rm_item_id, current + Math.abs(row.qty_delta));
+      consumed.set(row.rm_item_id, (consumed.get(row.rm_item_id) ?? 0) + Math.abs(row.qty_delta));
     }
 
-    if (consumed.size === 0) {
-      return NextResponse.json({ items: [] });
-    }
+    if (consumed.size === 0) return NextResponse.json({ items: [] });
+
+    const rmIds = Array.from(consumed.keys());
 
     // Fetch rm_items names and units
-    const rmIds = Array.from(consumed.keys());
     const { data: rmItems, error: rmErr } = await admin
       .schema('production')
       .from('rm_items')
@@ -50,20 +47,38 @@ export async function GET() {
       (rmItems || []).map((r: { id: number; name: string; unit: string }) => [r.id, { name: r.name, unit: r.unit }])
     );
 
-    // Fetch cost_sheet rates (use first matching ingredient name, averaged if multiple)
+    // (1) Average unit_cost from all received PO lines per item
+    const { data: poLines } = await admin
+      .schema('production')
+      .from('rm_purchase_order_lines')
+      .select('rm_item_id, unit_cost')
+      .in('rm_item_id', rmIds)
+      .not('unit_cost', 'is', null);
+
+    const poTotals = new Map<number, { sum: number; count: number }>();
+    for (const l of (poLines || [])) {
+      const cur = poTotals.get(l.rm_item_id) ?? { sum: 0, count: 0 };
+      poTotals.set(l.rm_item_id, { sum: cur.sum + (l.unit_cost as number), count: cur.count + 1 });
+    }
+    const poAvgMap = new Map<number, number>();
+    for (const [id, { sum, count }] of poTotals) {
+      poAvgMap.set(id, sum / count);
+    }
+
+    // (2) cost_sheet rates as fallback (keyed by ingredient name)
     const { data: costSheet } = await admin
       .schema('production')
       .from('cost_sheet')
       .select('ingredient, rate, rate_unit');
 
-    const rateMap = new Map<string, { rate: number; unit: string }>();
+    const csRateMap = new Map<string, { rate: number; unit: string }>();
     for (const cs of (costSheet || [])) {
-      if (cs.rate != null && !rateMap.has(cs.ingredient)) {
-        rateMap.set(cs.ingredient, { rate: cs.rate, unit: cs.rate_unit });
+      if (cs.rate != null && !csRateMap.has(cs.ingredient)) {
+        csRateMap.set(cs.ingredient, { rate: cs.rate, unit: cs.rate_unit });
       }
     }
 
-    // Fetch rm_costs as fallback (most recent effective rate per rm_item_id)
+    // (3) rm_costs manual rates as last fallback
     const { data: rmCosts } = await admin
       .schema('production')
       .from('rm_costs')
@@ -81,23 +96,42 @@ export async function GET() {
     const items = rmIds.map(id => {
       const rm = rmMap.get(id);
       const totalConsumed = consumed.get(id) ?? 0;
-      // Prefer cost_sheet rate; fall back to rm_costs rate
-      const rateData = (rm ? rateMap.get(rm.name) : undefined) ?? rmCostMap.get(id);
-      const estimatedSpend = rateData ? rateData.rate * totalConsumed : null;
+      const unit = rm?.unit ?? '';
+
+      // Pick rate by priority
+      let rate: number | null = null;
+      let rateUnit: string | null = null;
+      let rateSource: string | null = null;
+
+      const poAvg = poAvgMap.get(id);
+      if (poAvg != null) {
+        rate = Math.round(poAvg * 100) / 100;
+        rateUnit = unit;
+        rateSource = 'avg_po';
+      } else {
+        const cs = rm ? csRateMap.get(rm.name) : undefined;
+        if (cs) {
+          rate = cs.rate; rateUnit = cs.unit; rateSource = 'cost_sheet';
+        } else {
+          const rc = rmCostMap.get(id);
+          if (rc) { rate = rc.rate; rateUnit = rc.unit; rateSource = 'manual'; }
+        }
+      }
+
+      const estimatedSpend = rate != null ? Math.round(rate * totalConsumed * 100) / 100 : null;
       return {
         rm_item_id: id,
         ingredient: rm?.name ?? `RM #${id}`,
         total_consumed: totalConsumed,
-        unit: rm?.unit ?? '',
-        rate: rateData?.rate ?? null,
-        rate_unit: rateData?.unit ?? null,
+        unit,
+        rate,
+        rate_unit: rateUnit,
+        rate_source: rateSource,
         estimated_spend: estimatedSpend,
       };
     });
 
-    // Sort by estimated spend desc
     items.sort((a, b) => (b.estimated_spend ?? -1) - (a.estimated_spend ?? -1));
-
     return NextResponse.json({ items });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
