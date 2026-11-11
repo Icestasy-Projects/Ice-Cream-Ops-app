@@ -63,12 +63,29 @@ export async function GET() {
       }
     }
 
+    // Fetch rm_costs as fallback (most recent effective rate per rm_item_id)
+    const { data: rmCosts } = await admin
+      .schema('production')
+      .from('rm_costs')
+      .select('rm_item_id, rate, rate_uom, effective_from')
+      .in('rm_item_id', rmIds)
+      .order('effective_from', { ascending: false });
+
+    const rmCostMap = new Map<number, { rate: number; unit: string }>();
+    for (const rc of (rmCosts || [])) {
+      if (rc.rate != null && !rmCostMap.has(rc.rm_item_id)) {
+        rmCostMap.set(rc.rm_item_id, { rate: rc.rate, unit: rc.rate_uom ?? '' });
+      }
+    }
+
     const items = rmIds.map(id => {
       const rm = rmMap.get(id);
       const totalConsumed = consumed.get(id) ?? 0;
-      const rateData = rm ? rateMap.get(rm.name) : undefined;
+      // Prefer cost_sheet rate; fall back to rm_costs rate
+      const rateData = (rm ? rateMap.get(rm.name) : undefined) ?? rmCostMap.get(id);
       const estimatedSpend = rateData ? rateData.rate * totalConsumed : null;
       return {
+        rm_item_id: id,
         ingredient: rm?.name ?? `RM #${id}`,
         total_consumed: totalConsumed,
         unit: rm?.unit ?? '',
@@ -82,6 +99,34 @@ export async function GET() {
     items.sort((a, b) => (b.estimated_spend ?? -1) - (a.estimated_spend ?? -1));
 
     return NextResponse.json({ items });
+  } catch (e: unknown) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+  }
+}
+
+// PATCH /api/admin/rm-expenses — set a manual rate for an RM item in rm_costs
+export async function PATCH(req: Request) {
+  try {
+    const { rm_item_id, rate, rate_uom } = await req.json();
+    if (!rm_item_id || rate == null) {
+      return NextResponse.json({ error: 'rm_item_id and rate are required' }, { status: 400 });
+    }
+    const admin = adminClient();
+    // Upsert: replace any existing open-ended rate for this item
+    const today = new Date().toISOString().slice(0, 10);
+    // Delete any existing entry for this item on today to avoid duplicates
+    await admin
+      .schema('production')
+      .from('rm_costs')
+      .delete()
+      .eq('rm_item_id', rm_item_id)
+      .eq('effective_from', today);
+    const { error } = await admin
+      .schema('production')
+      .from('rm_costs')
+      .insert({ rm_item_id, rate, rate_uom: rate_uom || 'Kg', effective_from: today });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
   }
