@@ -25,11 +25,13 @@ interface PrepProduct {
 }
 
 interface RmExpenseRow {
+  rm_item_id: number;
   ingredient: string;
   total_consumed: number;
   unit: string;
   rate: number | null;
   rate_unit: string | null;
+  rate_source: string | null;
   estimated_spend: number | null;
 }
 
@@ -89,6 +91,8 @@ export default function CostSheetPage() {
   const [editing, setEditing] = useState<Record<number, { rate: string; qty: string }>>({});
   const [rmExpenses, setRmExpenses] = useState<RmExpenseRow[]>([]);
   const [rmLoading, setRmLoading] = useState(false);
+  const [rmRateEditing, setRmRateEditing] = useState<Record<number, { rate: string; unit: string }>>({});
+  const [rmRateSaving, setRmRateSaving] = useState<Record<number, boolean>>({});
 
   // Add-row state per flavour key
   const [addingRow, setAddingRow] = useState<Record<string, typeof BLANK_NEW_ROW>>({});
@@ -281,6 +285,23 @@ export default function CostSheetPage() {
     } finally {
       setRmLoading(false);
     }
+  }
+
+  async function saveRmRate(rmItemId: number) {
+    const e = rmRateEditing[rmItemId];
+    if (!e || !e.rate) return;
+    setRmRateSaving(prev => ({ ...prev, [rmItemId]: true }));
+    const res = await fetch('/api/admin/rm-expenses', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rm_item_id: rmItemId, rate: parseFloat(e.rate), rate_uom: e.unit || 'Kg' }),
+    });
+    setRmRateSaving(prev => ({ ...prev, [rmItemId]: false }));
+    if (!res.ok) { toast.error('Failed to save rate'); return; }
+    toast.success('Rate saved');
+    setRmRateEditing(prev => { const n = { ...prev }; delete n[rmItemId]; return n; });
+    setRmExpenses([]);
+    await loadRmExpenses();
   }
 
   useEffect(() => {
@@ -584,18 +605,60 @@ export default function CostSheetPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {rmExpenses.map((r, i) => (
-                    <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-4 py-2.5 font-medium text-gray-800">{r.ingredient}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-600">{formatNumber(r.total_consumed)} {r.unit}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-500 text-xs">
-                        {r.rate != null ? `₹${r.rate}/${r.rate_unit}` : <span className="text-gray-300">no rate</span>}
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-bold text-green-700">
-                        {r.estimated_spend != null ? `₹${formatNumber(r.estimated_spend)}` : <span className="text-gray-300">—</span>}
-                      </td>
-                    </tr>
-                  ))}
+                  {rmExpenses.map((r, i) => {
+                    const isEditing = !!rmRateEditing[r.rm_item_id];
+                    const editVal = rmRateEditing[r.rm_item_id];
+                    const isSaving = !!rmRateSaving[r.rm_item_id];
+                    return (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="px-4 py-2.5 font-medium text-gray-800">{r.ingredient}</td>
+                        <td className="px-4 py-2.5 text-right text-gray-600">{formatNumber(r.total_consumed)} {r.unit}</td>
+                        <td className="px-4 py-2.5 text-right text-gray-500 text-xs">
+                          {isEditing ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <span className="text-gray-400">₹</span>
+                              <input
+                                type="number" min="0" step="0.01"
+                                value={editVal.rate}
+                                onChange={e => setRmRateEditing(prev => ({ ...prev, [r.rm_item_id]: { ...prev[r.rm_item_id], rate: e.target.value } }))}
+                                className="w-20 border border-gray-300 rounded px-1 py-0.5 text-right text-xs"
+                                placeholder="rate"
+                                autoFocus
+                              />
+                              <span className="text-gray-400">/</span>
+                              <input
+                                type="text"
+                                value={editVal.unit}
+                                onChange={e => setRmRateEditing(prev => ({ ...prev, [r.rm_item_id]: { ...prev[r.rm_item_id], unit: e.target.value } }))}
+                                className="w-10 border border-gray-300 rounded px-1 py-0.5 text-xs"
+                                placeholder="unit"
+                              />
+                              <button onClick={() => saveRmRate(r.rm_item_id)} disabled={isSaving} className="text-green-600 hover:text-green-700 ml-1">
+                                <Check size={14} />
+                              </button>
+                              <button onClick={() => setRmRateEditing(prev => { const n = { ...prev }; delete n[r.rm_item_id]; return n; })} className="text-gray-400 hover:text-gray-600">
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ) : r.rate != null ? (
+                            <button onClick={() => setRmRateEditing(prev => ({ ...prev, [r.rm_item_id]: { rate: String(r.rate), unit: r.rate_unit || r.unit } }))} className="text-gray-500 hover:text-gray-700 flex items-center gap-1 ml-auto">
+                              <span>₹{r.rate}/{r.rate_unit}</span>
+                              {r.rate_source === 'avg_po' && <span className="text-blue-400 text-[10px] font-medium">avg</span>}
+                              {r.rate_source === 'manual' && <span className="text-purple-400 text-[10px] font-medium">manual</span>}
+                              <Pencil size={10} />
+                            </button>
+                          ) : (
+                            <button onClick={() => setRmRateEditing(prev => ({ ...prev, [r.rm_item_id]: { rate: '', unit: r.unit } }))} className="text-orange-400 hover:text-orange-600 flex items-center gap-1 ml-auto text-xs">
+                              set rate <Plus size={10} />
+                            </button>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-bold text-green-700">
+                          {r.estimated_spend != null ? `₹${formatNumber(r.estimated_spend)}` : <span className="text-gray-300">—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {rmExpenses.some(r => r.estimated_spend != null) && (
                     <tr className="bg-green-50 border-t border-green-200 font-bold">
                       <td colSpan={3} className="px-4 py-3 text-right text-gray-600">Total RM Spend</td>

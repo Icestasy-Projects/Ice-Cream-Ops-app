@@ -1,5 +1,3 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  serverExternalPackages: ['html5-qrcode'],
-};
+const nextConfig = {};
 module.exports = nextConfig;

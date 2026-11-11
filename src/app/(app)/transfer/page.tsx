@@ -13,8 +13,10 @@ interface PrepStock {
   prep_product_id: number;
   product_name: string;
   unit: string;
-  qty_kitchen: number;
-  qty_factory: number;
+  qty_kitchen: number;  // litres from DB
+  qty_factory: number;  // litres from DB
+  kitchen_bulks: number;
+  factory_bulks: number;
 }
 
 export default function TransferPage() {
@@ -38,13 +40,22 @@ export default function TransferPage() {
       .select('prep_product_id, product_name, unit, qty_kitchen, qty_factory')
       .gt('qty_kitchen', 0)
       .order('product_name');
-    setStock(data || []);
+    setStock((data || []).map((r: Record<string, unknown>) => ({
+      prep_product_id: r.prep_product_id as number,
+      product_name: r.product_name as string,
+      unit: r.unit as string,
+      qty_kitchen: (r.qty_kitchen as number) || 0,
+      qty_factory: (r.qty_factory as number) || 0,
+      kitchen_bulks: ((r.qty_kitchen as number) || 0) / 4,
+      factory_bulks: ((r.qty_factory as number) || 0) / 4,
+    })));
     setLoading(false);
   }, [supabase]);
 
   useEffect(() => { loadStock(); }, [loadStock]);
 
-  const effectiveQty = useCustomQty && customQty ? parseFloat(customQty) : selected?.qty_kitchen;
+  // effectiveQty is in Bulks; convert to litres for DB insert
+  const effectiveBulks = useCustomQty && customQty ? parseFloat(customQty) : (selected ? selected.kitchen_bulks : 0);
 
   function handleSelect(s: PrepStock) {
     if (selected?.prep_product_id === s.prep_product_id) {
@@ -62,24 +73,25 @@ export default function TransferPage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      const transferQty = useCustomQty && customQty && parseFloat(customQty) > 0
+      const bulksToTransfer = useCustomQty && customQty && parseFloat(customQty) > 0
         ? parseFloat(customQty)
-        : selected.qty_kitchen;
+        : selected.kitchen_bulks;
+      const litres = bulksToTransfer * 4;
 
       const { error } = await supabase
         .schema('production')
         .from('prep_transfers')
         .insert({
           prep_product_id: selected.prep_product_id,
-          qty: transferQty,
+          qty: litres,
           transferred_by: user?.id,
           note: note || null,
         });
 
       if (error) throw new Error(error.message);
 
-      setLastResult(`Transferred ${formatNumber(transferQty)} ${selected.unit} of ${selected.product_name} from kitchen to factory.`);
-      toast.success(`Transferred ${formatNumber(transferQty)} ${selected.unit} of ${selected.product_name} to the factory!`);
+      setLastResult(`Transferred ${formatNumber(bulksToTransfer, 1)} Bulk${bulksToTransfer !== 1 ? 's' : ''} of ${selected.product_name} from kitchen to factory.`);
+      toast.success(`Transferred ${formatNumber(bulksToTransfer, 1)} Bulk${bulksToTransfer !== 1 ? 's' : ''} of ${selected.product_name} to the factory!`);
       setShowConfirm(false);
       setSelected(null);
       setNote('');
@@ -89,7 +101,7 @@ export default function TransferPage() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (msg.toLowerCase().includes('insufficient')) {
-        toast.error(`Not enough ${selected.product_name} in the kitchen (have ${formatNumber(selected.qty_kitchen)} ${selected.unit}).`);
+        toast.error(`Not enough ${selected.product_name} in the kitchen (have ${formatNumber(selected.kitchen_bulks, 1)} Bulks).`);
       } else {
         toast.error(parseSupabaseError(msg));
       }
@@ -138,8 +150,8 @@ export default function TransferPage() {
                 >
                   <p className="font-bold text-gray-900">{s.product_name}</p>
                   <div className="flex gap-4 mt-1">
-                    <span className="text-sm text-blue-600 flex items-center gap-1"><FlaskConical size={13} /> Kitchen: {formatNumber(s.qty_kitchen)} {s.unit}</span>
-                    <span className="text-sm text-green-600 flex items-center gap-1"><Factory size={13} /> Factory: {formatNumber(s.qty_factory)} {s.unit}</span>
+                    <span className="text-sm text-blue-600 flex items-center gap-1"><FlaskConical size={13} /> Kitchen: {formatNumber(s.kitchen_bulks, 1)} Bulks</span>
+                    <span className="text-sm text-green-600 flex items-center gap-1"><Factory size={13} /> Factory: {formatNumber(s.factory_bulks, 1)} Bulks</span>
                   </div>
                 </button>
 
@@ -149,13 +161,13 @@ export default function TransferPage() {
                     {/* Transfer all banner */}
                     <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
                       <p className="font-bold text-blue-800 text-lg">
-                        Transfer all {formatNumber(s.qty_kitchen)} {s.unit}
+                        Transfer all {formatNumber(s.kitchen_bulks, 1)} Bulks
                       </p>
                       <p className="text-blue-600 text-sm mt-1">Moves everything from kitchen to factory — the usual action.</p>
                     </div>
 
                     <button onClick={() => setShowConfirm(true)} className="btn-primary w-full">
-                      Transfer All {formatNumber(s.qty_kitchen)} {s.unit} to Factory
+                      Transfer All {formatNumber(s.kitchen_bulks, 1)} Bulks to Factory
                     </button>
 
                     {/* Advanced: specific amount */}
@@ -165,17 +177,17 @@ export default function TransferPage() {
                         Transfer a specific amount instead (Advanced)
                       </summary>
                       <div className="px-4 pb-4 space-y-3 bg-gray-50">
-                        <p className="text-xs text-gray-500 pt-3">Available in kitchen: {formatNumber(s.qty_kitchen)} {s.unit}</p>
+                        <p className="text-xs text-gray-500 pt-3">Available in kitchen: {formatNumber(s.kitchen_bulks, 1)} Bulks</p>
                         <input
-                          type="number" min="0.1" max={s.qty_kitchen} step="0.1"
+                          type="number" min="0.25" max={s.kitchen_bulks} step="0.25"
                           value={customQty}
                           onChange={e => { setCustomQty(e.target.value); setUseCustomQty(true); }}
-                          placeholder={`Amount in ${s.unit}`}
+                          placeholder="Amount in Bulks"
                           className="input-field"
                         />
                         {customQty && parseFloat(customQty) > 0 && (
                           <button onClick={() => setShowConfirm(true)} className="btn-secondary w-full">
-                            Transfer {customQty} {s.unit}
+                            Transfer {customQty} Bulks
                           </button>
                         )}
                       </div>
@@ -201,7 +213,7 @@ export default function TransferPage() {
             <div className="space-y-2">
               <p>Moving from <strong>Kitchen → Factory</strong>:</p>
               <p className="text-xl font-bold text-gray-900">
-                {formatNumber(effectiveQty ?? 0)} {selected.unit} of {selected.product_name}
+                {formatNumber(effectiveBulks, 1)} Bulk{effectiveBulks !== 1 ? 's' : ''} of {selected.product_name}
               </p>
               <p className="text-sm text-gray-500">Kitchen stock decreases. Factory stock increases.</p>
             </div>
