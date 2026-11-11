@@ -10,6 +10,8 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Icestasy Ops',
   description: 'Kitchen and factory operations for Icestasy',
